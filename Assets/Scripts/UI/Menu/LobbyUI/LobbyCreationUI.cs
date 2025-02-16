@@ -14,7 +14,7 @@ public class LobbyCreationUI : MonoBehaviour
     private string lobbyName;
     private bool isPrivate;
     private int maxPlayers = 10;
-    private LobbyManager.LobbyGameMode gameMode;
+    private GameEnumsUtil.GameMode gameMode;
 
     private void Awake()
     {
@@ -25,7 +25,7 @@ public class LobbyCreationUI : MonoBehaviour
     private void Start()
     {
         gameModeManager.ResetSelectedIndex();
-        createLobbyButton.onClick.AddListener(OnCreateLobbyClicked);
+        //createLobbyButton.onClick.AddListener(OnCreateLobbyClicked);
     }
 
     private void OnCreateLobbyClicked()

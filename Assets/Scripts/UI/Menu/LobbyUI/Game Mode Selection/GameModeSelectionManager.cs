@@ -42,12 +42,12 @@ public class GameModeManager : MonoBehaviour
         return selectedIndex;
     }
 
-    public LobbyManager.LobbyGameMode GetSelectedGameMode()
+    public GameEnumsUtil.GameMode GetSelectedGameMode()
     {
         if (selectedIndex >= 0)
         {
             Debug.Log("Selected index : " + selectedIndex);
-            return (LobbyManager.LobbyGameMode)selectedIndex;
+            return (GameEnumsUtil.GameMode)selectedIndex;
         }
         Debug.Log("Selected index : " + selectedIndex);
 

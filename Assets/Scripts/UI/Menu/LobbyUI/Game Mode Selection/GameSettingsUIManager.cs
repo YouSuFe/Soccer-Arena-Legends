@@ -12,6 +12,16 @@ public class GameSettingsUIManager : MonoBehaviour
     [Header("UI Panels")]
     [SerializeField] private GameObject gameSettingsPanel; // Main UI panel
 
+    [Header("Map Selection")]
+    [SerializeField] private ToggleGroup mapToggleGroup; // ToggleGroup for Map Selection
+    [SerializeField] private Toggle[] mapToggles;
+    [SerializeField] private TextMeshProUGUI mapExplanationText; // Explanation text
+
+    [Header("Map Selection")]
+    [SerializeField] private ToggleGroup regionToggleGroup; // ToggleGroup for Map Selection
+    [SerializeField] private Toggle[] regionToggles;
+    [SerializeField] private TextMeshProUGUI regionExplanationText; // Explanation text
+
     [Header("Game Mode Selection")]
     [SerializeField] private ToggleGroup gameModeToggleGroup; // ToggleGroup for Game Modes
     [SerializeField] private Toggle[] gameModeToggles; // Direct references to toggles
@@ -22,28 +32,29 @@ public class GameSettingsUIManager : MonoBehaviour
     [SerializeField] private Toggle[] ballTypeToggles;
     [SerializeField] private TextMeshProUGUI ballExplanationText;
 
-    [Header("Map Selection")]
-    [SerializeField] private ToggleGroup mapToggleGroup; // ToggleGroup for Map Selection
-    [SerializeField] private Toggle[] mapToggles;
-    [SerializeField] private TextMeshProUGUI mapExplanationText; // Explanation text
-
     [Header("Player Amount Selection")]
     [SerializeField] private Slider playerAmountSlider;
     [SerializeField] private TextMeshProUGUI playerAmountText; // Text to show current value
 
     [Header("Explanations")]
+    [SerializeField] private string[] mapExplanations; // Static map explanations
+    [SerializeField] private string[] regionExplanations; // Region explanations
     [SerializeField] private string[] gameModeExplanations; // Descriptions for each game mode
     [SerializeField] private string[] ballExplanations; // Descriptions for each ball type
-    [SerializeField] private string[] mapExplanations; // Static map explanation
 
     [Header("Buttons")]
     [SerializeField] private Button createLobbyButton;
-    [SerializeField] private Button cancelButton; 
+    [SerializeField] private Button cancelButton;
+
+    private string lobbyName;
+    private bool isPrivate;
 
     private void Start()
     {
+        gameModeManager.ResetSelectedIndex();
+
         cancelButton.onClick.AddListener(CloseGameSettingsUI);
-        createLobbyButton.onClick.AddListener(CreateLobbyWithSettings);
+        createLobbyButton.onClick.AddListener(OnCreateLobbyButtonClicked);
         gameSettingsPanel.SetActive(false); // Hide UI at start
 
         // Default Player Amount
@@ -56,10 +67,41 @@ public class GameSettingsUIManager : MonoBehaviour
         UpdatePlayerAmountText(2);
     }
 
-    private void CreateLobbyWithSettings()
+    public void OnCreateLobbyButtonClicked()
     {
+        // ✅ Get Selected Region (Using Index)
+        int regionIndex = GetSelectedToggleIndex(regionToggles);
+        GameEnumsUtil.Region selectedRegion = (GameEnumsUtil.Region)regionIndex;
 
+        // ✅ Get Selected Game Mode
+        int gameModeIndex = GetSelectedToggleIndex(gameModeToggles);
+        GameEnumsUtil.GameMode selectedGameMode = (GameEnumsUtil.GameMode)gameModeIndex;
+
+        // ✅ Get Selected Ball Type
+        int ballTypeIndex = GetSelectedToggleIndex(ballTypeToggles);
+        GameEnumsUtil.BallType selectedBallType = (GameEnumsUtil.BallType)ballTypeIndex;
+
+        // ✅ Get Selected Map
+        int mapIndex = GetSelectedToggleIndex(mapToggles);
+        GameEnumsUtil.Map selectedMap = (GameEnumsUtil.Map)mapIndex;
+
+        // ✅ Get Player Amount from Slider
+        int playerAmount = Mathf.RoundToInt(playerAmountSlider.value);
+
+        // Reset selected index on Game Mode Selection UI
+        gameModeManager.ResetSelectedIndex();
+
+        // ✅ Call LobbyManager to create the lobby
+        LobbyManager.Instance.CreateLobby(
+            lobbyName,
+            playerAmount,
+            isPrivate,
+            selectedRegion,
+            selectedGameMode,
+            selectedBallType,
+            selectedMap);
     }
+
 
     // 🎮 Open the Game Settings UI when clicking "Create Game"
     public void OpenGameSettingsUI()
@@ -80,21 +122,32 @@ public class GameSettingsUIManager : MonoBehaviour
             UpdateGameModeExplanation(0);
         }
 
-        // Default Ball Type
-        ballTypeToggles[0].isOn = true;
-        UpdateBallExplanation(0);
-
         // Map is always selected (since only 1 exists)
         mapToggles[0].isOn = true;
         UpdateMapExplanation(0);
 
+        regionToggles[0].isOn = true;
+        UpdateRegionExplanation(0);
 
+        // Default Ball Type
+        ballTypeToggles[0].isOn = true;
+        UpdateBallExplanation(0);
     }
 
     public void CloseGameSettingsUI()
     {
         gameSettingsPanel.SetActive(false);
         ResetGameSettings();
+    }
+
+    public void UpdateMapExplanation(int index)
+    {
+        mapExplanationText.text = mapExplanations[index];
+    }
+
+    public void UpdateRegionExplanation(int index)
+    {
+        regionExplanationText.text = regionExplanations[index];
     }
 
     // 🎮 Game Mode Toggle Click Event
@@ -107,11 +160,6 @@ public class GameSettingsUIManager : MonoBehaviour
     public void UpdateBallExplanation(int index)
     {
         ballExplanationText.text = ballExplanations[index];
-    }
-
-    public void UpdateMapExplanation(int index)
-    {
-        mapExplanationText.text = mapExplanations[index];
     }
 
     // 🔢 Player Amount Slider Logic (Only Even Numbers)
@@ -130,6 +178,18 @@ public class GameSettingsUIManager : MonoBehaviour
     public void ResetGameSettings()
     {
         // Reset all toggles to first option
+        if (mapToggles.Length > 0)
+        {
+            mapToggles[0].isOn = true;
+            UpdateMapExplanation(0);
+        }
+
+        if (regionToggles.Length > 0)
+        {
+            regionToggles[0].isOn = true;
+            UpdateRegionExplanation(0);
+        }
+
         if (gameModeToggles.Length > 0)
         {
             gameModeToggles[0].isOn = true;
@@ -142,15 +202,21 @@ public class GameSettingsUIManager : MonoBehaviour
             UpdateBallExplanation(0);
         }
 
-        if (mapToggles.Length > 0)
-        {
-            mapToggles[0].isOn = true;
-            UpdateMapExplanation(0);
-        }
-
         // Reset Player Amount
         playerAmountSlider.SetValueWithoutNotify(2);
         UpdatePlayerAmountText(2);
+    }
+
+    private int GetSelectedToggleIndex(Toggle[] toggleArray)
+    {
+        for (int i = 0; i < toggleArray.Length; i++)
+        {
+            if (toggleArray[i].isOn)
+            {
+                return i; // ✅ Return the index of the selected toggle
+            }
+        }
+        return 0; // Default to the first option if none are selected
     }
 
 }

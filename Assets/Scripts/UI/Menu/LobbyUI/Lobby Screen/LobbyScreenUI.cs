@@ -82,12 +82,12 @@ public class LobbyScreenUI : MonoBehaviour
         foreach (Player player in lobby.Players)
         {
             // Determine the player's team
-            TeamUtils.PlayerTeam playerTeam = player.Data.ContainsKey("Team")
-                ? TeamUtils.StringToTeam(player.Data["Team"].Value)
-                : TeamUtils.PlayerTeam.Blue; // Default to Blue
+            GameEnumsUtil.PlayerTeam playerTeam = player.Data.ContainsKey("Team")
+                ? GameEnumsUtil.StringToEnum(player.Data["Team"].Value, GameEnumsUtil.PlayerTeam.Blue)
+                : GameEnumsUtil.PlayerTeam.Blue; // Default to Blue
 
             // Choose the correct container based on the team
-            Transform teamContainer = playerTeam == TeamUtils.PlayerTeam.Blue ? blueTeamContanier : redTeamContanier;
+            Transform teamContainer = playerTeam == GameEnumsUtil.PlayerTeam.Blue ? blueTeamContanier : redTeamContanier;
 
             // Instantiate player UI in the correct team container
             GameObject playerSingleTransform = Instantiate(playerSingleTemplate, teamContainer);

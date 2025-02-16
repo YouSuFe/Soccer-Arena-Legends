@@ -14,8 +14,11 @@ public class LobbyManager : MonoBehaviour
 
     public const string KEY_PLAYER_NAME = "PlayerName";
     public const string KEY_PLAYER_TEAM = "Team";
+    public const string KEY_MAP = "Map";
+    public const string KEY_REGION = "Region";
     public const string KEY_GAME_MODE = "GameMode";
-    public const string MATCHMAKING_STATE = "MatchmakingState";
+    public const string KEY_BALL_TYPE = "BallType";
+    public const string KEY_MAX_PLAYERS = "MaxPlayers";
 
     public Action<string> OnJoinLobbyByCodeSuccess;
     public Action<string> OnJoinLobbyByCodeFailure;
@@ -27,13 +30,6 @@ public class LobbyManager : MonoBehaviour
     public Action<Lobby> OnKickedFromLobby;
     public Action<Lobby> OnLobbyGameModeChanged;
     public Action<List<Lobby>> OnLobbyListChanged;
-
-    public enum LobbyGameMode
-    {
-        SkillGameMode,
-        CoreGameMode,
-        Training
-    }
 
     public enum PlayerStatus
     {
@@ -142,14 +138,14 @@ public class LobbyManager : MonoBehaviour
 
     private Player GetPlayer(Lobby lobby)
     {
-        var assignedTeam = TeamUtils.PlayerTeam.Blue;
+        var assignedTeam = GameEnumsUtil.PlayerTeam.Blue;
 
         // Check if a lobby exists and count current players
         if (lobby != null && lobby.Players != null)
         {
             Debug.Log($"[GetPlayer] Lobby exists! Current player count: {lobby.Players.Count}");
 
-            assignedTeam = (lobby.Players.Count % 2 == 0) ? TeamUtils.PlayerTeam.Blue : TeamUtils.PlayerTeam.Red;
+            assignedTeam = (lobby.Players.Count % 2 == 0) ? GameEnumsUtil.PlayerTeam.Blue : GameEnumsUtil.PlayerTeam.Red;
         }
         else
         {
@@ -161,27 +157,27 @@ public class LobbyManager : MonoBehaviour
         return new Player(AuthenticationService.Instance.PlayerId, null, new Dictionary<string, PlayerDataObject>
                 {
                     { KEY_PLAYER_NAME, new PlayerDataObject(PlayerDataObject.VisibilityOptions.Public, playerName) },
-                    { KEY_PLAYER_TEAM, new PlayerDataObject(PlayerDataObject.VisibilityOptions.Public, TeamUtils.TeamToString(assignedTeam)) }
+                    { KEY_PLAYER_TEAM, new PlayerDataObject(PlayerDataObject.VisibilityOptions.Public, GameEnumsUtil.EnumToString(assignedTeam)) }
                 });
     }
 
 
-    public LobbyGameMode GetLobbyGameMode()
+    public GameEnumsUtil.GameMode GetLobbyGameMode()
     {
-        if (joinedLobby == null) return LobbyGameMode.SkillGameMode; // Default or fallback mode.
-        return Enum.Parse<LobbyGameMode>(joinedLobby.Data[KEY_GAME_MODE].Value);
+        if (joinedLobby == null) return GameEnumsUtil.GameMode.SkillGameMode; // Default or fallback mode.
+        return Enum.Parse<GameEnumsUtil.GameMode>(joinedLobby.Data[KEY_GAME_MODE].Value);
     }
 
-    public GameMode ConvertLobbyGameModeToGameMode(LobbyGameMode lobbyGameMode)
+    public GameMode ConvertLobbyGameModeToGameMode(GameEnumsUtil.GameMode lobbyGameMode)
     {
         // Use a switch statement to map LobbyGameMode to GameMode
         switch (lobbyGameMode)
         {
-            case LobbyGameMode.SkillGameMode:
+            case GameEnumsUtil.GameMode.SkillGameMode:
                 return GameMode.SKillGameMode;
-            case LobbyGameMode.CoreGameMode:
+            case GameEnumsUtil.GameMode.CoreGameMode:
                 return GameMode.CoreGameMode;
-            case LobbyGameMode.Training:
+            case GameEnumsUtil.GameMode.Training:
                 return GameMode.Training;
             default:
                 throw new ArgumentOutOfRangeException(nameof(lobbyGameMode), lobbyGameMode, null);
@@ -190,16 +186,16 @@ public class LobbyManager : MonoBehaviour
 
     public GameMode GetAndConvertLobbyGameModeToGameMode()
     {
-        LobbyGameMode lobbyGameMode = GetLobbyGameMode();
+        GameEnumsUtil.GameMode lobbyGameMode = GetLobbyGameMode();
 
         // Use a switch statement to map LobbyGameMode to GameMode
         switch (lobbyGameMode)
         {
-            case LobbyGameMode.SkillGameMode:
+            case GameEnumsUtil.GameMode.SkillGameMode:
                 return GameMode.SKillGameMode;
-            case LobbyGameMode.CoreGameMode:
+            case GameEnumsUtil.GameMode.CoreGameMode:
                 return GameMode.CoreGameMode;
-            case LobbyGameMode.Training:
+            case GameEnumsUtil.GameMode.Training:
                 return GameMode.Training;
             default:
                 throw new ArgumentOutOfRangeException(nameof(lobbyGameMode), lobbyGameMode, null);
@@ -210,15 +206,15 @@ public class LobbyManager : MonoBehaviour
     {
         if (IsLobbyHost())
         {
-            LobbyGameMode gameMode = Enum.Parse<LobbyGameMode>(joinedLobby.Data[KEY_GAME_MODE].Value);
+            GameEnumsUtil.GameMode gameMode = Enum.Parse<GameEnumsUtil.GameMode>(joinedLobby.Data[KEY_GAME_MODE].Value);
 
-            gameMode = gameMode == LobbyGameMode.SkillGameMode ? LobbyGameMode.CoreGameMode : LobbyGameMode.SkillGameMode;
+            gameMode = gameMode == GameEnumsUtil.GameMode.SkillGameMode ? GameEnumsUtil.GameMode.CoreGameMode : GameEnumsUtil.GameMode.SkillGameMode;
 
             UpdateLobbyGameMode(gameMode);
         }
     }
 
-    public async void CreateLobby(string lobbyName, int maxPlayers, bool isPrivate, LobbyGameMode gameMode)
+    public async void CreateLobby(string lobbyName, int maxPlayers, bool isPrivate, GameEnumsUtil.GameMode gameMode)
     {
         try
         {
@@ -232,10 +228,49 @@ public class LobbyManager : MonoBehaviour
                 Data = new Dictionary<string, DataObject>
                 {
                     { KEY_GAME_MODE, new DataObject(DataObject.VisibilityOptions.Public, gameMode.ToString()) },
-                    { MATCHMAKING_STATE, new DataObject(DataObject.VisibilityOptions.Public, false.ToString()) }, // Initialize MatchmakingState
-                    { "MatchResult", new DataObject(DataObject.VisibilityOptions.Public, MatchmakerPollingResult.MatchAssignmentError.ToString()) }
-
                 }
+            };
+
+            lobbyName = player.Id;
+
+
+            Lobby lobby = await LobbyService.Instance.CreateLobbyAsync(lobbyName, maxPlayers, options);
+            Debug.Log($"Lobby '{lobby.Name}' created with mode '{gameMode}'. Lobby's privecy {isPrivate} with max {maxPlayers}");
+
+            // Assign to joinedLobby
+            joinedLobby = lobby;
+
+            OnJoinedLobby?.Invoke(lobby);
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"Failed to create lobby: {e.Message}");
+        }
+    }
+
+    public async void CreateLobby(string lobbyName, int maxPlayers, bool isPrivate,
+                            GameEnumsUtil.Region region,
+                            GameEnumsUtil.GameMode gameMode,
+                            GameEnumsUtil.BallType ballType,
+                            GameEnumsUtil.Map map)
+    {
+        try
+        {
+            Player player = GetPlayer(null); // Replace with your logic for fetching player data
+            Debug.Log("Player : " + JsonUtility.ToJson(player, true));
+
+            CreateLobbyOptions options = new CreateLobbyOptions
+            {
+                Player = player,
+                IsPrivate = isPrivate, // Change this if needed
+                Data = new Dictionary<string, DataObject>
+            {
+                { KEY_MAP, new DataObject(DataObject.VisibilityOptions.Public, GameEnumsUtil.EnumToString(map)) },
+                { KEY_REGION, new DataObject(DataObject.VisibilityOptions.Public, GameEnumsUtil.EnumToString(region)) },
+                { KEY_GAME_MODE, new DataObject(DataObject.VisibilityOptions.Public, GameEnumsUtil.EnumToString(gameMode)) },
+                { KEY_BALL_TYPE, new DataObject(DataObject.VisibilityOptions.Public, GameEnumsUtil.EnumToString(ballType)) },
+                { KEY_MAX_PLAYERS, new DataObject(DataObject.VisibilityOptions.Public, maxPlayers.ToString()) },
+            }
             };
 
             lobbyName = player.Id;
@@ -364,7 +399,7 @@ public class LobbyManager : MonoBehaviour
         }
     }
 
-    public async void UpdatePlayerTeam(TeamUtils.PlayerTeam newTeam)
+    public async void UpdatePlayerTeam(GameEnumsUtil.PlayerTeam newTeam)
     {
         if (joinedLobby == null)
         {
@@ -374,7 +409,7 @@ public class LobbyManager : MonoBehaviour
 
         try
         {
-            string teamString = TeamUtils.TeamToString(newTeam); // Convert enum to string
+            string teamString = GameEnumsUtil.EnumToString(newTeam); // Convert enum to string
 
             UpdatePlayerOptions options = new UpdatePlayerOptions
             {
@@ -465,7 +500,7 @@ public class LobbyManager : MonoBehaviour
         }
     }
 
-    public async void UpdateLobbyGameMode(LobbyGameMode gameMode)
+    public async void UpdateLobbyGameMode(GameEnumsUtil.GameMode gameMode)
     {
         try
         {
@@ -564,7 +599,7 @@ public class LobbyManager : MonoBehaviour
             Lobby lobby = await LobbyService.Instance.UpdateLobbyAsync(joinedLobby.Id, new UpdateLobbyOptions
             {
                 Data = new Dictionary<string, DataObject> {
-                    { MATCHMAKING_STATE, new DataObject(DataObject.VisibilityOptions.Public, isMatchmaking.ToString()) }
+                    { "Matchmake", new DataObject(DataObject.VisibilityOptions.Public, isMatchmaking.ToString()) }
                 }
             });
 
