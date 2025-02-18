@@ -10,14 +10,16 @@ public class GameSettingsUIManager : MonoBehaviour
     [SerializeField] private GameModeManager gameModeManager;
 
     [Header("UI Panels")]
-    [SerializeField] private GameObject gameSettingsPanel; // Main UI panel
+    [SerializeField] private GameObject gameModeSelectionScreen; // Main UI panel
+    [SerializeField] private GameObject gameSettingsPanel; // Settings UI panel
+    [SerializeField] private GameObject LobbyScreenUI;
 
     [Header("Map Selection")]
     [SerializeField] private ToggleGroup mapToggleGroup; // ToggleGroup for Map Selection
     [SerializeField] private Toggle[] mapToggles;
     [SerializeField] private TextMeshProUGUI mapExplanationText; // Explanation text
 
-    [Header("Map Selection")]
+    [Header("Region Selection")]
     [SerializeField] private ToggleGroup regionToggleGroup; // ToggleGroup for Map Selection
     [SerializeField] private Toggle[] regionToggles;
     [SerializeField] private TextMeshProUGUI regionExplanationText; // Explanation text
@@ -100,6 +102,10 @@ public class GameSettingsUIManager : MonoBehaviour
             selectedGameMode,
             selectedBallType,
             selectedMap);
+
+        gameModeSelectionScreen.SetActive(false);
+        LobbyScreenUI.SetActive(true);
+        CloseGameSettingsUI();
     }
 
 

@@ -17,6 +17,7 @@ public class LobbyScreenUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI gameModeText;
     [SerializeField] private TextMeshProUGUI joinCodeText;
 
+    private LobbyGameSettingsUI gameSettingsUI;
 
     private void Awake()
     {
@@ -27,6 +28,8 @@ public class LobbyScreenUI : MonoBehaviour
 
     private void Start()
     {
+        gameSettingsUI = GetComponent<LobbyGameSettingsUI>();
+
         LobbyManager.Instance.OnJoinedLobby += UpdateLobby_Event;
         LobbyManager.Instance.OnJoinedLobbyUpdate += UpdateLobby_Event;
         LobbyManager.Instance.OnLobbyGameModeChanged += UpdateLobby_Event;
@@ -103,6 +106,10 @@ public class LobbyScreenUI : MonoBehaviour
             lobbyPlayerSingleUI.UpdatePlayer(player);
         }
 
+        // ✅ Load game settings into dropdowns when lobby updates
+        gameSettingsUI.LoadLobbySettings();
+
+        // ✅ Update UI Text
         lobbyNameText.text = lobby.Name;
         gameModeText.text = lobby.Data[LobbyManager.KEY_GAME_MODE].Value;
         joinCodeText.text = lobby.LobbyCode;
@@ -111,6 +118,7 @@ public class LobbyScreenUI : MonoBehaviour
 
         Show();
     }
+
 
     private void ClearLobby()
     {

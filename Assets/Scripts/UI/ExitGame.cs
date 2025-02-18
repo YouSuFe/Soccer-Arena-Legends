@@ -13,7 +13,6 @@ public class ExitGame : NetworkBehaviour
             if (LobbyManager.Instance.IsLobbyHost())
             {
                 Debug.Log("It is host. Try to make state False from SERVER");
-                LobbyManager.Instance.UpdateMatchmakingState(false);
             }
             else
             {
@@ -26,10 +25,6 @@ public class ExitGame : NetworkBehaviour
             ClientSingleton.Instance.GameManager.Disconnect();
             if (LobbyManager.Instance.IsLobbyHost())
             {
-                Debug.Log("It is host. Try to make state Flase");
-                LobbyManager.Instance.UpdateMatchmakingState(false);
-                Debug.Log("It is host. Clear the lobby server");
-                LobbyManager.Instance.ClearLobbyServerDetails();
             }
             else
             {
@@ -48,9 +43,6 @@ public class ExitGame : NetworkBehaviour
     {
         // Notify clients that the game is ending
         NotifyClientsGameEnded();
-
-        // Clear lobby server details
-        LobbyManager.Instance.ClearLobbyServerDetails();
 
         // Shut down the NetworkManager
         NetworkManager.Singleton.Shutdown();

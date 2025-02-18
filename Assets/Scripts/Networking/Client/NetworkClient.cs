@@ -94,12 +94,6 @@ public class NetworkClient : IDisposable
 
     public void Disconnect()
     {
-        if (networkManager.IsServer) // Ensure server cleans up lobby data
-        {
-            LobbyManager.Instance.ClearLobbyServerDetails();
-            Debug.Log("Server clearing lobby server details.");
-        }
-
         if (SceneManager.GetActiveScene().name != MenuSceneName)
         {
             SceneManager.LoadScene(MenuSceneName);

@@ -1,17 +1,15 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using Unity.Services.Authentication;
-using Unity.Services.Core;
 using Unity.Services.Lobbies;
 using Unity.Services.Lobbies.Models;
 using UnityEngine;
 
 public class LobbyManager : MonoBehaviour
 {
-
     public static LobbyManager Instance { get; private set; }
 
+    #region Constants
     public const string KEY_PLAYER_NAME = "PlayerName";
     public const string KEY_PLAYER_TEAM = "Team";
     public const string KEY_MAP = "Map";
@@ -19,7 +17,9 @@ public class LobbyManager : MonoBehaviour
     public const string KEY_GAME_MODE = "GameMode";
     public const string KEY_BALL_TYPE = "BallType";
     public const string KEY_MAX_PLAYERS = "MaxPlayers";
+    #endregion
 
+    #region Events
     public Action<string> OnJoinLobbyByCodeSuccess;
     public Action<string> OnJoinLobbyByCodeFailure;
 
@@ -30,21 +30,17 @@ public class LobbyManager : MonoBehaviour
     public Action<Lobby> OnKickedFromLobby;
     public Action<Lobby> OnLobbyGameModeChanged;
     public Action<List<Lobby>> OnLobbyListChanged;
+    #endregion
 
-    public enum PlayerStatus
-    {
-        Başlangıç,
-        Acemi,
-        Usta,
-        Uzman
-    }
-
+    #region Private Fields
     private float heartbeatTimer;
     private float lobbyPollTimer;
     private float refreshLobbyListTimer = 5f;
     private Lobby joinedLobby;
     private string playerName = "Yusuf";
+    #endregion
 
+    #region Initialization
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -58,201 +54,19 @@ public class LobbyManager : MonoBehaviour
 
     private void Update()
     {
-        //HandleRefreshLobbyList(); // Disabled Auto Refresh for testing with multiple builds
+        //RefreshLobbyList();
         HandleLobbyHeartbeat();
         HandleLobbyPolling();
     }
+    #endregion
 
-    private void HandleLobbyHeartbeat()
-    {
-        if (IsLobbyHost())
-        {
-            heartbeatTimer -= Time.deltaTime;
-            if (heartbeatTimer < 0f)
-            {
-                float heartbeatTimerMax = 15f;
-                heartbeatTimer = heartbeatTimerMax;
-
-                Debug.Log("Heartbeat");
-                LobbyService.Instance.SendHeartbeatPingAsync(joinedLobby.Id);
-            }
-        }
-    }
-
-    private async void HandleLobbyPolling()
-    {
-        if (joinedLobby != null)
-        {
-            lobbyPollTimer -= Time.deltaTime;
-            if (lobbyPollTimer < 0f)
-            {
-                float lobbyPollTimerMax = 1.1f;
-                lobbyPollTimer = lobbyPollTimerMax;
-
-                joinedLobby = await LobbyService.Instance.GetLobbyAsync(joinedLobby.Id);
-                OnJoinedLobbyUpdate?.Invoke(joinedLobby);
-
-                Debug.Log($"Host ID: {joinedLobby.HostId}, Player ID: {AuthenticationService.Instance.PlayerId}");
-
-                DebugLobby(joinedLobby);
-
-                if (!IsPlayerInLobby())
-                {
-                    Debug.Log("Kicked from Lobby!");
-                    OnKickedFromLobby?.Invoke(joinedLobby);
-                    joinedLobby = null;
-                }
-            }
-        }
-    }
-
-    public Lobby GetJoinedLobby()
-    {
-        return joinedLobby;
-    }
-
-    public bool IsInLobby()
-    {
-        return Instance != null && Instance.GetJoinedLobby() != null;
-    }
-
-    public bool IsLobbyHost()
-    {
-        return joinedLobby != null && joinedLobby.HostId == AuthenticationService.Instance.PlayerId;
-    }
-
-    private bool IsPlayerInLobby()
-    {
-        if (joinedLobby != null && joinedLobby.Players != null)
-        {
-            foreach (Player player in joinedLobby.Players)
-            {
-                if (player.Id == AuthenticationService.Instance.PlayerId)
-                {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    private Player GetPlayer(Lobby lobby)
-    {
-        var assignedTeam = GameEnumsUtil.PlayerTeam.Blue;
-
-        // Check if a lobby exists and count current players
-        if (lobby != null && lobby.Players != null)
-        {
-            Debug.Log($"[GetPlayer] Lobby exists! Current player count: {lobby.Players.Count}");
-
-            assignedTeam = (lobby.Players.Count % 2 == 0) ? GameEnumsUtil.PlayerTeam.Blue : GameEnumsUtil.PlayerTeam.Red;
-        }
-        else
-        {
-            Debug.LogWarning("[GetPlayer] Lobby is NULL! Assigning default Blue team.");
-        }
-
-        Debug.Log($"[GetPlayer] Assigned Team: {assignedTeam}");
-
-        return new Player(AuthenticationService.Instance.PlayerId, null, new Dictionary<string, PlayerDataObject>
-                {
-                    { KEY_PLAYER_NAME, new PlayerDataObject(PlayerDataObject.VisibilityOptions.Public, playerName) },
-                    { KEY_PLAYER_TEAM, new PlayerDataObject(PlayerDataObject.VisibilityOptions.Public, GameEnumsUtil.EnumToString(assignedTeam)) }
-                });
-    }
-
-
-    public GameEnumsUtil.GameMode GetLobbyGameMode()
-    {
-        if (joinedLobby == null) return GameEnumsUtil.GameMode.SkillGameMode; // Default or fallback mode.
-        return Enum.Parse<GameEnumsUtil.GameMode>(joinedLobby.Data[KEY_GAME_MODE].Value);
-    }
-
-    public GameMode ConvertLobbyGameModeToGameMode(GameEnumsUtil.GameMode lobbyGameMode)
-    {
-        // Use a switch statement to map LobbyGameMode to GameMode
-        switch (lobbyGameMode)
-        {
-            case GameEnumsUtil.GameMode.SkillGameMode:
-                return GameMode.SKillGameMode;
-            case GameEnumsUtil.GameMode.CoreGameMode:
-                return GameMode.CoreGameMode;
-            case GameEnumsUtil.GameMode.Training:
-                return GameMode.Training;
-            default:
-                throw new ArgumentOutOfRangeException(nameof(lobbyGameMode), lobbyGameMode, null);
-        }
-    }
-
-    public GameMode GetAndConvertLobbyGameModeToGameMode()
-    {
-        GameEnumsUtil.GameMode lobbyGameMode = GetLobbyGameMode();
-
-        // Use a switch statement to map LobbyGameMode to GameMode
-        switch (lobbyGameMode)
-        {
-            case GameEnumsUtil.GameMode.SkillGameMode:
-                return GameMode.SKillGameMode;
-            case GameEnumsUtil.GameMode.CoreGameMode:
-                return GameMode.CoreGameMode;
-            case GameEnumsUtil.GameMode.Training:
-                return GameMode.Training;
-            default:
-                throw new ArgumentOutOfRangeException(nameof(lobbyGameMode), lobbyGameMode, null);
-        }
-    }
-
-    public void ChangeGameMode()
-    {
-        if (IsLobbyHost())
-        {
-            GameEnumsUtil.GameMode gameMode = Enum.Parse<GameEnumsUtil.GameMode>(joinedLobby.Data[KEY_GAME_MODE].Value);
-
-            gameMode = gameMode == GameEnumsUtil.GameMode.SkillGameMode ? GameEnumsUtil.GameMode.CoreGameMode : GameEnumsUtil.GameMode.SkillGameMode;
-
-            UpdateLobbyGameMode(gameMode);
-        }
-    }
-
-    public async void CreateLobby(string lobbyName, int maxPlayers, bool isPrivate, GameEnumsUtil.GameMode gameMode)
-    {
-        try
-        {
-            Player player = GetPlayer(null); // Replace with your logic for fetching player data
-            Debug.Log("Player : " + JsonUtility.ToJson(player, true));
-
-            CreateLobbyOptions options = new CreateLobbyOptions
-            {
-                Player = player,
-                IsPrivate = isPrivate,
-                Data = new Dictionary<string, DataObject>
-                {
-                    { KEY_GAME_MODE, new DataObject(DataObject.VisibilityOptions.Public, gameMode.ToString()) },
-                }
-            };
-
-            lobbyName = player.Id;
-
-
-            Lobby lobby = await LobbyService.Instance.CreateLobbyAsync(lobbyName, maxPlayers, options);
-            Debug.Log($"Lobby '{lobby.Name}' created with mode '{gameMode}'. Lobby's privecy {isPrivate} with max {maxPlayers}");
-
-            // Assign to joinedLobby
-            joinedLobby = lobby;
-
-            OnJoinedLobby?.Invoke(lobby);
-        }
-        catch (System.Exception e)
-        {
-            Debug.LogError($"Failed to create lobby: {e.Message}");
-        }
-    }
+    #region Lobby Management
 
     public async void CreateLobby(string lobbyName, int maxPlayers, bool isPrivate,
-                            GameEnumsUtil.Region region,
-                            GameEnumsUtil.GameMode gameMode,
-                            GameEnumsUtil.BallType ballType,
-                            GameEnumsUtil.Map map)
+                        GameEnumsUtil.Region region,
+                        GameEnumsUtil.GameMode gameMode,
+                        GameEnumsUtil.BallType ballType,
+                        GameEnumsUtil.Map map)
     {
         try
         {
@@ -287,6 +101,61 @@ public class LobbyManager : MonoBehaviour
         catch (System.Exception e)
         {
             Debug.LogError($"Failed to create lobby: {e.Message}");
+        }
+    }
+
+    private void HandleLobbyHeartbeat()
+    {
+        if (joinedLobby == null) return;
+        if (IsLobbyHost())
+        {
+            heartbeatTimer -= Time.deltaTime;
+            if (heartbeatTimer < 0f)
+            {
+                float heartbeatTimerMax = 15f;
+                heartbeatTimer = heartbeatTimerMax;
+
+                Debug.Log("Heartbeat");
+                LobbyService.Instance.SendHeartbeatPingAsync(joinedLobby.Id);
+            }
+        }
+    }
+
+    private async void HandleLobbyPolling()
+    {
+        if (joinedLobby != null)
+        {
+            lobbyPollTimer -= Time.deltaTime;
+            if (lobbyPollTimer < 0f)
+            {
+                float lobbyPollTimerMax = 1.5f;
+                try
+                {
+                    lobbyPollTimer = lobbyPollTimerMax;
+
+                    joinedLobby = await LobbyService.Instance.GetLobbyAsync(joinedLobby.Id);
+                    OnJoinedLobbyUpdate?.Invoke(joinedLobby);
+
+                    Debug.Log($"Host ID: {joinedLobby.HostId}, Player ID: {AuthenticationService.Instance.PlayerId}");
+
+                    DebugLobby(joinedLobby);
+
+                    if (!IsPlayerInLobby())
+                    {
+                        Debug.Log("Kicked from Lobby!");
+                        OnKickedFromLobby?.Invoke(joinedLobby);
+                        joinedLobby = null;
+                    }
+                }
+                catch(LobbyServiceException e )
+                {
+                    if (e.Reason == LobbyExceptionReason.RateLimited)
+                    {
+                        Debug.LogError($"[HandleLobbyPolling] Rate limit hit! {e.Message}");
+                    }
+                }
+
+            }
         }
     }
 
@@ -334,26 +203,6 @@ public class LobbyManager : MonoBehaviour
         }
     }
 
-    public async void JoinLobby(Lobby lobby)
-    {
-        try
-        {
-            Player player = GetPlayer(lobby);
-            joinedLobby = await LobbyService.Instance.JoinLobbyByIdAsync(lobby.Id, new JoinLobbyByIdOptions { Player = player });
-            Debug.Log($"Player {player} is joined to Lobby '{joinedLobby.Name}' with mode" +
-                $" '{joinedLobby.Data["GameMode"].Value}'. Lobby's privecy '{joinedLobby.IsPrivate}'" +
-                $" with max '{joinedLobby.MaxPlayers}'");
-
-            OnJoinedLobby?.Invoke(joinedLobby);
-        }
-
-        catch(LobbyServiceException e)
-        {
-            Debug.LogError($"Failed to Join Lobby Directly : {e}");
-        }
-
-    }
-
     public async void JoinLobby(Lobby lobby, Action onJoinLobbySuccess, Action<string> onJoinLobbyFailed)
     {
         try
@@ -373,65 +222,136 @@ public class LobbyManager : MonoBehaviour
         }
     }
 
-    public async void UpdatePlayerName(string playerName)
+    #endregion
+
+    #region Lobby Updates
+
+    public async void UpdateLobbyPlayerAmount(int newMaxPlayers)
     {
-        this.playerName = playerName;
+        if (!IsLobbyHost()) return;
 
-        if (joinedLobby != null)
+        if (joinedLobby.Players.Count > newMaxPlayers)
         {
-            try
-            {
-                UpdatePlayerOptions options = new UpdatePlayerOptions
-                {
-                    Data = new Dictionary<string, PlayerDataObject> {
-                        { KEY_PLAYER_NAME, new PlayerDataObject(PlayerDataObject.VisibilityOptions.Public, playerName) }
-                    }
-                };
-
-                string playerId = AuthenticationService.Instance.PlayerId;
-                joinedLobby = await LobbyService.Instance.UpdatePlayerAsync(joinedLobby.Id, playerId, options);
-                OnJoinedLobbyUpdate?.Invoke(joinedLobby);
-            }
-            catch (LobbyServiceException e)
-            {
-                Debug.Log(e);
-            }
-        }
-    }
-
-    public async void UpdatePlayerTeam(GameEnumsUtil.PlayerTeam newTeam)
-    {
-        if (joinedLobby == null)
-        {
-            Debug.LogError("[UpdatePlayerTeam] No lobby joined.");
+            Debug.LogError($"Cannot set max players to {newMaxPlayers}. There are already {joinedLobby.Players.Count} players in the lobby.");
             return;
         }
 
         try
         {
-            string teamString = GameEnumsUtil.EnumToString(newTeam); // Convert enum to string
+            Debug.Log($"[UpdateLobbyPlayerAmount] Attempting to update lobby max players to: {newMaxPlayers}");
 
-            UpdatePlayerOptions options = new UpdatePlayerOptions
+            Lobby lobby = await LobbyService.Instance.UpdateLobbyAsync(joinedLobby.Id, new UpdateLobbyOptions
             {
-                Data = new Dictionary<string, PlayerDataObject> {
-                { KEY_PLAYER_TEAM, new PlayerDataObject(PlayerDataObject.VisibilityOptions.Public, teamString) }
+                Data = new Dictionary<string, DataObject>
+            {
+                { KEY_MAX_PLAYERS, new DataObject(DataObject.VisibilityOptions.Public, newMaxPlayers.ToString()) }
             }
-            };
+            });
 
-            string playerId = AuthenticationService.Instance.PlayerId;
-            joinedLobby = await LobbyService.Instance.UpdatePlayerAsync(joinedLobby.Id, playerId, options);
-
-            Debug.Log($"[UpdatePlayerTeam] Player {playerId} switched to {newTeam}");
-
+            joinedLobby = lobby;
             OnJoinedLobbyUpdate?.Invoke(joinedLobby);
         }
         catch (LobbyServiceException e)
         {
-            Debug.LogError($"[UpdatePlayerTeam] Failed: {e.Message}");
+            Debug.LogError($"Failed to update player amount: {e.Message}");
         }
     }
 
+    public async void UpdateLobbyGameMode(GameEnumsUtil.GameMode gameMode)
+    {
+        if (!IsLobbyHost()) return;
 
+        try
+        {
+            Lobby lobby = await LobbyService.Instance.UpdateLobbyAsync(joinedLobby.Id, new UpdateLobbyOptions
+            {
+                Data = new Dictionary<string, DataObject>
+                {
+                    { KEY_GAME_MODE, new DataObject(DataObject.VisibilityOptions.Public, GameEnumsUtil.EnumToString(gameMode)) }
+                }
+            });
+
+            joinedLobby = lobby;
+            OnLobbyGameModeChanged?.Invoke(joinedLobby);
+        }
+        catch (LobbyServiceException e)
+        {
+            Debug.LogError($"Failed to update game mode: {e.Message}");
+        }
+    }
+
+    public async void UpdateLobbyRegion(GameEnumsUtil.Region region)
+    {
+        if (!IsLobbyHost()) return;
+
+        try
+        {
+            Lobby lobby = await LobbyService.Instance.UpdateLobbyAsync(joinedLobby.Id, new UpdateLobbyOptions
+            {
+                Data = new Dictionary<string, DataObject>
+                {
+                    { KEY_REGION, new DataObject(DataObject.VisibilityOptions.Public, GameEnumsUtil.EnumToString(region)) }
+                }
+            });
+
+            joinedLobby = lobby;
+            OnJoinedLobbyUpdate?.Invoke(joinedLobby);
+        }
+        catch (LobbyServiceException e)
+        {
+            Debug.LogError($"Failed to update region: {e.Message}");
+        }
+    }
+
+    public async void UpdateLobbyBallType(GameEnumsUtil.BallType ballType)
+    {
+        if (!IsLobbyHost()) return;
+
+        try
+        {
+            Lobby lobby = await LobbyService.Instance.UpdateLobbyAsync(joinedLobby.Id, new UpdateLobbyOptions
+            {
+                Data = new Dictionary<string, DataObject>
+                {
+                    { KEY_BALL_TYPE, new DataObject(DataObject.VisibilityOptions.Public, GameEnumsUtil.EnumToString(ballType)) }
+                }
+            });
+
+            joinedLobby = lobby;
+            OnJoinedLobbyUpdate?.Invoke(joinedLobby);
+        }
+        catch (LobbyServiceException e)
+        {
+            Debug.LogError($"Failed to update ball type: {e.Message}");
+        }
+    }
+
+    public async void UpdateLobbyMap(GameEnumsUtil.Map map)
+    {
+        if (!IsLobbyHost()) return;
+
+        try
+        {
+            Lobby lobby = await LobbyService.Instance.UpdateLobbyAsync(joinedLobby.Id, new UpdateLobbyOptions
+            {
+                Data = new Dictionary<string, DataObject>
+                {
+                    { KEY_MAP, new DataObject(DataObject.VisibilityOptions.Public, GameEnumsUtil.EnumToString(map)) }
+                }
+            });
+
+            joinedLobby = lobby;
+            OnJoinedLobbyUpdate?.Invoke(joinedLobby);
+        }
+        catch (LobbyServiceException e)
+        {
+            Debug.LogError($"Failed to update map: {e.Message}");
+        }
+    }
+
+    #endregion
+
+    #region Utility Methods
 
     public async void MigrateHost(string newHostPlayerId)
     {
@@ -500,118 +420,191 @@ public class LobbyManager : MonoBehaviour
         }
     }
 
-    public async void UpdateLobbyGameMode(GameEnumsUtil.GameMode gameMode)
+    public Lobby GetJoinedLobby()
     {
-        try
-        {
-            Lobby lobby = await LobbyService.Instance.UpdateLobbyAsync(joinedLobby.Id, new UpdateLobbyOptions
-            {
-                Data = new Dictionary<string, DataObject> {
-                    { KEY_GAME_MODE, new DataObject(DataObject.VisibilityOptions.Public, gameMode.ToString()) }
-                }
-            });
+        return joinedLobby;
+    }
 
-            joinedLobby = lobby;
-            OnLobbyGameModeChanged?.Invoke(joinedLobby);
-        }
-        catch (LobbyServiceException e)
+    public bool IsInLobby()
+    {
+        return Instance != null && Instance.GetJoinedLobby() != null;
+    }
+
+    public bool IsLobbyHost()
+    {
+        if (joinedLobby == null)
         {
-            Debug.Log(e);
+            Debug.LogError("[LobbyManager] joinedLobby is NULL!");
+            return false;
+        }
+
+        return joinedLobby.HostId == AuthenticationService.Instance.PlayerId;
+    }
+
+    private bool IsPlayerInLobby()
+    {
+        if (joinedLobby != null && joinedLobby.Players != null)
+        {
+            foreach (Player player in joinedLobby.Players)
+            {
+                if (player.Id == AuthenticationService.Instance.PlayerId)
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public GameEnumsUtil.GameMode GetLobbyGameMode()
+    {
+        if (joinedLobby == null) return GameEnumsUtil.GameMode.SkillGameMode; // Default or fallback mode.
+        return Enum.Parse<GameEnumsUtil.GameMode>(joinedLobby.Data[KEY_GAME_MODE].Value);
+    }
+
+    public GameMode ConvertLobbyGameModeToGameMode(GameEnumsUtil.GameMode lobbyGameMode)
+    {
+        // Use a switch statement to map LobbyGameMode to GameMode
+        switch (lobbyGameMode)
+        {
+            case GameEnumsUtil.GameMode.SkillGameMode:
+                return GameMode.SKillGameMode;
+            case GameEnumsUtil.GameMode.CoreGameMode:
+                return GameMode.CoreGameMode;
+            case GameEnumsUtil.GameMode.Training:
+                return GameMode.Training;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(lobbyGameMode), lobbyGameMode, null);
         }
     }
 
-    public async void UpdateLobbyServerDetails(MatchmakerPollingResult result, string ip, int port)
+    public GameMode GetAndConvertLobbyGameModeToGameMode()
     {
-        if (joinedLobby != null)
+        GameEnumsUtil.GameMode lobbyGameMode = GetLobbyGameMode();
+
+        // Use a switch statement to map LobbyGameMode to GameMode
+        switch (lobbyGameMode)
         {
-            try
-            {
-                await LobbyService.Instance.UpdateLobbyAsync(joinedLobby.Id, new UpdateLobbyOptions
-                {
-                    Data = new Dictionary<string, DataObject>
-                {
-                    { "MatchResult", new DataObject(DataObject.VisibilityOptions.Public, result.ToString()) },
-                    { "ServerIP", new DataObject(DataObject.VisibilityOptions.Member, ip) },
-                    { "ServerPort", new DataObject(DataObject.VisibilityOptions.Member, port.ToString()) }
-                }
-                });
-
-                Debug.Log($"Updated lobby with server details: {ip}:{port}");
-
-                // Trigger event after clearing details
-                OnJoinedLobbyUpdate?.Invoke(joinedLobby);
-            }
-            catch (LobbyServiceException e)
-            {
-                Debug.LogError($"Failed to update lobby with server details: {e.Message}");
-            }
+            case GameEnumsUtil.GameMode.SkillGameMode:
+                return GameMode.SKillGameMode;
+            case GameEnumsUtil.GameMode.CoreGameMode:
+                return GameMode.CoreGameMode;
+            case GameEnumsUtil.GameMode.Training:
+                return GameMode.Training;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(lobbyGameMode), lobbyGameMode, null);
         }
     }
+    #endregion
 
-    private  void DebugLobby(Lobby lobby)
+    #region Player Lobby
+    private Player GetPlayer(Lobby lobby)
     {
-        // Check if the data contains the keys
-        if (lobby.Data.TryGetValue("ServerIP", out DataObject serverIP) &&
-            lobby.Data.TryGetValue("ServerPort", out DataObject serverPort))
+        var assignedTeam = GameEnumsUtil.PlayerTeam.Blue;
+
+        // Check if a lobby exists and count current players
+        if (lobby != null && lobby.Players != null)
         {
-            // Log the values for debugging
-            Debug.Log($"Server IP: {serverIP.Value}");
-            Debug.Log($"Server Port: {serverPort.Value}");
+            Debug.Log($"[GetPlayer] Lobby exists! Current player count: {lobby.Players.Count}");
+
+            assignedTeam = (lobby.Players.Count % 2 == 0) ? GameEnumsUtil.PlayerTeam.Blue : GameEnumsUtil.PlayerTeam.Red;
         }
         else
         {
-            Debug.LogWarning("ServerIP or ServerPort not found in the lobby data.");
+            Debug.LogWarning("[GetPlayer] Lobby is NULL! Assigning default Blue team.");
         }
+
+        Debug.Log($"[GetPlayer] Assigned Team: {assignedTeam}");
+
+        return new Player(AuthenticationService.Instance.PlayerId, null, new Dictionary<string, PlayerDataObject>
+                {
+                    { KEY_PLAYER_NAME, new PlayerDataObject(PlayerDataObject.VisibilityOptions.Public, playerName) },
+                    { KEY_PLAYER_TEAM, new PlayerDataObject(PlayerDataObject.VisibilityOptions.Public, GameEnumsUtil.EnumToString(assignedTeam)) }
+                });
     }
 
-    public async void ClearLobbyServerDetails()
+    public async void UpdatePlayerName(string playerName)
     {
+        this.playerName = playerName;
+
         if (joinedLobby != null)
         {
             try
             {
-                await LobbyService.Instance.UpdateLobbyAsync(joinedLobby.Id, new UpdateLobbyOptions
+                UpdatePlayerOptions options = new UpdatePlayerOptions
                 {
-                    Data = new Dictionary<string, DataObject>
-                {
-                    { "ServerIP", new DataObject(DataObject.VisibilityOptions.Member, null) },
-                    { "ServerPort", new DataObject(DataObject.VisibilityOptions.Member, null) },
-                    { "MatchResult", new DataObject(DataObject.VisibilityOptions.Public, MatchmakerPollingResult.MatchAssignmentError.ToString()) }
+                    Data = new Dictionary<string, PlayerDataObject> {
+                        { KEY_PLAYER_NAME, new PlayerDataObject(PlayerDataObject.VisibilityOptions.Public, playerName) }
+                    }
+                };
 
-                }
-                });
-                Debug.Log("Cleared server details from the lobby.");
-
-                // Trigger event after clearing details
+                string playerId = AuthenticationService.Instance.PlayerId;
+                joinedLobby = await LobbyService.Instance.UpdatePlayerAsync(joinedLobby.Id, playerId, options);
                 OnJoinedLobbyUpdate?.Invoke(joinedLobby);
             }
             catch (LobbyServiceException e)
             {
-                Debug.LogError($"Failed to clear lobby server details: {e.Message}");
+                Debug.Log(e);
             }
         }
     }
 
-    public async void UpdateMatchmakingState(bool isMatchmaking)
+    public async void UpdatePlayerTeam(GameEnumsUtil.PlayerTeam newTeam)
     {
+        if (joinedLobby == null)
+        {
+            Debug.LogError("[UpdatePlayerTeam] No lobby joined.");
+            return;
+        }
+
         try
         {
-            Lobby lobby = await LobbyService.Instance.UpdateLobbyAsync(joinedLobby.Id, new UpdateLobbyOptions
+            string teamString = GameEnumsUtil.EnumToString(newTeam); // Convert enum to string
+
+            UpdatePlayerOptions options = new UpdatePlayerOptions
             {
-                Data = new Dictionary<string, DataObject> {
-                    { "Matchmake", new DataObject(DataObject.VisibilityOptions.Public, isMatchmaking.ToString()) }
-                }
-            });
+                Data = new Dictionary<string, PlayerDataObject> {
+                { KEY_PLAYER_TEAM, new PlayerDataObject(PlayerDataObject.VisibilityOptions.Public, teamString) }
+            }
+            };
 
-            Debug.Log("We called Update State Event");
+            string playerId = AuthenticationService.Instance.PlayerId;
+            joinedLobby = await LobbyService.Instance.UpdatePlayerAsync(joinedLobby.Id, playerId, options);
 
-            joinedLobby = lobby;
-            OnMatchmakingStatusChanged?.Invoke(joinedLobby);
+            Debug.Log($"[UpdatePlayerTeam] Player {playerId} switched to {newTeam}");
+
+            OnJoinedLobbyUpdate?.Invoke(joinedLobby);
         }
         catch (LobbyServiceException e)
         {
-            Debug.Log(e);
+            Debug.LogError($"[UpdatePlayerTeam] Failed: {e.Message}");
         }
-        
     }
+
+    #endregion
+
+    private void DebugLobby(Lobby lobby)
+    {
+        if (lobby == null)
+        {
+            Debug.LogError("[DebugLobby] Lobby is NULL!");
+            return;
+        }
+
+        string debugMessage = $"===== LOBBY DEBUG INFO =====\n" +
+                              $"Lobby Name: {lobby.Name}\n" +
+                              $"Lobby ID: {lobby.Id}\n" +
+                              $"Host ID: {lobby.HostId}\n" +
+                              $"Is Private: {lobby.IsPrivate}\n" +
+                              $"Max Players: {lobby.Data[KEY_MAX_PLAYERS].Value}\n" + // ✅ Ensure we read the latest value
+                              $"Current Players: {lobby.Players.Count}\n" +
+                              $"Game Mode: {lobby.Data[KEY_GAME_MODE].Value}\n" +
+                              $"Map: {lobby.Data[KEY_MAP].Value}\n" +
+                              $"Region: {lobby.Data[KEY_REGION].Value}\n" +
+                              $"Ball Type: {lobby.Data[KEY_BALL_TYPE].Value}\n" +
+                              $"----------------------------";
+
+        Debug.Log(debugMessage);
+    }
+
 }
