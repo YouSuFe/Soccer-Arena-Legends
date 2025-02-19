@@ -1,4 +1,3 @@
-using System;
 using Unity.Services.Lobbies.Models;
 using UnityEngine;
 using UnityEngine.UI;
@@ -7,9 +6,8 @@ using UnityEngine.UI;
 public class LobbyScreenButtonsController : MonoBehaviour
 {
     [Header("Serialized Buttons")]
-    [SerializeField] private Button findMatchButton;
+    [SerializeField] private Button startGameButton;
     [SerializeField] private Button leaveLobbyButton;
-    [SerializeField] private Button cancelMatchmakingButton;
 
     [Header("Serialized Objects")]
     [SerializeField] private GameObject currentLobbyUI;
@@ -19,16 +17,15 @@ public class LobbyScreenButtonsController : MonoBehaviour
     private void Awake()
     {
         // Ensure the buttons and references are assigned
-        if (findMatchButton == null || leaveLobbyButton == null)
+        if (startGameButton == null || leaveLobbyButton == null)
         {
             Debug.LogError("One or more buttons are not assigned in the Inspector!");
             return;
         }
 
         // Add listeners to the buttons
-        findMatchButton.onClick.AddListener(HandleFindMatch);
+        startGameButton.onClick.AddListener(HandleStartGame);
         leaveLobbyButton.onClick.AddListener(HandleLeaveLobby);
-        cancelMatchmakingButton.onClick.AddListener(HandleCancellingTheMatchmaking);
     }
 
     private void Start()
@@ -37,8 +34,6 @@ public class LobbyScreenButtonsController : MonoBehaviour
         LobbyManager.Instance.OnLeftLobby += LobbyManager_OnLeftLobby;
 
         UpdateFindMatchButtonInteractable();
-
-
     }
 
     private void LobbyManager_OnLeftLobby()
@@ -51,14 +46,9 @@ public class LobbyScreenButtonsController : MonoBehaviour
         UpdateFindMatchButtonInteractable(); // Ensure the find match button state is updated
     }
 
-    private void HandleFindMatch()
+    private async void HandleStartGame()
     {
-        
-    }
-
-    private void HandleCancellingTheMatchmaking()
-    {
-       
+        await HostSingleton.Instance.GameManager.StartHostAsync();
     }
 
     private void HandleLeaveLobby()
@@ -75,7 +65,7 @@ public class LobbyScreenButtonsController : MonoBehaviour
 
     private void UpdateFindMatchButtonInteractable()
     {
-        findMatchButton.interactable = LobbyManager.Instance.IsLobbyHost();
+        startGameButton.interactable = LobbyManager.Instance.IsLobbyHost();
     }
 
     private void OnDestroy()

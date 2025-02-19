@@ -30,9 +30,10 @@ public class LobbyScreenUI : MonoBehaviour
     {
         gameSettingsUI = GetComponent<LobbyGameSettingsUI>();
 
+        Debug.Log("[LobbyScreenUI] Subscribing to LobbyManager events...");
+
         LobbyManager.Instance.OnJoinedLobby += UpdateLobby_Event;
         LobbyManager.Instance.OnJoinedLobbyUpdate += UpdateLobby_Event;
-        LobbyManager.Instance.OnLobbyGameModeChanged += UpdateLobby_Event;
         LobbyManager.Instance.OnLeftLobby += LobbyManager_OnLeftLobby;
         LobbyManager.Instance.OnKickedFromLobby += LobbyManager_OnLeftLobby;
 
@@ -50,9 +51,14 @@ public class LobbyScreenUI : MonoBehaviour
         Hide();
     }
 
+
+
+
     private void UpdateLobby_Event(Lobby lobby)
     {
         UpdateLobby();
+
+        OnGameStartWithLobby(lobby);
     }
 
     private void UpdateLobby()
@@ -119,6 +125,28 @@ public class LobbyScreenUI : MonoBehaviour
         Show();
     }
 
+    private async void OnGameStartWithLobby(Lobby lobby)
+    {
+        if (lobby.Data.ContainsKey("RelayJoinCode"))
+        {
+            string joinCode = lobby.Data["RelayJoinCode"].Value;
+            Debug.Log($"[LobbyScreenUI] Relay Join Code received: {joinCode}");
+
+            if (!LobbyManager.Instance.IsLobbyHost())
+            {
+                Debug.Log("[LobbyScreenUI] Client detected, starting connection...");
+                await ClientSingleton.Instance.GameManager.StartClientAsync(joinCode);
+            }
+            else
+            {
+                Debug.Log("[LobbyScreenUI] This is the host, skipping client start.");
+            }
+        }
+        else
+        {
+            Debug.LogWarning("[LobbyScreenUI] Lobby does NOT contain RelayJoinCode!");
+        }
+    }
 
     private void ClearLobby()
     {
@@ -164,7 +192,6 @@ public class LobbyScreenUI : MonoBehaviour
         {
             LobbyManager.Instance.OnJoinedLobby -= UpdateLobby_Event;
             LobbyManager.Instance.OnJoinedLobbyUpdate -= UpdateLobby_Event;
-            LobbyManager.Instance.OnLobbyGameModeChanged -= UpdateLobby_Event;
             LobbyManager.Instance.OnLeftLobby -= LobbyManager_OnLeftLobby;
             LobbyManager.Instance.OnKickedFromLobby -= LobbyManager_OnLeftLobby;
         }

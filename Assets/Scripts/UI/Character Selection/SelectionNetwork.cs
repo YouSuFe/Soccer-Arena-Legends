@@ -77,6 +77,18 @@ public class SelectionNetwork : NetworkBehaviour
             Debug.Log("Inside Selection Network Is Server " + IsServer);
             NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
             NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnected;
+
+            ulong hostClientId = NetworkManager.Singleton.LocalClientId;
+            if (!IsPlayerInList(hostClientId))
+            {
+                Debug.Log($"Adding Host Player (Client ID: {hostClientId}) to the selection list.");
+                Players.Add(new PlayerSelectState(hostClientId));
+            }
+        }
+
+        if (IsHost)
+        {
+            NotifySelectionChanged();
         }
     }
 
@@ -95,7 +107,7 @@ public class SelectionNetwork : NetworkBehaviour
         Players.Add(new PlayerSelectState(clientId));
 
         // Start the timer only when the first player joins
-        if (Players.Count == 1)
+        if (Players.Count == LobbyManager.Instance.GetJoinedLobby().MaxPlayers)
         {
             StartSelectionTimer();
         }
@@ -427,6 +439,18 @@ public class SelectionNetwork : NetworkBehaviour
     private List<int> GetAvailableWeapons()
     {
         return new List<int>(availableWeaponsCache);
+    }
+
+    private bool IsPlayerInList(ulong clientId)
+    {
+        foreach (var player in Players)
+        {
+            if (player.ClientId == clientId)
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     public void NotifySelectionChanged()

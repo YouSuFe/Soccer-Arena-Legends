@@ -12,11 +12,6 @@ using Unity.Services.Relay.Models;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-public class MatchmakingServerDetails
-{
-    public string ip;   // Server IP address
-    public int port;    // Server port number
-}
 
 public class ClientGameManager : IDisposable
 {
@@ -43,7 +38,7 @@ public class ClientGameManager : IDisposable
             // We did the exactly reverse in getting data in NetworkServer class
             UserData = new UserData
             {
-                userName = UnityEngine.Random.Range(10,100).ToString(),
+                userName = PlayerPrefs.GetString(NameSelector.PlayerNameKey, "Missing Name"),
                 userAuthId = AuthenticationService.Instance.PlayerId
             };
             return true;
@@ -68,8 +63,6 @@ public class ClientGameManager : IDisposable
     }
 
     #endregion
-
-   
 
     #region Clean Up
 

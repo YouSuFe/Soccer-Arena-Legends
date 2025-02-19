@@ -17,6 +17,7 @@ public class LobbyManager : MonoBehaviour
     public const string KEY_GAME_MODE = "GameMode";
     public const string KEY_BALL_TYPE = "BallType";
     public const string KEY_MAX_PLAYERS = "MaxPlayers";
+    public const string KEY_RELAY_CODE = "RelayJoinCode";
     #endregion
 
     #region Events
@@ -24,11 +25,10 @@ public class LobbyManager : MonoBehaviour
     public Action<string> OnJoinLobbyByCodeFailure;
 
     public Action OnLeftLobby;
-    public Action<Lobby> OnMatchmakingStatusChanged;
     public Action<Lobby> OnJoinedLobby;
     public Action<Lobby> OnJoinedLobbyUpdate;
+    public Action<Lobby> OnJoinedLobbyStartsGame;
     public Action<Lobby> OnKickedFromLobby;
-    public Action<Lobby> OnLobbyGameModeChanged;
     public Action<List<Lobby>> OnLobbyListChanged;
     #endregion
 
@@ -87,7 +87,7 @@ public class LobbyManager : MonoBehaviour
             }
             };
 
-            lobbyName = player.Id;
+            lobbyName = PlayerPrefs.GetString(NameSelector.PlayerNameKey, playerName);
 
 
             Lobby lobby = await LobbyService.Instance.CreateLobbyAsync(lobbyName, maxPlayers, options);
@@ -128,12 +128,13 @@ public class LobbyManager : MonoBehaviour
             lobbyPollTimer -= Time.deltaTime;
             if (lobbyPollTimer < 0f)
             {
-                float lobbyPollTimerMax = 1.5f;
+                float lobbyPollTimerMax = 1.2f;
                 try
                 {
                     lobbyPollTimer = lobbyPollTimerMax;
 
                     joinedLobby = await LobbyService.Instance.GetLobbyAsync(joinedLobby.Id);
+
                     OnJoinedLobbyUpdate?.Invoke(joinedLobby);
 
                     Debug.Log($"Host ID: {joinedLobby.HostId}, Player ID: {AuthenticationService.Instance.PlayerId}");
@@ -195,6 +196,21 @@ public class LobbyManager : MonoBehaviour
 
             OnJoinedLobby?.Invoke(lobby);
             OnJoinLobbyByCodeSuccess?.Invoke($"Successfully joined lobby: {lobby.Name}");
+
+            if (joinedLobby.Data.ContainsKey(KEY_RELAY_CODE))
+            {
+                string joinCode = joinedLobby.Data[KEY_RELAY_CODE].Value;
+
+                if (!string.IsNullOrEmpty(joinCode) && await HostSingleton.Instance.GameManager.IsRelayJoinCodeValid(joinCode))
+                {
+                    Debug.Log($"[Client] Game already started! Connecting using Relay Join Code: {joinCode}");
+                    await ClientSingleton.Instance.GameManager.StartClientAsync(joinCode);
+                }
+                else
+                {
+                    Debug.LogWarning($"[Client] Invalid or expired Relay Join Code: {joinCode}. Cannot join game.");
+                }
+            }
         }
         catch (LobbyServiceException e)
         {
@@ -214,6 +230,21 @@ public class LobbyManager : MonoBehaviour
                 $" with max '{joinedLobby.MaxPlayers}'");
 
             OnJoinedLobby?.Invoke(joinedLobby);
+
+            if (joinedLobby.Data.ContainsKey(KEY_RELAY_CODE))
+            {
+                string joinCode = joinedLobby.Data[KEY_RELAY_CODE].Value;
+
+                if (!string.IsNullOrEmpty(joinCode) && await HostSingleton.Instance.GameManager.IsRelayJoinCodeValid(joinCode))
+                {
+                    Debug.Log($"[Client] Game already started! Connecting using Relay Join Code: {joinCode}");
+                    await ClientSingleton.Instance.GameManager.StartClientAsync(joinCode);
+                }
+                else
+                {
+                    Debug.LogWarning($"[Client] Invalid or expired Relay Join Code: {joinCode}. Cannot join game.");
+                }
+            }
         }
 
         catch (LobbyServiceException e)
@@ -272,7 +303,7 @@ public class LobbyManager : MonoBehaviour
             });
 
             joinedLobby = lobby;
-            OnLobbyGameModeChanged?.Invoke(joinedLobby);
+            OnJoinedLobbyUpdate?.Invoke(joinedLobby);
         }
         catch (LobbyServiceException e)
         {
@@ -348,6 +379,47 @@ public class LobbyManager : MonoBehaviour
             Debug.LogError($"Failed to update map: {e.Message}");
         }
     }
+
+    public async void UpdateLobbyRelayCode(string relayJoinCode)
+    {
+        if (!IsLobbyHost()) return;
+
+        try
+        {
+            string newRelayCode = string.IsNullOrEmpty(relayJoinCode) ? "" : relayJoinCode; // Allow clearing the code
+
+            // Update the lobby with the new Relay Join Code
+            Lobby updatedLobby = await LobbyService.Instance.UpdateLobbyAsync(joinedLobby.Id, new UpdateLobbyOptions
+            {
+                Data = new Dictionary<string, DataObject>
+            {
+                { KEY_RELAY_CODE, new DataObject(DataObject.VisibilityOptions.Member, newRelayCode) }
+            }
+            });
+
+            joinedLobby = updatedLobby; // Save updated lobby data
+
+            OnJoinedLobbyUpdate?.Invoke(joinedLobby);
+            Debug.Log($"[LobbyManager] Updated Relay Join Code: {relayJoinCode}");
+
+            // Notify all clients that the lobby data changed
+            if (!string.IsNullOrEmpty(relayJoinCode))
+            {
+                Debug.Log("There is a valid relay code");
+                OnJoinedLobbyStartsGame?.Invoke(joinedLobby);
+            }
+            else
+            {
+                Debug.Log("[LobbyManager] Relay Join Code is empty, NOT invoking event.");
+            }
+
+        }
+        catch (LobbyServiceException e)
+        {
+            Debug.LogError($"[LobbyManager] Failed to update Relay Join Code: {e.Message}");
+        }
+    }
+
 
     #endregion
 
@@ -456,45 +528,6 @@ public class LobbyManager : MonoBehaviour
         return false;
     }
 
-    public GameEnumsUtil.GameMode GetLobbyGameMode()
-    {
-        if (joinedLobby == null) return GameEnumsUtil.GameMode.SkillGameMode; // Default or fallback mode.
-        return Enum.Parse<GameEnumsUtil.GameMode>(joinedLobby.Data[KEY_GAME_MODE].Value);
-    }
-
-    public GameMode ConvertLobbyGameModeToGameMode(GameEnumsUtil.GameMode lobbyGameMode)
-    {
-        // Use a switch statement to map LobbyGameMode to GameMode
-        switch (lobbyGameMode)
-        {
-            case GameEnumsUtil.GameMode.SkillGameMode:
-                return GameMode.SKillGameMode;
-            case GameEnumsUtil.GameMode.CoreGameMode:
-                return GameMode.CoreGameMode;
-            case GameEnumsUtil.GameMode.Training:
-                return GameMode.Training;
-            default:
-                throw new ArgumentOutOfRangeException(nameof(lobbyGameMode), lobbyGameMode, null);
-        }
-    }
-
-    public GameMode GetAndConvertLobbyGameModeToGameMode()
-    {
-        GameEnumsUtil.GameMode lobbyGameMode = GetLobbyGameMode();
-
-        // Use a switch statement to map LobbyGameMode to GameMode
-        switch (lobbyGameMode)
-        {
-            case GameEnumsUtil.GameMode.SkillGameMode:
-                return GameMode.SKillGameMode;
-            case GameEnumsUtil.GameMode.CoreGameMode:
-                return GameMode.CoreGameMode;
-            case GameEnumsUtil.GameMode.Training:
-                return GameMode.Training;
-            default:
-                throw new ArgumentOutOfRangeException(nameof(lobbyGameMode), lobbyGameMode, null);
-        }
-    }
     #endregion
 
     #region Player Lobby

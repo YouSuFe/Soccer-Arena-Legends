@@ -11,7 +11,7 @@ public class NameSelector : MonoBehaviour
     // For naming validation, this way is easly hackable and player put long or less name,
     // Usually, we are validating it on Server
     [SerializeField] private int minNameLength = 1;
-    [SerializeField] private int maxNameLength = 12;
+    [SerializeField] private int maxNameLength = 16;
 
     public const string PlayerNameKey = "PlayerName";
 
@@ -23,6 +23,8 @@ public class NameSelector : MonoBehaviour
             SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex + 1);
             return;
         }
+
+        connectButton.onClick.AddListener(Connect);
 
         nameField.text = PlayerPrefs.GetString(PlayerNameKey, string.Empty);
         HandleNameChanged();

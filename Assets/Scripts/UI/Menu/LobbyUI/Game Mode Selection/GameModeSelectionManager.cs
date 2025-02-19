@@ -5,6 +5,11 @@ public class GameModeManager : MonoBehaviour
     [SerializeField] private GameModeSelectionEffect[] gameModeButtons; // Assign buttons in Inspector
     private int selectedIndex = -1;
 
+    private void Start()
+    {
+        Hide();
+    }
+
     private void OnEnable()
     {
         if(selectedIndex != -1)
@@ -52,5 +57,15 @@ public class GameModeManager : MonoBehaviour
         Debug.Log("Selected index : " + selectedIndex);
 
         return 0; // Automatically first game mode is selected
+    }
+
+    private void Hide()
+    {
+        gameObject.SetActive(false);
+    }
+
+    public void Show()
+    {
+        gameObject.SetActive(true);
     }
 }
