@@ -614,6 +614,23 @@ public class LobbyManager : MonoBehaviour
         }
     }
 
+    public int GetPlayerTeamIndex(string playerId)
+    {
+        if (joinedLobby == null) return -1;
+
+        foreach (var player in joinedLobby.Players)
+        {
+            if (player.Id == playerId && player.Data.ContainsKey(KEY_PLAYER_TEAM))
+            {
+                GameEnumsUtil.PlayerTeam team = GameEnumsUtil.StringToEnum(
+                    player.Data[KEY_PLAYER_TEAM].Value, GameEnumsUtil.PlayerTeam.Spectator
+                );
+                return (int)team;
+            }
+        }
+        return -1;
+    }
+
     #endregion
 
     private void DebugLobby(Lobby lobby)

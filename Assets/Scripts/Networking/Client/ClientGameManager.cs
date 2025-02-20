@@ -53,6 +53,18 @@ public class ClientGameManager : IDisposable
     public async Task<JoinAllocation> StartClientAsync(string joinCode)
     {
         Debug.Log($"Starting networkClient with join code {joinCode}\nWith : {UserData}");
+
+        // Get the player's team index from the lobby
+        int teamIndex = LobbyManager.Instance.GetPlayerTeamIndex(AuthenticationService.Instance.PlayerId);
+
+        // Assign the team index to UserData before connecting
+        UserData = new UserData
+        {
+            userName = PlayerPrefs.GetString(NameSelector.PlayerNameKey, "Missing Name"),
+            userAuthId = AuthenticationService.Instance.PlayerId,
+            teamIndex = teamIndex
+        };
+
         return await networkClient.StartClient(joinCode);
     }
 

@@ -14,7 +14,7 @@ public static class GameEnumsUtil
     // ⚽ Ball Type Enum
     public enum BallType { DefaultBall, FastBall, HeavyBall }
 
-    // 🔵🔴 Team Enum (Previously in TeamUtils)
+    // 🔵🔴 Team Enum
     public enum PlayerTeam { Blue, Red, Spectator }
 
     // Convert Enum to String

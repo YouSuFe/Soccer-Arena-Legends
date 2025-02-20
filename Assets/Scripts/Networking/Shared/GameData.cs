@@ -5,17 +5,18 @@ public enum Map
     Default
 }
 
+public enum BallType
+{
+    DefaultBall,
+    FastBall,
+    HeavyBall
+}
+
 public enum GameMode
 {
     SKillGameMode,
     CoreGameMode,
-    Training
-}
-
-public enum GameQueue
-{
-    SkillQueue,
-    CoreQueue
+    LevelUpMode
 }
 
 [Serializable]
@@ -36,16 +37,5 @@ public class GameInfo
 {
     public Map map;
     public GameMode gameMode;
-    public GameQueue gameQueue;
-
-    public string ToMultiplayQueue()
-    {
-        return gameQueue switch
-        {
-            GameQueue.SkillQueue => "skill-game-mode",
-            GameQueue.CoreQueue => "core-game-mode",
-            _ => "skill-game-mode"
-        };
-
-    }
+    public BallType ballType;
 }
