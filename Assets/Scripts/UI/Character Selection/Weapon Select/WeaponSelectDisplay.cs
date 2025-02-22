@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using Unity.Netcode;
@@ -31,7 +32,8 @@ public class WeaponSelectDisplay : NetworkBehaviour
                 weaponButtons.Add(selectButtonInstance);
             }
 
-            SelectionNetwork.Instance.Players.OnListChanged += HandlePlayersStateChanged;
+            SelectionNetwork.Instance.PlayerSelections.OnListChanged += HandlePlayersStateChanged;
+            SelectionNetwork.Instance.PlayerStatuses.OnListChanged += HandlePlayersStateChanged;
         }
     }
 
@@ -39,23 +41,41 @@ public class WeaponSelectDisplay : NetworkBehaviour
     {
         if (IsClient)
         {
-            SelectionNetwork.Instance.Players.OnListChanged -= HandlePlayersStateChanged;
+            SelectionNetwork.Instance.PlayerSelections.OnListChanged -= HandlePlayersStateChanged;
+            SelectionNetwork.Instance.PlayerStatuses.OnListChanged -= HandlePlayersStateChanged;
         }
     }
 
     public void Select(Weapon weapon)
     {
-        var players = SelectionNetwork.Instance.Players; // Cached reference
+        var playersSelection = SelectionNetwork.Instance.PlayerSelections;
+        var playersStatus = SelectionNetwork.Instance.PlayerStatuses;
 
-        for (int i = 0; i < players.Count; i++)
+        int localPlayerTeam = -1;
+
+        for (int i = 0; i < playersStatus.Count; i++)
         {
-            if (players[i].ClientId != NetworkManager.Singleton.LocalClientId) { continue; }
+            if (playersSelection[i].ClientId == NetworkManager.Singleton.LocalClientId)
+            {
+                localPlayerTeam = playersStatus[i].TeamIndex;
+                break;
+            }
+        }
 
-            if (players[i].IsLockedIn) { return; }
+        if (localPlayerTeam == -1)
+        {
+            Debug.LogWarning($"[Select] Could not find local player's team!");
+            return;
+        }
 
-            if (players[i].WeaponId == weapon.Id) { return; }
+        for (int i = 0; i < playersStatus.Count; i++)
+        {
+            if (playersSelection[i].ClientId != NetworkManager.Singleton.LocalClientId) { continue; }
+            if (playersStatus[i].IsLockedIn) { return; }
+            if (playersSelection[i].WeaponId == weapon.Id) { return; }
 
-            if (SelectionNetwork.Instance.IsWeaponTaken(weapon.Id, false)) { return; }
+            // ✅ Use team-based weapon availability check
+            if (SelectionNetwork.Instance.IsWeaponTaken(weapon.Id, localPlayerTeam)) { return; }
         }
 
         weaponNameText.text = weapon.DisplayName;
@@ -73,31 +93,104 @@ public class WeaponSelectDisplay : NetworkBehaviour
     [ServerRpc(RequireOwnership = false)]
     private void SelectWeaponServerRpc(int weaponId, ServerRpcParams serverRpcParams = default)
     {
-        var players = SelectionNetwork.Instance.Players; // Cached reference
+        var playersSelection = SelectionNetwork.Instance.PlayerSelections;
+        var playersStatus = SelectionNetwork.Instance.PlayerStatuses;
+        ulong clientId = serverRpcParams.Receive.SenderClientId;
 
-        for (int i = 0; i < players.Count; i++)
+        int playerIndex = -1;
+        int teamIndex = -1;
+
+        for (int i = 0; i < playersSelection.Count; i++)
         {
-            if (players[i].ClientId != serverRpcParams.Receive.SenderClientId) { continue; }
-
-            if (!weaponDatabase.IsValidWeaponId(weaponId)) { return; }
-
-            if (SelectionNetwork.Instance.IsWeaponTaken(weaponId, true)) { return; }
-
-            var updatedPlayer = players[i];
-            updatedPlayer.WeaponId = weaponId;
-            players[i] = updatedPlayer;
+            if (playersSelection[i].ClientId == clientId)
+            {
+                playerIndex = i;
+                teamIndex = playersStatus[i].TeamIndex;
+                break;
+            }
         }
+
+        if (playerIndex == -1 || teamIndex == -1)
+        {
+            Debug.LogWarning($"[SelectWeaponServerRpc] Could not find player {clientId} or their team!");
+            return;
+        }
+
+        if (!weaponDatabase.IsValidWeaponId(weaponId))
+        {
+            Debug.LogWarning($"[SelectWeaponServerRpc] Player {clientId} tried to select an invalid weapon ID {weaponId}!");
+            return;
+        }
+
+        // ✅ Use team-based check
+        if (SelectionNetwork.Instance.IsWeaponTaken(weaponId, teamIndex))
+        {
+            Debug.LogWarning($"[SelectWeaponServerRpc] Player {clientId} tried to select Weapon {weaponId}, but it's already locked by a teammate!");
+            return;
+        }
+
+        var updatedPlayer = playersSelection[playerIndex];
+        updatedPlayer.WeaponId = weaponId;
+        playersSelection[playerIndex] = updatedPlayer;
     }
 
-    private void HandlePlayersStateChanged(NetworkListEvent<PlayerSelectState> changeEvent)
+    private void HandlePlayersStateChanged<T>(NetworkListEvent<T> changeEvent)
     {
-        var players = SelectionNetwork.Instance.Players; // Cached reference
+        StartCoroutine(WaitForSyncAndUpdateUI());
+    }
 
+    private IEnumerator WaitForSyncAndUpdateUI()
+    {
+        // Wait until both lists have the same count
+        int attempts = 2; // Prevent infinite loops
+        while (SelectionNetwork.Instance.PlayerSelections.Count != SelectionNetwork.Instance.PlayerStatuses.Count && attempts > 0)
+        {
+            yield return new WaitForEndOfFrame(); // Wait for the next frame
+            attempts--;
+        }
+
+        if (SelectionNetwork.Instance.PlayerSelections.Count != SelectionNetwork.Instance.PlayerStatuses.Count)
+        {
+            Debug.LogWarning("Selection and Status lists are STILL not in sync after delay!");
+            yield break; // Stop execution to prevent errors
+        }
+
+        // Get local player's team
+        int localPlayerTeam = -1;
+        foreach (var playerStatus in SelectionNetwork.Instance.PlayerStatuses)
+        {
+            if (playerStatus.ClientId == NetworkManager.Singleton.LocalClientId)
+            {
+                localPlayerTeam = playerStatus.TeamIndex;
+                break;
+            }
+        }
+
+        if (localPlayerTeam == -1)
+        {
+            Debug.LogWarning("Local player's team index not found!");
+            yield break;
+        }
+
+        // Filter players by team
+        List<PlayerSelectionState> teamSelections = new List<PlayerSelectionState>();
+        List<PlayerStatusState> teamStatuses = new List<PlayerStatusState>();
+
+        for (int i = 0; i < SelectionNetwork.Instance.PlayerStatuses.Count; i++)
+        {
+            if (SelectionNetwork.Instance.PlayerStatuses[i].TeamIndex == localPlayerTeam)
+            {
+                teamSelections.Add(SelectionNetwork.Instance.PlayerSelections[i]);
+                teamStatuses.Add(SelectionNetwork.Instance.PlayerStatuses[i]);
+            }
+        }
+
+        // Update only the UI for the local player's team
         for (int i = 0; i < playerCards.Length; i++)
         {
-            if (players.Count > i)
+            if (i < teamSelections.Count)
             {
-                playerCards[i].UpdateWeaponDisplay(players[i]);
+                playerCards[i].UpdateWeaponDisplay(teamSelections[i]);
             }
             else
             {
@@ -105,17 +198,8 @@ public class WeaponSelectDisplay : NetworkBehaviour
             }
         }
 
-        foreach (var button in weaponButtons)
-        {
-            if (button.IsDisabled) { continue; }
-
-            if (SelectionNetwork.Instance.IsWeaponTaken(button.Weapon.Id, false))
-            {
-                button.SetDisabled();
-            }
-        }
-
         SelectionNetwork.Instance.NotifySelectionChanged();
+
     }
 
 }

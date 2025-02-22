@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -24,5 +25,10 @@ public class CharacterDatabase : ScriptableObject
     public bool IsValidCharacterId(int id)
     {
         return characters.Any(x => x.Id == id);
+    }
+
+    public List<int> GetAllCharacterIds()
+    {
+        return characters.Select(c => c.Id).ToList();
     }
 }

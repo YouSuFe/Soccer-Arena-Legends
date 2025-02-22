@@ -26,21 +26,25 @@ public class LockInButtonHandler : MonoBehaviour
 
     private void UpdateLockInState()
     {
-        if (!SelectionNetwork.Instance) return;
+        if (!SelectionNetwork.Instance)
+        {
+            Debug.LogWarning("SelectionNetwork Instance is NULL!");
+            return;
+        }
 
         ulong clientId = NetworkManager.Singleton.LocalClientId;
         var playerState = SelectionNetwork.Instance.GetPlayerState(clientId);
 
         if (playerState == null)
         {
+            Debug.LogWarning($"Client {clientId} has NO player state. Lock-in button disabled.");
             lockInButton.interactable = false;
             return;
         }
 
-        PlayerSelectState player = playerState.Value;
+        PlayerStatusState player = playerState.Value;
 
-        bool canLockIn = !player.IsLockedIn &&
-                         SelectionNetwork.Instance.CanLockIn(clientId);
+        bool canLockIn = !player.IsLockedIn && SelectionNetwork.Instance.CanLockIn(clientId);
 
         lockInButton.interactable = canLockIn;
     }

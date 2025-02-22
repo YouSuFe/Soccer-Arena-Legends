@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -16,5 +17,10 @@ public class WeaponDatabase : ScriptableObject
     public bool IsValidWeaponId(int id)
     {
         return weapons.Any(w => w.Id == id);
+    }
+
+    public List<int> GetAllWeaponIds()
+    {
+        return weapons.Select(w => w.Id).ToList();
     }
 }

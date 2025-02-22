@@ -17,11 +17,12 @@ public class PlayerCard : MonoBehaviour
     [SerializeField] private Image weaponIconImage;
     [SerializeField] private TMP_Text weaponNameText;
 
-    public void UpdateCharacterDisplay(PlayerSelectState state)
+    // ✅ Updates character UI, now using `PlayerSelectionState`
+    public void UpdateCharacterDisplay(PlayerSelectionState selection, PlayerStatusState status)
     {
-        if (state.CharacterId != -1)
+        if (selection.CharacterId != -1)
         {
-            var character = characterDatabase.GetCharacterById(state.CharacterId);
+            var character = characterDatabase.GetCharacterById(selection.CharacterId);
             characterIconImage.sprite = character.Icon;
             characterIconImage.enabled = true;
             characterNameText.text = character.DisplayName;
@@ -32,7 +33,8 @@ public class PlayerCard : MonoBehaviour
             characterNameText.text = "No Character Selected";
         }
 
-        playerNameText.text = state.IsLockedIn ? $"Player {state.ClientId}" : $"Player {state.ClientId} (Picking...)";
+        // ✅ Player name is now based on `PlayerStatusState`
+        playerNameText.text = status.IsLockedIn ? $"Player {selection.ClientId}" : $"Player {selection.ClientId} (Picking...)";
 
         if (!visuals.activeSelf)
         {
@@ -40,11 +42,12 @@ public class PlayerCard : MonoBehaviour
         }
     }
 
-    public void UpdateWeaponDisplay(PlayerSelectState state)
+    // ✅ Updates weapon UI, now using `PlayerSelectionState`
+    public void UpdateWeaponDisplay(PlayerSelectionState selection)
     {
-        if (state.WeaponId != -1)
+        if (selection.WeaponId != -1)
         {
-            var weapon = weaponDatabase.GetWeaponById(state.WeaponId);
+            var weapon = weaponDatabase.GetWeaponById(selection.WeaponId);
             weaponIconImage.sprite = weapon.Icon;
             weaponIconImage.enabled = true;
             weaponNameText.text = weapon.DisplayName;

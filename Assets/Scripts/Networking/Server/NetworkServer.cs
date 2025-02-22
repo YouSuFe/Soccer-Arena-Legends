@@ -112,6 +112,7 @@ public class NetworkServer : IDisposable
         Debug.Log("Player is Spawned but no object for now");
     }
 
+
     // This method is called once we've basically started up the server, once it's ready to go
     private void OnNetworkReady()
     {
