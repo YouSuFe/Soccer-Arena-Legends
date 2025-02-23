@@ -14,10 +14,14 @@ public class CharacterSelectDisplay : NetworkBehaviour
     [SerializeField] private PlayerCard[] playerCards;
     [SerializeField] private GameObject characterInfoPanel;
     [SerializeField] private TMP_Text characterNameText;
-    [SerializeField] private Transform introSpawnPoint;
+    [SerializeField] private Transform previewSpawnPoint;
 
-    private GameObject introInstance;
+    private GameObject characterPreviewInstance;
     private List<CharacterSelectButton> characterButtons = new List<CharacterSelectButton>();
+
+    private Dictionary<ulong, (int playerIndex, int teamIndex)> playerInfoCache = new Dictionary<ulong, (int, int)>();
+    private List<PlayerSelectionState> reusableTeamSelections = new List<PlayerSelectionState>();
+    private List<PlayerStatusState> reusableTeamStatuses = new List<PlayerStatusState>();
 
     public override void OnNetworkSpawn()
     {
@@ -53,84 +57,63 @@ public class CharacterSelectDisplay : NetworkBehaviour
 
     public void Select(Character character)
     {
-        var playersSelection = SelectionNetwork.Instance.PlayerSelections;
-        var playersStatus = SelectionNetwork.Instance.PlayerStatuses;
+        var selectionNetwork = SelectionNetwork.Instance;
+        var playersSelection = selectionNetwork.PlayerSelections;
+        var playersStatus = selectionNetwork.PlayerStatuses;
 
-        int localPlayerTeam = -1;
+        (int localPlayerIndex, int localPlayerTeam) = GetLocalPlayerInfo();
 
-        for (int i = 0; i < playersStatus.Count; i++)
+        if (localPlayerIndex == -1 || localPlayerTeam == -1)
         {
-            if (playersSelection[i].ClientId == NetworkManager.Singleton.LocalClientId)
-            {
-                localPlayerTeam = playersStatus[i].TeamIndex;
-                break;
-            }
-        }
-
-        if (localPlayerTeam == -1)
-        {
-            Debug.LogWarning($"[Select] Could not find local player's team!");
+            Debug.LogWarning($"[Select] Could not find local player's index or team!");
             return;
         }
 
-        for (int i = 0; i < playersStatus.Count; i++)
-        {
-            if (playersSelection[i].ClientId != NetworkManager.Singleton.LocalClientId) { continue; }
-            if (playersStatus[i].IsLockedIn) { return; }
-            if (playersSelection[i].CharacterId == character.Id) { return; }
+        if (playersStatus[localPlayerIndex].IsLockedIn || playersSelection[localPlayerIndex].CharacterId == character.Id)
+            return;
 
-            // ✅ Use team-based character availability check
-            if (SelectionNetwork.Instance.IsCharacterTaken(character.Id, localPlayerTeam)) { return; }
-        }
+        if (selectionNetwork.IsCharacterTaken(character.Id, localPlayerTeam))
+            return;
 
         characterNameText.text = character.DisplayName;
         characterInfoPanel.SetActive(true);
 
-        if (introInstance != null)
+        if (characterPreviewInstance != null)
         {
-            Destroy(introInstance);
+            Destroy(characterPreviewInstance);
         }
 
-        introInstance = Instantiate(character.IntroPrefab, introSpawnPoint);
-        SelectServerRpc(character.Id);
+        characterPreviewInstance = Instantiate(character.IntroPrefab, previewSpawnPoint);
+
+        //  Now we pass the cached playerIndex and teamIndex to the server
+        SelectServerRpc(character.Id, localPlayerIndex, localPlayerTeam);
     }
 
+
     [ServerRpc(RequireOwnership = false)]
-    private void SelectServerRpc(int characterId, ServerRpcParams serverRpcParams = default)
+    private void SelectServerRpc(int characterId, int playerIndex, int teamIndex, ServerRpcParams serverRpcParams = default)
     {
-        var playersSelection = SelectionNetwork.Instance.PlayerSelections;
-        var playersStatus = SelectionNetwork.Instance.PlayerStatuses;
+        var selectionNetwork = SelectionNetwork.Instance;
+        var playersSelection = selectionNetwork.PlayerSelections;
+
         ulong clientId = serverRpcParams.Receive.SenderClientId;
 
-        int playerIndex = -1;
-        int teamIndex = -1;
-
-        for (int i = 0; i < playersSelection.Count; i++)
+        // ✅ No need to loop through lists anymore!
+        if (playerIndex < 0 || playerIndex >= playersSelection.Count || teamIndex < 0)
         {
-            if (playersSelection[i].ClientId == clientId)
-            {
-                playerIndex = i;
-                teamIndex = playersStatus[i].TeamIndex;
-                break;
-            }
-        }
-
-        if (playerIndex == -1 || teamIndex == -1)
-        {
-            Debug.LogWarning($"[SelectServerRpc] Could not find player {clientId} or their team!");
+            Debug.LogWarning($"[SelectServerRpc] Invalid playerIndex {playerIndex} or teamIndex {teamIndex} for client {clientId}.");
             return;
         }
 
         if (!characterDatabase.IsValidCharacterId(characterId))
         {
-            Debug.LogWarning($"[SelectServerRpc] Player {clientId} tried to select an invalid character ID {characterId}!");
+            Debug.LogWarning($"[SelectServerRpc] Invalid character ID {characterId} selected by {clientId}!");
             return;
         }
 
-        // ✅ Use team-based check
-        if (SelectionNetwork.Instance.IsCharacterTaken(characterId, teamIndex))
+        if (selectionNetwork.IsCharacterTaken(characterId, teamIndex))
         {
-            Debug.LogWarning($"[SelectServerRpc] Player {clientId} tried to select Character {characterId}, but it's already locked by a teammate!");
+            Debug.LogWarning($"[SelectServerRpc] Character {characterId} already taken by a teammate!");
             return;
         }
 
@@ -139,82 +122,117 @@ public class CharacterSelectDisplay : NetworkBehaviour
         playersSelection[playerIndex] = updatedPlayer;
     }
 
+
     private void HandlePlayersStateChanged<T>(NetworkListEvent<T> changeEvent)
     {
-        StartCoroutine(WaitForSyncAndUpdateUI());
+        playerInfoCache.Clear(); // ✅ Clear cache when player data updates
+
+        // ✅ Only use Coroutine if necessary
+        if (SelectionNetwork.Instance.PlayerSelections.Count == SelectionNetwork.Instance.PlayerStatuses.Count)
+        {
+            UpdateUI();
+        }
+        else
+        {
+            StartCoroutine(WaitForSyncAndUpdateUI());
+        }
     }
 
     private IEnumerator WaitForSyncAndUpdateUI()
     {
-        // Wait until both lists have the same count
-        int attempts = 3; // Prevent infinite loops
+        int attempts = 3;
         while (SelectionNetwork.Instance.PlayerSelections.Count != SelectionNetwork.Instance.PlayerStatuses.Count && attempts > 0)
         {
-            yield return new WaitForEndOfFrame(); // Wait for the next frame
+            yield return new WaitForEndOfFrame();
             attempts--;
         }
 
         if (SelectionNetwork.Instance.PlayerSelections.Count != SelectionNetwork.Instance.PlayerStatuses.Count)
         {
             Debug.LogWarning("Selection and Status lists are STILL not in sync after delay!");
-            yield break; // Stop execution to prevent errors
-        }
-
-        // Get local player's team
-        int localPlayerTeam = -1;
-        foreach (var playerStatus in SelectionNetwork.Instance.PlayerStatuses)
-        {
-            if (playerStatus.ClientId == NetworkManager.Singleton.LocalClientId)
-            {
-                localPlayerTeam = playerStatus.TeamIndex;
-                break;
-            }
-        }
-
-        if (localPlayerTeam == -1)
-        {
-            Debug.LogWarning("Local player's team index not found!");
             yield break;
         }
 
-        // Disable buttons for already locked characters
+        UpdateUI();
+    }
+
+    private void UpdateUI()
+    {
+        var selectionNetwork = SelectionNetwork.Instance;
+        var playerStatuses = selectionNetwork.PlayerStatuses;
+        var playerSelections = selectionNetwork.PlayerSelections;
+
+        // Get local player team instantly from cache
+        (int _, int localPlayerTeam) = GetLocalPlayerInfo();
+        if (localPlayerTeam == -1) return;
+
+        // Disable buttons for characters that are already taken in this team
         foreach (var button in characterButtons)
         {
-            if (SelectionNetwork.Instance.IsCharacterTaken(button.Character.Id, localPlayerTeam))
+            if (selectionNetwork.IsCharacterTaken(button.Character.Id, localPlayerTeam))
             {
                 button.SetDisabled();
             }
         }
 
-        // Filter players by team
-        List<PlayerSelectionState> teamSelections = new List<PlayerSelectionState>();
-        List<PlayerStatusState> teamStatuses = new List<PlayerStatusState>();
+        // Clear reusable lists instead of creating new ones
+        reusableTeamSelections.Clear();
+        reusableTeamStatuses.Clear();
 
-        for (int i = 0; i < SelectionNetwork.Instance.PlayerStatuses.Count; i++)
+        // Filter only the players from the same team (fast O(n) loop)
+        for (int i = 0; i < playerStatuses.Count; i++)
         {
-            if (SelectionNetwork.Instance.PlayerStatuses[i].TeamIndex == localPlayerTeam)
+            if (playerStatuses[i].TeamIndex == localPlayerTeam)
             {
-                teamSelections.Add(SelectionNetwork.Instance.PlayerSelections[i]);
-                teamStatuses.Add(SelectionNetwork.Instance.PlayerStatuses[i]);
+                reusableTeamSelections.Add(playerSelections[i]);
+                reusableTeamStatuses.Add(playerStatuses[i]);
             }
         }
 
+        // Update player card UI efficiently
+        int teamCount = reusableTeamSelections.Count;
         for (int i = 0; i < playerCards.Length; i++)
         {
-            if (i < teamSelections.Count)
+            if (i < teamCount)
             {
-                playerCards[i].UpdateCharacterDisplay(teamSelections[i], teamStatuses[i]);
-
+                playerCards[i].UpdateCharacterDisplay(reusableTeamSelections[i], reusableTeamStatuses[i]);
             }
             else
             {
                 playerCards[i].DisableDisplay();
             }
         }
-        SelectionNetwork.Instance.NotifySelectionChanged();
 
+        // Notify UI updates only once at the end
+        selectionNetwork.NotifySelectionChanged();
     }
 
+    private (int playerIndex, int teamIndex) GetLocalPlayerInfo()
+    {
+        ulong localId = NetworkManager.Singleton.LocalClientId;
 
+        if (playerInfoCache.TryGetValue(localId, out var cachedInfo))
+        {
+            return cachedInfo;  // ✅ Return cached data (O(1) lookup)
+        }
+
+        var playerSelections = SelectionNetwork.Instance.PlayerSelections;
+        var playerStatuses = SelectionNetwork.Instance.PlayerStatuses;
+
+        Dictionary<ulong, (int playerIndex, int teamIndex)> tempCache = new Dictionary<ulong, (int, int)>();
+
+        for (int i = 0; i < playerStatuses.Count; i++)
+        {
+            tempCache[playerSelections[i].ClientId] = (i, playerStatuses[i].TeamIndex);
+        }
+
+        if (tempCache.TryGetValue(localId, out var playerInfo))
+        {
+            playerInfoCache[localId] = playerInfo; // ✅ Cache result
+            return playerInfo;
+        }
+
+        return (-1, -1);
+    }
 
 }

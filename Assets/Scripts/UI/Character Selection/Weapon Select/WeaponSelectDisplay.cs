@@ -19,6 +19,10 @@ public class WeaponSelectDisplay : NetworkBehaviour
     private GameObject weaponPreviewInstance;
     private List<WeaponSelectButton> weaponButtons = new List<WeaponSelectButton>();
 
+    private Dictionary<ulong, (int playerIndex, int teamIndex)> playerInfoCache = new Dictionary<ulong, (int, int)>();
+    private List<PlayerSelectionState> reusableTeamSelections = new List<PlayerSelectionState>();
+    private List<PlayerStatusState> reusableTeamStatuses = new List<PlayerStatusState>();
+
     public override void OnNetworkSpawn()
     {
         if (IsClient)
@@ -48,35 +52,23 @@ public class WeaponSelectDisplay : NetworkBehaviour
 
     public void Select(Weapon weapon)
     {
-        var playersSelection = SelectionNetwork.Instance.PlayerSelections;
-        var playersStatus = SelectionNetwork.Instance.PlayerStatuses;
+        var selectionNetwork = SelectionNetwork.Instance;
+        var playersSelection = selectionNetwork.PlayerSelections;
+        var playersStatus = selectionNetwork.PlayerStatuses;
 
-        int localPlayerTeam = -1;
+        (int localPlayerIndex, int localPlayerTeam) = GetLocalPlayerInfo();
 
-        for (int i = 0; i < playersStatus.Count; i++)
+        if (localPlayerIndex == -1 || localPlayerTeam == -1)
         {
-            if (playersSelection[i].ClientId == NetworkManager.Singleton.LocalClientId)
-            {
-                localPlayerTeam = playersStatus[i].TeamIndex;
-                break;
-            }
-        }
-
-        if (localPlayerTeam == -1)
-        {
-            Debug.LogWarning($"[Select] Could not find local player's team!");
+            Debug.LogWarning($"[Select] Could not find local player's index or team!");
             return;
         }
 
-        for (int i = 0; i < playersStatus.Count; i++)
-        {
-            if (playersSelection[i].ClientId != NetworkManager.Singleton.LocalClientId) { continue; }
-            if (playersStatus[i].IsLockedIn) { return; }
-            if (playersSelection[i].WeaponId == weapon.Id) { return; }
+        if (playersStatus[localPlayerIndex].IsLockedIn || playersSelection[localPlayerIndex].WeaponId == weapon.Id)
+            return;
 
-            // ✅ Use team-based weapon availability check
-            if (SelectionNetwork.Instance.IsWeaponTaken(weapon.Id, localPlayerTeam)) { return; }
-        }
+        if (selectionNetwork.IsWeaponTaken(weapon.Id, localPlayerTeam))
+            return;
 
         weaponNameText.text = weapon.DisplayName;
         weaponInfoPanel.SetActive(true);
@@ -87,45 +79,34 @@ public class WeaponSelectDisplay : NetworkBehaviour
         }
 
         weaponPreviewInstance = Instantiate(weapon.ModelPrefab, weaponPreviewSpawnPoint);
-        SelectWeaponServerRpc(weapon.Id);
+
+        // ✅ Pass cached playerIndex and teamIndex
+        SelectWeaponServerRpc(weapon.Id, localPlayerIndex, localPlayerTeam);
     }
 
     [ServerRpc(RequireOwnership = false)]
-    private void SelectWeaponServerRpc(int weaponId, ServerRpcParams serverRpcParams = default)
+    private void SelectWeaponServerRpc(int weaponId, int playerIndex, int teamIndex, ServerRpcParams serverRpcParams = default)
     {
-        var playersSelection = SelectionNetwork.Instance.PlayerSelections;
-        var playersStatus = SelectionNetwork.Instance.PlayerStatuses;
+        var selectionNetwork = SelectionNetwork.Instance;
+        var playersSelection = selectionNetwork.PlayerSelections;
+
         ulong clientId = serverRpcParams.Receive.SenderClientId;
 
-        int playerIndex = -1;
-        int teamIndex = -1;
-
-        for (int i = 0; i < playersSelection.Count; i++)
+        if (playerIndex < 0 || playerIndex >= playersSelection.Count || teamIndex < 0)
         {
-            if (playersSelection[i].ClientId == clientId)
-            {
-                playerIndex = i;
-                teamIndex = playersStatus[i].TeamIndex;
-                break;
-            }
-        }
-
-        if (playerIndex == -1 || teamIndex == -1)
-        {
-            Debug.LogWarning($"[SelectWeaponServerRpc] Could not find player {clientId} or their team!");
+            Debug.LogWarning($"[SelectServerRpc] Invalid playerIndex {playerIndex} or teamIndex {teamIndex} for client {clientId}.");
             return;
         }
 
         if (!weaponDatabase.IsValidWeaponId(weaponId))
         {
-            Debug.LogWarning($"[SelectWeaponServerRpc] Player {clientId} tried to select an invalid weapon ID {weaponId}!");
+            Debug.LogWarning($"[SelectServerRpc] Invalid weapon ID {weaponId} selected by {clientId}!");
             return;
         }
 
-        // ✅ Use team-based check
-        if (SelectionNetwork.Instance.IsWeaponTaken(weaponId, teamIndex))
+        if (selectionNetwork.IsWeaponTaken(weaponId, teamIndex))
         {
-            Debug.LogWarning($"[SelectWeaponServerRpc] Player {clientId} tried to select Weapon {weaponId}, but it's already locked by a teammate!");
+            Debug.LogWarning($"[SelectServerRpc] Weapon {weaponId} already taken by a teammate!");
             return;
         }
 
@@ -136,70 +117,73 @@ public class WeaponSelectDisplay : NetworkBehaviour
 
     private void HandlePlayersStateChanged<T>(NetworkListEvent<T> changeEvent)
     {
-        StartCoroutine(WaitForSyncAndUpdateUI());
+        playerInfoCache.Clear(); // ✅ Ensure cached data is refreshed
+
+        if (SelectionNetwork.Instance.PlayerSelections.Count == SelectionNetwork.Instance.PlayerStatuses.Count)
+        {
+            UpdateUI();
+        }
+        else
+        {
+            StartCoroutine(WaitForSyncAndUpdateUI());
+        }
     }
 
     private IEnumerator WaitForSyncAndUpdateUI()
     {
-        // Wait until both lists have the same count
-        int attempts = 2; // Prevent infinite loops
+        int attempts = 3;
         while (SelectionNetwork.Instance.PlayerSelections.Count != SelectionNetwork.Instance.PlayerStatuses.Count && attempts > 0)
         {
-            yield return new WaitForEndOfFrame(); // Wait for the next frame
+            yield return new WaitForEndOfFrame();
             attempts--;
         }
 
         if (SelectionNetwork.Instance.PlayerSelections.Count != SelectionNetwork.Instance.PlayerStatuses.Count)
         {
             Debug.LogWarning("Selection and Status lists are STILL not in sync after delay!");
-            yield break; // Stop execution to prevent errors
-        }
-
-        // Get local player's team
-        int localPlayerTeam = -1;
-        foreach (var playerStatus in SelectionNetwork.Instance.PlayerStatuses)
-        {
-            if (playerStatus.ClientId == NetworkManager.Singleton.LocalClientId)
-            {
-                localPlayerTeam = playerStatus.TeamIndex;
-                break;
-            }
-        }
-
-        if (localPlayerTeam == -1)
-        {
-            Debug.LogWarning("Local player's team index not found!");
             yield break;
         }
 
-        // Disable buttons for already locked characters
+        UpdateUI();
+    }
+
+    private void UpdateUI()
+    {
+        var selectionNetwork = SelectionNetwork.Instance;
+        var playerStatuses = selectionNetwork.PlayerStatuses;
+        var playerSelections = selectionNetwork.PlayerSelections;
+
+        // ✅ Get local player team instantly from cache
+        (int _, int localPlayerTeam) = GetLocalPlayerInfo();
+        if (localPlayerTeam == -1) return;
+
+        // ✅ Reduce redundant method calls inside loop
         foreach (var button in weaponButtons)
         {
-            if (SelectionNetwork.Instance.IsCharacterTaken(button.Weapon.Id, localPlayerTeam))
+            if (selectionNetwork.IsWeaponTaken(button.Weapon.Id, localPlayerTeam))
             {
                 button.SetDisabled();
             }
         }
 
-        // Filter players by team
-        List<PlayerSelectionState> teamSelections = new List<PlayerSelectionState>();
-        List<PlayerStatusState> teamStatuses = new List<PlayerStatusState>();
+        reusableTeamSelections.Clear();
+        reusableTeamStatuses.Clear();
 
-        for (int i = 0; i < SelectionNetwork.Instance.PlayerStatuses.Count; i++)
+        for (int i = 0; i < playerStatuses.Count; i++)
         {
-            if (SelectionNetwork.Instance.PlayerStatuses[i].TeamIndex == localPlayerTeam)
+            if (playerStatuses[i].TeamIndex == localPlayerTeam)
             {
-                teamSelections.Add(SelectionNetwork.Instance.PlayerSelections[i]);
-                teamStatuses.Add(SelectionNetwork.Instance.PlayerStatuses[i]);
+                reusableTeamSelections.Add(playerSelections[i]);
+                reusableTeamStatuses.Add(playerStatuses[i]);
             }
         }
 
-        // Update only the UI for the local player's team
+        int teamCount = reusableTeamSelections.Count;
         for (int i = 0; i < playerCards.Length; i++)
         {
-            if (i < teamSelections.Count)
+            if (i < teamCount)
             {
-                playerCards[i].UpdateWeaponDisplay(teamSelections[i]);
+                playerCards[i].UpdateWeaponDisplay(reusableTeamSelections[i]);
             }
             else
             {
@@ -207,8 +191,27 @@ public class WeaponSelectDisplay : NetworkBehaviour
             }
         }
 
-        SelectionNetwork.Instance.NotifySelectionChanged();
-
+        selectionNetwork.NotifySelectionChanged();
     }
 
+    private (int playerIndex, int teamIndex) GetLocalPlayerInfo()
+    {
+        ulong localId = NetworkManager.Singleton.LocalClientId;
+        if (playerInfoCache.TryGetValue(localId, out var cachedInfo)) return cachedInfo;
+
+        var playerSelections = SelectionNetwork.Instance.PlayerSelections;
+        var playerStatuses = SelectionNetwork.Instance.PlayerStatuses;
+        Dictionary<ulong, (int, int)> tempCache = new Dictionary<ulong, (int, int)>();
+
+        for (int i = 0; i < playerStatuses.Count; i++)
+            tempCache[playerSelections[i].ClientId] = (i, playerStatuses[i].TeamIndex);
+
+        if (tempCache.TryGetValue(localId, out var playerInfo))
+        {
+            playerInfoCache[localId] = playerInfo;
+            return playerInfo;
+        }
+
+        return (-1, -1);
+    }
 }

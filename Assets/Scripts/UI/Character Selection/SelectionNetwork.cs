@@ -48,10 +48,8 @@ public class SelectionNetwork : NetworkBehaviour
     [SerializeField] private int maxPlayers = 4;
     [SerializeField] private float selectionTimeAmount = 90f;
 
-    private Dictionary<int, HashSet<int>> lockedCharactersByTeam = new Dictionary<int, HashSet<int>>();
-    private Dictionary<int, HashSet<int>> lockedWeaponsByTeam = new Dictionary<int, HashSet<int>>();
-    private Dictionary<int, List<int>> availableCharactersByTeam = new Dictionary<int, List<int>>();
-    private Dictionary<int, List<int>> availableWeaponsByTeam = new Dictionary<int, List<int>>();
+    private Dictionary<int, TeamSelectionData> teamData = new();
+
 
 
     private Coroutine timerCoroutine;
@@ -81,90 +79,30 @@ public class SelectionNetwork : NetworkBehaviour
 
         for (int i = 0; i < PlayerSelections.Count; i++)
         {
-            var updatedSelection = PlayerSelections[i];
-            var updatedStatus = PlayerStatuses[i];
-            int teamIndex = updatedStatus.TeamIndex;
+            PlayerSelectionState selection = PlayerSelections[i];
+            PlayerStatusState status = PlayerStatuses[i];
+            int teamIndex = status.TeamIndex;
 
-            Debug.Log($"[Lock-In Process] Checking Player {updatedSelection.ClientId} (Team {teamIndex}): " +
-                      $"Character {updatedSelection.CharacterId}, Weapon {updatedSelection.WeaponId}, LockedIn: {updatedStatus.IsLockedIn}");
+            if (status.IsLockedIn) continue; // Skip already locked-in players
 
-            if (!updatedStatus.IsLockedIn)
+            if (!teamData.TryGetValue(teamIndex, out var team))
             {
-                // ✅ Now we just retrieve the team-specific lists, no need to check if they exist
-                HashSet<int> teamLockedCharacters = lockedCharactersByTeam[teamIndex];
-                HashSet<int> teamLockedWeapons = lockedWeaponsByTeam[teamIndex];
-                List<int> teamAvailableCharacters = availableCharactersByTeam[teamIndex];
-                List<int> teamAvailableWeapons = availableWeaponsByTeam[teamIndex];
-
-                // Handle Character Selection
-                if (teamLockedCharacters.Contains(updatedSelection.CharacterId))
-                {
-                    Debug.LogWarning($"[Character Conflict] Player {updatedSelection.ClientId} (Team {teamIndex}) selected Character {updatedSelection.CharacterId}, but it's already locked by a teammate. Resetting.");
-                    updatedSelection.CharacterId = -1;
-                }
-                else if (updatedSelection.CharacterId != -1)
-                {
-                    Debug.Log($"[Character Assigned] Player {updatedSelection.ClientId} (Team {teamIndex}) locks in Character {updatedSelection.CharacterId}.");
-                    teamLockedCharacters.Add(updatedSelection.CharacterId);
-                    if (teamAvailableCharacters.Contains(updatedSelection.CharacterId))
-                    {
-                        teamAvailableCharacters.Remove(updatedSelection.CharacterId);
-                        Debug.Log($"[Character Removed] Character {updatedSelection.CharacterId} removed from Team {teamIndex}'s available characters.");
-                    }
-                }
-
-                // Handle Weapon Selection
-                if (teamLockedWeapons.Contains(updatedSelection.WeaponId))
-                {
-                    Debug.LogWarning($"[Weapon Conflict] Player {updatedSelection.ClientId} (Team {teamIndex}) selected Weapon {updatedSelection.WeaponId}, but it's already locked by a teammate. Resetting.");
-                    updatedSelection.WeaponId = -1;
-                }
-                else if (updatedSelection.WeaponId != -1)
-                {
-                    Debug.Log($"[Weapon Assigned] Player {updatedSelection.ClientId} (Team {teamIndex}) locks in Weapon {updatedSelection.WeaponId}.");
-                    teamLockedWeapons.Add(updatedSelection.WeaponId);
-                    if (teamAvailableWeapons.Contains(updatedSelection.WeaponId))
-                    {
-                        teamAvailableWeapons.Remove(updatedSelection.WeaponId);
-                        Debug.Log($"[Weapon Removed] Weapon {updatedSelection.WeaponId} removed from Team {teamIndex}'s available weapons.");
-                    }
-                }
-
-                // Assign Random Character if not selected
-                if (updatedSelection.CharacterId == -1 && teamAvailableCharacters.Count > 0)
-                {
-                    int randomIndex = UnityEngine.Random.Range(0, teamAvailableCharacters.Count);
-                    updatedSelection.CharacterId = teamAvailableCharacters[randomIndex];
-                    teamAvailableCharacters.RemoveAt(randomIndex);
-                    teamLockedCharacters.Add(updatedSelection.CharacterId);
-                    Debug.Log($"[Auto-Assign Character] Player {updatedSelection.ClientId} (Team {teamIndex}) gets random Character {updatedSelection.CharacterId}.");
-                }
-
-                // Assign Random Weapon if not selected
-                if (updatedSelection.WeaponId == -1 && teamAvailableWeapons.Count > 0)
-                {
-                    int randomIndex = UnityEngine.Random.Range(0, teamAvailableWeapons.Count);
-                    updatedSelection.WeaponId = teamAvailableWeapons[randomIndex];
-                    teamAvailableWeapons.RemoveAt(randomIndex);
-                    teamLockedWeapons.Add(updatedSelection.WeaponId);
-                    Debug.Log($"[Auto-Assign Weapon] Player {updatedSelection.ClientId} (Team {teamIndex}) gets random Weapon {updatedSelection.WeaponId}.");
-                }
-
-                // Finalize Lock-In
-                updatedStatus.IsLockedIn = true;
-                PlayerSelections[i] = updatedSelection;
-                PlayerStatuses[i] = updatedStatus;
-
-                Debug.Log($"[Final Lock-In] Player {PlayerSelections[i].ClientId} locked in with " +
-                          $"Character {PlayerSelections[i].CharacterId}, Weapon {PlayerSelections[i].WeaponId}.");
-
-                // Sync with the server
-                HostSingleton.Instance.GameManager.NetworkServer.SetCharacter(updatedSelection.ClientId, updatedSelection.CharacterId);
-                HostSingleton.Instance.GameManager.NetworkServer.SetWeapon(updatedSelection.ClientId, updatedSelection.WeaponId);
+                Debug.LogError($"[ForceLockIn] Team {teamIndex} not found in teamData!");
+                continue;
             }
+
+            Debug.Log($"[Lock-In Process] Checking Player {selection.ClientId} (Team {teamIndex}): " +
+                      $"Character {selection.CharacterId}, Weapon {selection.WeaponId}, LockedIn: {status.IsLockedIn}");
+
+            // ✅ Lock in the player using our centralized method
+            LockInPlayer(selection.ClientId, ref selection, ref status);
+
+            // ✅ Store the updated selections in NetworkList
+            PlayerSelections[i] = selection;
+            PlayerStatuses[i] = status;
         }
 
-        // Notify that selections have changed
+        // Notify selection changes
         NotifySelectionChanged();
         Debug.Log("[ForceLockIn] Lock-in process complete.");
     }
@@ -262,20 +200,12 @@ public class SelectionNetwork : NetworkBehaviour
     /// ✅ **Now initializes all teams (0 and 1) at the start. No missing teams!**
     private void InitializeTeamData()
     {
-        lockedCharactersByTeam.Clear();
-        lockedWeaponsByTeam.Clear();
-        availableCharactersByTeam.Clear();
-        availableWeaponsByTeam.Clear();
-
-        for (int teamIndex = 0; teamIndex <= 1; teamIndex++) // ✅ Always initialize Team 0 & 1
+        teamData.Clear();
+        teamData = new Dictionary<int, TeamSelectionData>
         {
-            lockedCharactersByTeam[teamIndex] = new HashSet<int>();
-            lockedWeaponsByTeam[teamIndex] = new HashSet<int>();
-            availableCharactersByTeam[teamIndex] = new List<int>(characterDatabase.GetAllCharacterIds());
-            availableWeaponsByTeam[teamIndex] = new List<int>(weaponDatabase.GetAllWeaponIds());
-
-            Debug.Log($"[InitializeTeamData] Initialized all lists for Team {teamIndex}");
-        }
+            { 0, new TeamSelectionData(characterDatabase, weaponDatabase) },
+            { 1, new TeamSelectionData(characterDatabase, weaponDatabase) }
+        };
     }
 
 
@@ -317,31 +247,23 @@ public class SelectionNetwork : NetworkBehaviour
      */
     private void OnClientDisconnected(ulong clientId)
     {
-        for (int i = 0; i < PlayerStatuses.Count; i++)
+        int index = GetPlayerStatusIndex(clientId);
+        if (index == -1) return;
+
+        int teamIndex = PlayerStatuses[index].TeamIndex;
+        if (teamData.TryGetValue(teamIndex, out var team))
         {
-            if (PlayerStatuses[i].ClientId == clientId)
+            if (PlayerStatuses[index].IsLockedIn)
             {
-                int teamIndex = PlayerStatuses[i].TeamIndex;
-
-                if (PlayerStatuses[i].IsLockedIn)
-                {
-                    lockedCharactersByTeam[teamIndex].Remove(PlayerSelections[i].CharacterId);
-                    lockedWeaponsByTeam[teamIndex].Remove(PlayerSelections[i].WeaponId);
-                }
-
-                availableCharactersByTeam[teamIndex] = GetAvailableCharacters(teamIndex);
-                availableWeaponsByTeam[teamIndex] = GetAvailableWeapons(teamIndex);
-
-                // ✅ Remove player from both NetworkLists
-                PlayerStatuses.RemoveAt(i);
-                PlayerSelections.RemoveAt(i);
-
-                Debug.Log($"[OnClientDisconnected] Removed player {clientId} from selection lists.");
-
-                NotifySelectionChanged();
-                return; // ✅ Exit loop after finding and removing the player
+                team.UnlockSelection(PlayerSelections[index].CharacterId, team.LockedCharacters, team.AvailableCharacters);
+                team.UnlockSelection(PlayerSelections[index].WeaponId, team.LockedWeapons, team.AvailableWeapons);
             }
         }
+
+        PlayerSelections.RemoveAt(index);
+        PlayerStatuses.RemoveAt(index);
+
+        NotifySelectionChanged();
 
         Debug.LogWarning($"[OnClientDisconnected] Player {clientId} was not found in the selection lists!");
     }
@@ -372,9 +294,13 @@ public class SelectionNetwork : NetworkBehaviour
         ulong clientId = serverRpcParams.Receive.SenderClientId;
 
         List<TeamLockData> teamLocks = new List<TeamLockData>();
-        foreach (var team in lockedCharactersByTeam.Keys)
+        foreach (var kvp in teamData) // ✅ Iterating over teamData instead of separate dictionaries
         {
-            teamLocks.Add(new TeamLockData(team, lockedCharactersByTeam[team], lockedWeaponsByTeam[team]));
+            int teamIndex = kvp.Key;
+            TeamSelectionData team = kvp.Value;
+
+            // ✅ Creating a data packet for each team
+            teamLocks.Add(new TeamLockData(teamIndex, team.LockedCharacters, team.LockedWeapons));
         }
 
         SyncTeamLocksToClientClientRpc(teamLocks.ToArray(), clientId);
@@ -385,18 +311,20 @@ public class SelectionNetwork : NetworkBehaviour
     {
         if (NetworkManager.Singleton.LocalClientId != targetClientId) return;
 
-        lockedCharactersByTeam.Clear();
-        lockedWeaponsByTeam.Clear();
-        availableCharactersByTeam.Clear();
-        availableWeaponsByTeam.Clear();
+        teamData.Clear(); // ✅ Clearing teamData before updating
 
         foreach (var teamLock in teamLocks)
         {
-            int teamIndex = teamLock.TeamIndex;
-            lockedCharactersByTeam[teamIndex] = new HashSet<int>(teamLock.LockedCharacters);
-            lockedWeaponsByTeam[teamIndex] = new HashSet<int>(teamLock.LockedWeapons);
-            availableCharactersByTeam[teamIndex] = GetAvailableCharacters(teamIndex);
-            availableWeaponsByTeam[teamIndex] = GetAvailableWeapons(teamIndex);
+            TeamSelectionData team = new TeamSelectionData(characterDatabase, weaponDatabase);
+
+            // ✅ Copying locked characters and weapons from the server's data
+            foreach (var charId in teamLock.LockedCharacters)
+                team.LockedCharacters.Add(charId);
+
+            foreach (var weaponId in teamLock.LockedWeapons)
+                team.LockedWeapons.Add(weaponId);
+
+            teamData[teamLock.TeamIndex] = team;
         }
 
         Debug.Log("[SyncTeamLocks] Client received updated team lock data.");
@@ -408,95 +336,33 @@ public class SelectionNetwork : NetworkBehaviour
 
         for (int i = 0; i < PlayerSelections.Count; i++)
         {
-            var updatedSelection = PlayerSelections[i];
-            var updatedStatus = PlayerStatuses[i];
-            int teamIndex = updatedStatus.TeamIndex;
+            PlayerSelectionState selection = PlayerSelections[i];
+            PlayerStatusState status = PlayerStatuses[i];
+            int teamIndex = status.TeamIndex;
 
-            Debug.Log($"[Lock-In Process] Checking Player {updatedSelection.ClientId} (Team {teamIndex}): " +
-                      $"Character {updatedSelection.CharacterId}, Weapon {updatedSelection.WeaponId}, LockedIn: {updatedStatus.IsLockedIn}");
+            if (status.IsLockedIn) continue; // Skip already locked-in players
 
-            if (!updatedStatus.IsLockedIn)
+            if (!teamData.TryGetValue(teamIndex, out var team))
             {
-                // ✅ Now we just retrieve the team-specific lists, no need to check if they exist
-                HashSet<int> teamLockedCharacters = lockedCharactersByTeam[teamIndex];
-                HashSet<int> teamLockedWeapons = lockedWeaponsByTeam[teamIndex];
-                List<int> teamAvailableCharacters = availableCharactersByTeam[teamIndex];
-                List<int> teamAvailableWeapons = availableWeaponsByTeam[teamIndex];
-
-                // Handle Character Selection
-                if (teamLockedCharacters.Contains(updatedSelection.CharacterId))
-                {
-                    Debug.LogWarning($"[Character Conflict] Player {updatedSelection.ClientId} (Team {teamIndex}) selected Character {updatedSelection.CharacterId}, but it's already locked by a teammate. Resetting.");
-                    updatedSelection.CharacterId = -1;
-                }
-                else if (updatedSelection.CharacterId != -1)
-                {
-                    Debug.Log($"[Character Assigned] Player {updatedSelection.ClientId} (Team {teamIndex}) locks in Character {updatedSelection.CharacterId}.");
-                    teamLockedCharacters.Add(updatedSelection.CharacterId);
-                    if (teamAvailableCharacters.Contains(updatedSelection.CharacterId))
-                    {
-                        teamAvailableCharacters.Remove(updatedSelection.CharacterId);
-                        Debug.Log($"[Character Removed] Character {updatedSelection.CharacterId} removed from Team {teamIndex}'s available characters.");
-                    }
-                }
-
-                // Handle Weapon Selection
-                if (teamLockedWeapons.Contains(updatedSelection.WeaponId))
-                {
-                    Debug.LogWarning($"[Weapon Conflict] Player {updatedSelection.ClientId} (Team {teamIndex}) selected Weapon {updatedSelection.WeaponId}, but it's already locked by a teammate. Resetting.");
-                    updatedSelection.WeaponId = -1;
-                }
-                else if (updatedSelection.WeaponId != -1)
-                {
-                    Debug.Log($"[Weapon Assigned] Player {updatedSelection.ClientId} (Team {teamIndex}) locks in Weapon {updatedSelection.WeaponId}.");
-                    teamLockedWeapons.Add(updatedSelection.WeaponId);
-                    if (teamAvailableWeapons.Contains(updatedSelection.WeaponId))
-                    {
-                        teamAvailableWeapons.Remove(updatedSelection.WeaponId);
-                        Debug.Log($"[Weapon Removed] Weapon {updatedSelection.WeaponId} removed from Team {teamIndex}'s available weapons.");
-                    }
-                }
-
-                // Assign Random Character if not selected
-                if (updatedSelection.CharacterId == -1 && teamAvailableCharacters.Count > 0)
-                {
-                    int randomIndex = UnityEngine.Random.Range(0, teamAvailableCharacters.Count);
-                    updatedSelection.CharacterId = teamAvailableCharacters[randomIndex];
-                    teamAvailableCharacters.RemoveAt(randomIndex);
-                    teamLockedCharacters.Add(updatedSelection.CharacterId);
-                    Debug.Log($"[Auto-Assign Character] Player {updatedSelection.ClientId} (Team {teamIndex}) gets random Character {updatedSelection.CharacterId}.");
-                }
-
-                // Assign Random Weapon if not selected
-                if (updatedSelection.WeaponId == -1 && teamAvailableWeapons.Count > 0)
-                {
-                    int randomIndex = UnityEngine.Random.Range(0, teamAvailableWeapons.Count);
-                    updatedSelection.WeaponId = teamAvailableWeapons[randomIndex];
-                    teamAvailableWeapons.RemoveAt(randomIndex);
-                    teamLockedWeapons.Add(updatedSelection.WeaponId);
-                    Debug.Log($"[Auto-Assign Weapon] Player {updatedSelection.ClientId} (Team {teamIndex}) gets random Weapon {updatedSelection.WeaponId}.");
-                }
-
-                // Finalize Lock-In
-                updatedStatus.IsLockedIn = true;
-                PlayerSelections[i] = updatedSelection;
-                PlayerStatuses[i] = updatedStatus;
-
-                Debug.Log($"[Final Lock-In] Player {PlayerSelections[i].ClientId} locked in with " +
-                          $"Character {PlayerSelections[i].CharacterId}, Weapon {PlayerSelections[i].WeaponId}.");
-
-                // Sync with the server
-                HostSingleton.Instance.GameManager.NetworkServer.SetCharacter(updatedSelection.ClientId, updatedSelection.CharacterId);
-                HostSingleton.Instance.GameManager.NetworkServer.SetWeapon(updatedSelection.ClientId, updatedSelection.WeaponId);
+                Debug.LogError($"[ForceLockIn] Team {teamIndex} not found in teamData!");
+                continue;
             }
+
+            Debug.Log($"[Lock-In Process] Checking Player {selection.ClientId} (Team {teamIndex}): " +
+                      $"Character {selection.CharacterId}, Weapon {selection.WeaponId}, LockedIn: {status.IsLockedIn}");
+
+            // ✅ Lock in the player using our centralized method
+            LockInPlayer(selection.ClientId, ref selection, ref status);
+
+            // ✅ Store the updated selections in NetworkList
+            PlayerSelections[i] = selection;
+            PlayerStatuses[i] = status;
         }
 
-        // Notify that selections have changed
+        // Notify selection changes
         NotifySelectionChanged();
         Debug.Log("[ForceLockIn] Lock-in process complete.");
     }
-
-
 
 
     /*
@@ -505,55 +371,40 @@ public class SelectionNetwork : NetworkBehaviour
      */
     public bool CanLockIn(ulong clientId)
     {
-        foreach (var player in PlayerSelections)
+        int index = GetPlayerSelectionIndex(clientId);
+        if (index == -1) return false;
+
+        var selection = PlayerSelections[index];
+        var status = PlayerStatuses[index];
+        int teamIndex = status.TeamIndex;
+
+        if (characterDatabase == null || weaponDatabase == null)
         {
-            if (player.ClientId != clientId) { continue; }
-
-            int teamIndex = -1;
-            foreach (var status in PlayerStatuses)
-            {
-                if (status.ClientId == clientId)
-                {
-                    teamIndex = status.TeamIndex;
-                    break;
-                }
-            }
-
-            if (teamIndex == -1)
-            {
-                Debug.LogError($"[CanLockIn] Failed to find team for Client {clientId}!");
-                return false;
-            }
-
-            if (characterDatabase == null || weaponDatabase == null)
-            {
-                Debug.LogError("CharacterDatabase or WeaponDatabase is not set in SelectionNetwork!");
-                return false;
-            }
-
-            if (!characterDatabase.IsValidCharacterId(player.CharacterId))
-            {
-                Debug.LogWarning($"CharacterId {player.CharacterId} is INVALID.");
-                return false;
-            }
-
-            if (!weaponDatabase.IsValidWeaponId(player.WeaponId))
-            {
-                Debug.LogWarning($"WeaponId {player.WeaponId} is INVALID.");
-                return false;
-            }
-
-            // ✅ Check only within the same team
-            bool isCharacterValid = player.CharacterId != -1 && !IsCharacterTaken(player.CharacterId, teamIndex);
-            bool isWeaponValid = player.WeaponId != -1 && !IsWeaponTaken(player.WeaponId, teamIndex);
-
-            Debug.Log($"[CanLockIn] Client {clientId} → IsCharacterValid: {isCharacterValid}, IsWeaponValid: {isWeaponValid}");
-
-            return isCharacterValid && isWeaponValid;
+            Debug.LogError("[CanLockIn] CharacterDatabase or WeaponDatabase is not set!");
+            return false;
         }
 
-        Debug.LogWarning($"[CanLockIn] Client {clientId} NOT found in PlayerSelections!");
-        return false;
+        if (!characterDatabase.IsValidCharacterId(selection.CharacterId))
+        {
+            Debug.LogWarning($"[CanLockIn] CharacterId {selection.CharacterId} is INVALID.");
+            return false;
+        }
+
+        if (!weaponDatabase.IsValidWeaponId(selection.WeaponId))
+        {
+            Debug.LogWarning($"[CanLockIn] WeaponId {selection.WeaponId} is INVALID.");
+            return false;
+        }
+
+        // ✅ Use `teamData` for quick lookup instead of checking lists
+        if (!teamData.TryGetValue(teamIndex, out var team)) return false;
+
+        bool isCharacterValid = selection.CharacterId != -1 && !team.LockedCharacters.Contains(selection.CharacterId);
+        bool isWeaponValid = selection.WeaponId != -1 && !team.LockedWeapons.Contains(selection.WeaponId);
+
+        Debug.Log($"[CanLockIn] Client {clientId} → IsCharacterValid: {isCharacterValid}, IsWeaponValid: {isWeaponValid}");
+
+        return isCharacterValid && isWeaponValid;
     }
 
 
@@ -571,127 +422,103 @@ public class SelectionNetwork : NetworkBehaviour
 
         ulong clientId = serverRpcParams.Receive.SenderClientId;
         int index = GetPlayerSelectionIndex(clientId);
-
-        if (index == -1)
-        {
-            Debug.LogError($"[LockInSelection] Player {clientId} not found in selection/status lists!");
-            return;
-        }
+        if (index == -1) return;
 
         if (!CanLockIn(clientId))
         {
-            Debug.LogError($"[LockInSelection] Client {clientId} has not selected both character & weapon!");
+            Debug.LogWarning($"[LockInSelection] Client {clientId} cannot lock in due to invalid selection.");
             return;
         }
 
+        // ✅ Retrieve the structs from NetworkLists
+        PlayerSelectionState selection = PlayerSelections[index];
+        PlayerStatusState status = PlayerStatuses[index];
 
-        var updatedSelection = PlayerSelections[index];
-        var updatedStatus = PlayerStatuses[index];
-        int teamIndex = updatedStatus.TeamIndex;
+        // ✅ Lock in selection
+        LockInPlayer(clientId, ref selection, ref status);
 
-        if (!lockedCharactersByTeam.ContainsKey(teamIndex))
+        // ✅ Assign modified structs back to NetworkLists
+        PlayerSelections[index] = selection;
+        PlayerStatuses[index] = status;
+
+        // ✅ Resolve conflicts
+        ResolveSelectionConflicts(status.TeamIndex);
+
+        NotifySelectionChanged();
+    }
+
+    private void LockInPlayer(ulong clientId, ref PlayerSelectionState selection, ref PlayerStatusState status)
+    {
+        int teamIndex = status.TeamIndex;
+        if (!teamData.TryGetValue(teamIndex, out var team)) return;
+
+        Debug.Log($"[LockInPlayer] Locking in Player {clientId} for Team {teamIndex}");
+
+        // Handle Character Selection
+        if (team.LockedCharacters.Contains(selection.CharacterId))
         {
-            Debug.LogWarning($"[LockInSelection] Team {teamIndex} not found in lockedCharactersByTeam! Initializing...");
-            lockedCharactersByTeam[teamIndex] = new HashSet<int>();
+            selection.CharacterId = -1;
+        }
+        else if (selection.CharacterId != -1)
+        {
+            team.LockSelection(selection.CharacterId, team.LockedCharacters, team.AvailableCharacters);
         }
 
-        if (!lockedWeaponsByTeam.ContainsKey(teamIndex))
+        // Handle Weapon Selection
+        if (team.LockedWeapons.Contains(selection.WeaponId))
         {
-            Debug.LogWarning($"[LockInSelection] Team {teamIndex} not found in lockedWeaponsByTeam! Initializing...");
-            lockedWeaponsByTeam[teamIndex] = new HashSet<int>();
+            selection.WeaponId = -1;
+        }
+        else if (selection.WeaponId != -1)
+        {
+            team.LockSelection(selection.WeaponId, team.LockedWeapons, team.AvailableWeapons);
         }
 
-        if (!availableCharactersByTeam.ContainsKey(teamIndex))
+        // Assign Random Character if needed
+        if (selection.CharacterId == -1 && team.AvailableCharacters.Count > 0)
         {
-            Debug.LogWarning($"[LockInSelection] Team {teamIndex} not found in availableCharactersByTeam! Initializing...");
-            availableCharactersByTeam[teamIndex] = new List<int>(characterDatabase.GetAllCharacterIds());
+            selection.CharacterId = team.AvailableCharacters[UnityEngine.Random.Range(0, team.AvailableCharacters.Count)];
+            team.LockSelection(selection.CharacterId, team.LockedCharacters, team.AvailableCharacters);
         }
 
-        if (!availableWeaponsByTeam.ContainsKey(teamIndex))
+        // Assign Random Weapon if needed
+        if (selection.WeaponId == -1 && team.AvailableWeapons.Count > 0)
         {
-            Debug.LogWarning($"[LockInSelection] Team {teamIndex} not found in availableWeaponsByTeam! Initializing...");
-            availableWeaponsByTeam[teamIndex] = new List<int>(weaponDatabase.GetAllWeaponIds());
+            selection.WeaponId = team.AvailableWeapons[UnityEngine.Random.Range(0, team.AvailableWeapons.Count)];
+            team.LockSelection(selection.WeaponId, team.LockedWeapons, team.AvailableWeapons);
         }
 
-        Debug.Log($"[LockInSelectionServerRpc] Attempting to access teamIndex: {teamIndex}");
+        // Finalize Lock-In
+        status.IsLockedIn = true;
 
-        // ✅ Retrieve team-based locks and available selections
-        HashSet<int> teamLockedCharacters = lockedCharactersByTeam[teamIndex];
-        HashSet<int> teamLockedWeapons = lockedWeaponsByTeam[teamIndex];
-        List<int> teamAvailableCharacters = availableCharactersByTeam[teamIndex];
-        List<int> teamAvailableWeapons = availableWeaponsByTeam[teamIndex];
+        // Sync with server
+        HostSingleton.Instance.GameManager.NetworkServer.SetCharacter(clientId, selection.CharacterId);
+        HostSingleton.Instance.GameManager.NetworkServer.SetWeapon(clientId, selection.WeaponId);
+    }
 
-        bool selectionInvalid = false;
+    private void ResolveSelectionConflicts(int teamIndex)
+    {
+        if (!teamData.TryGetValue(teamIndex, out var team)) return;
 
-        // ✅ Check team-based character locks
-        if (teamLockedCharacters.Contains(updatedSelection.CharacterId))
-        {
-            Debug.LogWarning($"[LockInSelection] Player {clientId} tried to lock in Character {updatedSelection.CharacterId}, but it's already locked by a teammate!");
-            updatedSelection.CharacterId = -1;
-            selectionInvalid = true;
-        }
+        HashSet<int> teamLockedCharacters = team.LockedCharacters;
+        HashSet<int> teamLockedWeapons = team.LockedWeapons;
 
-        // ✅ Check team-based weapon locks
-        if (teamLockedWeapons.Contains(updatedSelection.WeaponId))
-        {
-            Debug.LogWarning($"[LockInSelection] Player {clientId} tried to lock in Weapon {updatedSelection.WeaponId}, but it's already locked by a teammate!");
-            updatedSelection.WeaponId = -1;
-            selectionInvalid = true;
-        }
-
-        if (selectionInvalid)
-        {
-            Debug.LogError($"[LockInSelection] Player {clientId} has invalid selections and must reselect before locking in.");
-            PlayerSelections[index] = updatedSelection;
-            return;
-        }
-
-        // ✅ Add to team-based locks
-        teamLockedCharacters.Add(updatedSelection.CharacterId);
-        teamLockedWeapons.Add(updatedSelection.WeaponId);
-
-        // ✅ Remove from team's available lists
-        if (teamAvailableCharacters.Contains(updatedSelection.CharacterId))
-        {
-            teamAvailableCharacters.Remove(updatedSelection.CharacterId);
-            Debug.Log($"[Character Removed] Character {updatedSelection.CharacterId} removed from Team {teamIndex}'s available characters.");
-        }
-
-        if (teamAvailableWeapons.Contains(updatedSelection.WeaponId))
-        {
-            teamAvailableWeapons.Remove(updatedSelection.WeaponId);
-            Debug.Log($"[Weapon Removed] Weapon {updatedSelection.WeaponId} removed from Team {teamIndex}'s available weapons.");
-        }
-
-        // ✅ Finalize Lock-In
-        updatedStatus.IsLockedIn = true;
-        PlayerSelections[index] = updatedSelection;
-        PlayerStatuses[index] = updatedStatus;
-
-        Debug.Log($"[LockInSelection] Player {clientId} locked in with " +
-                  $"CharacterId: {updatedSelection.CharacterId}, WeaponId: {updatedSelection.WeaponId}");
-
-        // ✅ Sync with the server
-        HostSingleton.Instance.GameManager.NetworkServer.SetCharacter(clientId, updatedSelection.CharacterId);
-        HostSingleton.Instance.GameManager.NetworkServer.SetWeapon(clientId, updatedSelection.WeaponId);
-
-        // ✅ Check teammates to reset invalid selections (ONLY for the same team)
         for (int i = 0; i < PlayerSelections.Count; i++)
         {
-            if (i == index) continue; // Skip the locked-in player
-
             var otherSelection = PlayerSelections[i];
             var otherStatus = PlayerStatuses[i];
 
             if (otherStatus.TeamIndex != teamIndex) continue; // ✅ Only check players on the same team
             if (otherStatus.IsLockedIn) continue; // ✅ Skip already locked-in players
 
+            // Reset character if conflict exists
             if (otherSelection.CharacterId != -1 && teamLockedCharacters.Contains(otherSelection.CharacterId))
             {
                 Debug.Log($"[Conflict Reset] Player {otherSelection.ClientId} (Team {teamIndex}) had Character {otherSelection.CharacterId}, but it's now locked. Resetting...");
                 otherSelection.CharacterId = -1;
             }
 
+            // Reset weapon if conflict exists
             if (otherSelection.WeaponId != -1 && teamLockedWeapons.Contains(otherSelection.WeaponId))
             {
                 Debug.Log($"[Conflict Reset] Player {otherSelection.ClientId} (Team {teamIndex}) had Weapon {otherSelection.WeaponId}, but it's now locked. Resetting...");
@@ -700,10 +527,7 @@ public class SelectionNetwork : NetworkBehaviour
 
             PlayerSelections[i] = otherSelection;
         }
-
-        NotifySelectionChanged();
     }
-
 
     private int GetPlayerSelectionIndex(ulong clientId)
     {
@@ -725,12 +549,12 @@ public class SelectionNetwork : NetworkBehaviour
 
     public bool IsCharacterTaken(int characterId, int teamIndex)
     {
-        return lockedCharactersByTeam[teamIndex].Contains(characterId);
+        return teamData.ContainsKey(teamIndex) && teamData[teamIndex].LockedCharacters.Contains(characterId);
     }
 
     public bool IsWeaponTaken(int weaponId, int teamIndex)
     {
-        return lockedWeaponsByTeam[teamIndex].Contains(weaponId);
+        return teamData.ContainsKey(teamIndex) && teamData[teamIndex].LockedWeapons.Contains(weaponId);
     }
 
 
@@ -791,10 +615,13 @@ public class SelectionNetwork : NetworkBehaviour
 
     private List<int> GetAvailableCharacters(int teamIndex)
     {
+        if (!teamData.TryGetValue(teamIndex, out var team))
+            return new List<int>(); // Return empty list if team data doesn't exist
+
         List<int> availableCharacters = new List<int>();
         foreach (int characterId in characterDatabase.GetAllCharacterIds())
         {
-            if (!lockedCharactersByTeam.ContainsKey(teamIndex) || !lockedCharactersByTeam[teamIndex].Contains(characterId))
+            if (!team.LockedCharacters.Contains(characterId))
             {
                 availableCharacters.Add(characterId);
             }
@@ -804,10 +631,13 @@ public class SelectionNetwork : NetworkBehaviour
 
     private List<int> GetAvailableWeapons(int teamIndex)
     {
+        if (!teamData.TryGetValue(teamIndex, out var team))
+            return new List<int>(); // Return empty list if team data doesn't exist
+
         List<int> availableWeapons = new List<int>();
         foreach (int weaponId in weaponDatabase.GetAllWeaponIds())
         {
-            if (!lockedWeaponsByTeam.ContainsKey(teamIndex) || !lockedWeaponsByTeam[teamIndex].Contains(weaponId))
+            if (!team.LockedWeapons.Contains(weaponId))
             {
                 availableWeapons.Add(weaponId);
             }
