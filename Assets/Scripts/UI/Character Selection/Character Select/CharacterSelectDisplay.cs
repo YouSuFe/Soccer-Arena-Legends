@@ -177,6 +177,15 @@ public class CharacterSelectDisplay : NetworkBehaviour
             yield break;
         }
 
+        // Disable buttons for already locked characters
+        foreach (var button in characterButtons)
+        {
+            if (SelectionNetwork.Instance.IsCharacterTaken(button.Character.Id, localPlayerTeam))
+            {
+                button.SetDisabled();
+            }
+        }
+
         // Filter players by team
         List<PlayerSelectionState> teamSelections = new List<PlayerSelectionState>();
         List<PlayerStatusState> teamStatuses = new List<PlayerStatusState>();

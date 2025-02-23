@@ -172,6 +172,15 @@ public class WeaponSelectDisplay : NetworkBehaviour
             yield break;
         }
 
+        // Disable buttons for already locked characters
+        foreach (var button in weaponButtons)
+        {
+            if (SelectionNetwork.Instance.IsCharacterTaken(button.Weapon.Id, localPlayerTeam))
+            {
+                button.SetDisabled();
+            }
+        }
+
         // Filter players by team
         List<PlayerSelectionState> teamSelections = new List<PlayerSelectionState>();
         List<PlayerStatusState> teamStatuses = new List<PlayerStatusState>();
