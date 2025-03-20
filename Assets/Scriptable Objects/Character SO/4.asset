@@ -16,3 +16,4 @@ MonoBehaviour:
   displayName: Four
   icon: {fileID: 21300000, guid: a91e6ddf8f5244a2b89f6b560d57054d, type: 3}
   introPrefab: {fileID: 5454596134875775234, guid: c50cf1e70da734d30b99cc9511713672, type: 3}
+  gameplayPrefab: {fileID: 4551682215654862057, guid: d11355934e33a46e7a3aa2278ca2b49d, type: 3}

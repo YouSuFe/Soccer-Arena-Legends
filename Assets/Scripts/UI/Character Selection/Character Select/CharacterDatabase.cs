@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "New Character Database", menuName = "Character Selection/Characters/Database")]
+//[CreateAssetMenu(fileName = "New Character Database", menuName = "Character Selection/Characters/Database")]
 public class CharacterDatabase : ScriptableObject
 {
     [SerializeField] private Character[] characters = new Character[0];

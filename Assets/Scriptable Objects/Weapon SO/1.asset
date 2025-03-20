@@ -16,3 +16,4 @@ MonoBehaviour:
   displayName: Weapon One
   icon: {fileID: 21300000, guid: da974c4d40533154a83d57ca90e34bb8, type: 3}
   modelPrefab: {fileID: 2836394920414219592, guid: 364d02a1b64854b0eb6b6b7d1827100f, type: 3}
+  gameplayPrefab: {fileID: 1962091245426479924, guid: 78c45ecf077a749acb652d094c129c6f, type: 3}

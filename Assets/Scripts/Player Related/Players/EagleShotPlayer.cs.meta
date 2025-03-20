@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: ee4f9bb5544084dbdbf71fad357e39fb
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - baseStats: {instanceID: 0}
+  - meleeWeaponFactory: {instanceID: 0}
+  - ballHolder: {instanceID: 0}
+  - playerCamera: {instanceID: 0}
+  - weaponHolder: {instanceID: 0}
+  - projectileHolder: {instanceID: 0}
+  executionOrder: 365
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

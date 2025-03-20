@@ -16,3 +16,4 @@ MonoBehaviour:
   displayName: Two
   icon: {fileID: 21300000, guid: dcb19cdd6c11c4adaa58892f162ba1be, type: 3}
   introPrefab: {fileID: 2815973395356816752, guid: 780586bfdec584e04ab6ff8806cc09d9, type: 3}
+  gameplayPrefab: {fileID: 4551682215654862057, guid: d11355934e33a46e7a3aa2278ca2b49d, type: 3}
