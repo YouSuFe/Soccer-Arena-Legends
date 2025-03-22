@@ -377,6 +377,11 @@ MonoBehaviour:
   m_LightCookieSize: {x: 1, y: 1}
   m_LightCookieOffset: {x: 0, y: 0}
   m_SoftShadowQuality: 1
+--- !u!4 &443229016 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1069582925596624212, guid: 47f54c43f01824eaa9364dc880b04c5a, type: 3}
+  m_PrefabInstance: {fileID: 408441044608714484}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &832575517
 GameObject:
   m_ObjectHideFlags: 0
@@ -887,7 +892,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4845276930943762971, guid: 2da3dcc22749e7f4280737786d898334, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0.000030517578
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4845637959249703711, guid: 2da3dcc22749e7f4280737786d898334, type: 3}
       propertyPath: m_AnchorMax.y
@@ -1218,6 +1223,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Lock In
       objectReference: {fileID: 0}
+    - target: {fileID: 8732752724991411149, guid: 47f54c43f01824eaa9364dc880b04c5a, type: 3}
+      propertyPath: previewSpawnPoint
+      value: 
+      objectReference: {fileID: 443229016}
     - target: {fileID: 8845986138494528240, guid: 47f54c43f01824eaa9364dc880b04c5a, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0

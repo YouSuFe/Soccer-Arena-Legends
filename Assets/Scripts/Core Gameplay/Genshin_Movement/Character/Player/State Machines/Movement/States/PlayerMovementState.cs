@@ -90,12 +90,11 @@ public class PlayerMovementState : IState
 
     public virtual void HandleInput()
     {
-        //// Check if players in InGame state, if not then block movement
-        //if (!stateMachine.PlayerController.Player.CheckPlayerInGameState())
-        //{
-        //    ClearMovementInput();
-        //    return;
-        //}
+        if(!stateMachine.PlayerController.Player.IsPlayerAllowedToMove())
+        {
+            ClearMovementInput();
+            return;
+        }
 
         ReadMovementInput();
     }
@@ -401,7 +400,10 @@ public class PlayerMovementState : IState
 
     protected bool CanStartSprinting()
     {
-        return stateMachine.PlayerController.Player.PlayerStamina > 20;
+        bool canStartSprinting = stateMachine.PlayerController.Player.IsPlayerAllowedToMove() &&
+            stateMachine.PlayerController.Player.PlayerStamina > 20;
+
+        return canStartSprinting;
     }
 
     protected bool CanKeepSprinting()

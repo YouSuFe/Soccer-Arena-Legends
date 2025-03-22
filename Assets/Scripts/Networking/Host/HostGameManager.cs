@@ -116,6 +116,7 @@ public class HostGameManager : IDisposable
     {
         try
         {
+            Debug.Log($"[Server] Handle Client Left from HostGameManager with client {authId}");
             await LobbyService.Instance.RemovePlayerAsync(lobbyId, authId);
         }
         catch (LobbyServiceException e)

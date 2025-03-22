@@ -143,9 +143,9 @@ public class PlayerGroundedState : PlayerMovementState
         // ToDo: Buraya bir Weapon Skill kullanma durumu ekle sonra state değiştir içinde.
         // Reusable Data içinde ENUM oluştur. isDashing, isPulling tarzı durumlarda switch ile Q' de baktığımız skill durumuna atlarız
 
-        inputReader.OnStartingSprint += InputManager_OnStartingSprint;
-
         inputReader.OnJumpEvent += InputManager_OnJump;
+
+        inputReader.OnStartingSprint += InputManager_OnStartingSprint;
     }
 
 

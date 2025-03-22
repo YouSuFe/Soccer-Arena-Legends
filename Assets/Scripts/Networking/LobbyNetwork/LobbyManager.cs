@@ -104,6 +104,7 @@ public class LobbyManager : MonoBehaviour
         }
     }
 
+
     private void HandleLobbyHeartbeat()
     {
         if (joinedLobby == null) return;
@@ -495,6 +496,32 @@ public class LobbyManager : MonoBehaviour
     public Lobby GetJoinedLobby()
     {
         return joinedLobby;
+    }
+
+    public int GetCurrentPlayerCount()
+    {
+        return joinedLobby?.Players?.Count ?? 0;
+    }
+
+    public int GetMaxPlayersInLobby()
+    {
+        Lobby lobby = GetJoinedLobby();
+
+        if (lobby != null && lobby.Data != null && lobby.Data.ContainsKey(KEY_MAX_PLAYERS))
+        {
+            string value = lobby.Data[KEY_MAX_PLAYERS].Value;
+            if (int.TryParse(value, out int maxPlayers))
+            {
+                return maxPlayers;
+            }
+            else
+            {
+                Debug.LogWarning($"[LobbyManager] Failed to parse MaxPlayers. Value: {value}");
+            }
+        }
+
+        Debug.LogWarning("[LobbyManager] No valid lobby or missing MaxPlayers key. Returning fallback value 2.");
+        return 2; // Default fallback value
     }
 
     public bool IsInLobby()

@@ -8,6 +8,8 @@ using UnityEngine.SceneManagement;
 
 public class NetworkServer : IDisposable
 {
+    private const string Game_Scene_Name = "Game";
+    private const string Menu_Scene_Name = "Menu";
     private NetworkManager networkManager;
 
     private NetworkObject playerPrefab;
@@ -32,6 +34,7 @@ public class NetworkServer : IDisposable
         networkManager.OnServerStarted += OnNetworkReady;
     }
 
+    // ToDo: Delete this, this is for dedicated server
     public bool OpenConnection(string ip, int port)
     {
         UnityTransport transport = networkManager.gameObject.GetComponent<UnityTransport>();
@@ -67,7 +70,7 @@ public class NetworkServer : IDisposable
         }
         catch
         {
-            Debug.LogError("Failed to deserialize user data payload.");
+            Debug.LogError("[Payload] Failed to deserialize user data payload.");
             response.Approved = false; // Reject the connection if payload is invalid
             return;
         }
@@ -203,7 +206,16 @@ public class NetworkServer : IDisposable
 
         Debug.Log("All players locked in. Starting the game...");
 
-        NetworkManager.Singleton.SceneManager.LoadScene("Gameplay", LoadSceneMode.Single);
+        NetworkManager.Singleton.SceneManager.LoadScene(Game_Scene_Name, LoadSceneMode.Single);
+    }
+
+    public void EndGame()
+    {
+        gameHasStarted = false;
+
+        Debug.Log("The game is ended. Making all players left!");
+
+        NetworkManager.Singleton.SceneManager.LoadScene(Menu_Scene_Name, LoadSceneMode.Single);
     }
 
 

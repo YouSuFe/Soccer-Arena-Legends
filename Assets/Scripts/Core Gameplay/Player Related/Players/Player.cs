@@ -42,8 +42,7 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
 
     [Header("Game State Settings")]
     //[SerializeField] private GameStateEventChannel gameStateEventChannel;
-    //[SerializeField] private GameplayManager.GameState CurrentGameState;
-    protected bool isPlayerInGameState = false;
+    [SerializeField] private GameState CurrentGameState = GameState.WaitingForPlayers;
 
     [Header("Player HUD")]
     private PlayerUIManager playerUIManager;
@@ -208,10 +207,20 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
         InputReader.OnHeavyAttackPerformed += InputManager_OnHeavyAttack;
         InputReader.OnProjectilePerformed += InputManager_OnProjectile;
 
+        if(MultiplayerGameStateManager.Instance != null)
+        {
+            Debug.Log($"Multiplayer Server Game Manager is not null and subscribing the event");
+            MultiplayerGameStateManager.Instance.OnGameStateChanged += GameStateManager_OnGameStateChanged;
+        }
         //if (gameStateEventChannel != null)
         //{
         //    gameStateEventChannel.OnEventRaised += HandleGameStateChanged;
         //}
+    }
+
+    private void GameStateManager_OnGameStateChanged(GameState newState)
+    {
+        this.CurrentGameState = newState;
     }
 
     private void UnSubscribeEvents()
@@ -270,6 +279,8 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
 
         if (!IsOwner) return; // Ensure only the owner triggers the skill, for double check
 
+        if (!IsPlayerAllowedToMove()) return;
+
         if (skillCooldownTimer <= 0 && activeBall != null)
         {
             Debug.Log("Requesting server to perform ball skill.");
@@ -281,6 +292,8 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
         }
     }
 
+
+
     private void InputManager_OnWeaponSkillUsed()
     {
 
@@ -290,22 +303,31 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
         //{
         //    return;
         //}
+
+        if (!IsPlayerAllowedToMove()) return;
+
         Debug.Log("Player Weapon Skill is Called from " + name);
         PerformPlayerWeaponSkill();
     }
 
     private void InputManager_OnRegularAttack()
     {
+        if (!IsPlayerAllowedToMove()) return;
+
         PerformRegularAttack();
     }
 
     private void InputManager_OnHeavyAttack()
     {
+        if (!IsPlayerAllowedToMove()) return;
+
         PerformHeavyAttack();
     }
 
     private void InputManager_OnProjectile()
     {
+        if (!IsPlayerAllowedToMove()) return;
+
         Debug.Log("Projectile is called from " + name + "if it can shoot : " + CanShoot);
         if(CanShoot)
         {
@@ -612,9 +634,14 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
         CanShoot = true;
     }
 
-    public bool CheckPlayerInGameState()
+    public GameState GetPlayerCurrentGameState()
     {
-        return isPlayerInGameState;
+        return CurrentGameState;
+    }
+
+    public bool IsPlayerAllowedToMove()
+    {
+        return (CurrentGameState != GameState.InGame || CurrentGameState != GameState.WaitingForPlayers);
     }
 
     public void DistributeStatPoint(StatType statType)

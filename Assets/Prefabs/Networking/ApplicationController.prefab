@@ -45,4 +45,4 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   clientPrefab: {fileID: 7849539188892665091, guid: 2091bbb9267e94b94a821fc6b607c417, type: 3}
-  serverPrefab: {fileID: 3026635925485794937, guid: 697376be15aef4f0c933f37002fe39bf, type: 3}
+  hostPrefab: {fileID: 7714893835096025041, guid: 4a2254b0d595c46048ee85c587f0ce10, type: 3}

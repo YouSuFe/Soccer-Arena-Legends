@@ -47,12 +47,12 @@ public class SelectionNetwork : NetworkBehaviour
     // If we want to start the game when max player is reached, we can use this.
     [SerializeField] private int maxPlayers = 4;
     [SerializeField] private float selectionTimeAmount = 90f;
+    [SerializeField] private float secondPhaseTime = 15f;
 
     private Dictionary<int, TeamSelectionData> teamData = new();
 
-
-
     private Coroutine timerCoroutine;
+    private Coroutine secondTimerCoroutine;
 
     /// <summary>
     /// ✅ Called from external third-party software. This method is STATIC.
@@ -115,7 +115,7 @@ public class SelectionNetwork : NetworkBehaviour
             Destroy(gameObject);
             return;
         }
-
+        Debug.LogError("Here is this, can all clients see this mf.");
         Instance = this;
 
         // Initialize NetworkLists for players' selection and status
@@ -286,6 +286,32 @@ public class SelectionNetwork : NetworkBehaviour
 
         Debug.Log("Timer Expired! Forcing Lock-In.");
         ForceLockInAllPlayers();
+
+        Debug.Log("Ahahahaa look at that we are inside here");
+
+        // Set the selectionTimer value for all players before starting second phase
+        StartSecondPhaseTimer();
+    }
+
+    // Second Timer (Pre-Game Phase)
+    private void StartSecondPhaseTimer()
+    {
+        selectionTimer.Value = secondPhaseTime; // Assign the selection timer value for second phase of selection
+
+        if (secondTimerCoroutine != null) { StopCoroutine(secondTimerCoroutine); }
+        secondTimerCoroutine = StartCoroutine(SecondPhaseTimerRoutine());
+    }
+
+    private IEnumerator SecondPhaseTimerRoutine()
+    {
+        while (selectionTimer.Value > 0)
+        {
+            yield return new WaitForSeconds(1f);
+            selectionTimer.Value -= 1f;
+        }
+
+        Debug.Log("Second Phase Timer Expired! Starting Game.");
+        HostSingleton.Instance.GameManager.NetworkServer.StartGame();
     }
 
     [ServerRpc(RequireOwnership = false)]
@@ -303,6 +329,7 @@ public class SelectionNetwork : NetworkBehaviour
             teamLocks.Add(new TeamLockData(teamIndex, team.LockedCharacters, team.LockedWeapons));
         }
 
+        Debug.Log("Server : Try to sync team lock datas to players");
         SyncTeamLocksToClientClientRpc(teamLocks.ToArray(), clientId);
     }
 
