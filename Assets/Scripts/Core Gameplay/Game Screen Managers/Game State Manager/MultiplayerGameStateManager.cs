@@ -8,7 +8,8 @@ public enum GameState
     WaitingForPlayers,
     PreGame,
     InGame,
-    PostGame
+    PostGame,
+    EndGame
 }
 
 public class MultiplayerGameStateManager : NetworkBehaviour
@@ -52,6 +53,9 @@ public class MultiplayerGameStateManager : NetworkBehaviour
                 break;
             case GameState.PostGame:
                 HandlePostGame();
+                break;
+            case GameState.EndGame:
+                HandleEndGame();
                 break;
         }
     }
@@ -133,10 +137,18 @@ public class MultiplayerGameStateManager : NetworkBehaviour
 
     private void HandleInGame()
     {
-        // Begin gameplay
+        if(TimerManager.Instance.GetGameDurationValue() <= 0)
+        {
+            SetGameState(GameState.EndGame);
+        }
     }
 
     private void HandlePostGame()
+    {
+        // Show post-game stats, etc.
+    }
+
+    private void HandleEndGame()
     {
         // Show post-game stats, etc.
     }

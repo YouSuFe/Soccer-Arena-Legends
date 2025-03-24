@@ -207,21 +207,18 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
         InputReader.OnHeavyAttackPerformed += InputManager_OnHeavyAttack;
         InputReader.OnProjectilePerformed += InputManager_OnProjectile;
 
+
+        InputReader.OnStatisticTabOpen += InputReader_OnStatisticTabVisibility;
+        InputReader.OnStatisticTabClose += InputReader_OnStatisticTabVisibility;
+
         if(MultiplayerGameStateManager.Instance != null)
         {
             Debug.Log($"Multiplayer Server Game Manager is not null and subscribing the event");
             MultiplayerGameStateManager.Instance.OnGameStateChanged += GameStateManager_OnGameStateChanged;
         }
-        //if (gameStateEventChannel != null)
-        //{
-        //    gameStateEventChannel.OnEventRaised += HandleGameStateChanged;
-        //}
     }
 
-    private void GameStateManager_OnGameStateChanged(GameState newState)
-    {
-        this.CurrentGameState = newState;
-    }
+
 
     private void UnSubscribeEvents()
     {
@@ -233,33 +230,15 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
         InputReader.OnHeavyAttackPerformed -= InputManager_OnHeavyAttack;
         InputReader.OnProjectilePerformed -= InputManager_OnProjectile;
 
-        //if (gameStateEventChannel != null)
-        //{
-        //    gameStateEventChannel.OnEventRaised -= HandleGameStateChanged;
-        //}
+        InputReader.OnStatisticTabOpen -= InputReader_OnStatisticTabVisibility;
+        InputReader.OnStatisticTabClose -= InputReader_OnStatisticTabVisibility;
+
+        if (MultiplayerGameStateManager.Instance != null)
+        {
+            Debug.Log($"Multiplayer Server Game Manager is not null and unsubscribing the event");
+            MultiplayerGameStateManager.Instance.OnGameStateChanged -= GameStateManager_OnGameStateChanged;
+        }
     }
-
-    #endregion
-
-    #region Event Channels Method
-
-    private void HandleGameStateChanged()
-    {
-        //Debug.LogError("Current State = " + CurrentGameState);
-        //CurrentGameState = newState;
-        //Debug.LogError("Current State = AFter " + CurrentGameState);
-
-        //if (CurrentGameState != GameplayManager.GameState.InGame)
-        //{
-        //    isPlayerInGameState = false;
-        //}
-        //else
-        //{
-        //    isPlayerInGameState = true;
-        //}
-    }
-
-
 
     #endregion
 
@@ -269,17 +248,9 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
     {
         Debug.Log("InputManager_OnPlayerSkillUsed triggered.");
 
-
-        //// ToDo: Change this logic with better approach,
-        //// move it to the 
-        //if (!GameplayManager.Instance.CanPlayersMove())
-        //{
-        //    return;
-        //}
-
         if (!IsOwner) return; // Ensure only the owner triggers the skill, for double check
 
-        if (!IsPlayerAllowedToMove()) return;
+        if (!IsPlayerAllowedToMoveOrAction()) return;
 
         if (skillCooldownTimer <= 0 && activeBall != null)
         {
@@ -297,14 +268,7 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
     private void InputManager_OnWeaponSkillUsed()
     {
 
-        // ToDo: Change this logic with better approach,
-        // move it to the 
-        //if (!GameplayManager.Instance.CanPlayersMove())
-        //{
-        //    return;
-        //}
-
-        if (!IsPlayerAllowedToMove()) return;
+        if (!IsPlayerAllowedToMoveOrAction()) return;
 
         Debug.Log("Player Weapon Skill is Called from " + name);
         PerformPlayerWeaponSkill();
@@ -326,7 +290,7 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
 
     private void InputManager_OnProjectile()
     {
-        if (!IsPlayerAllowedToMove()) return;
+        if (!IsPlayerAllowedToMoveOrAction()) return;
 
         Debug.Log("Projectile is called from " + name + "if it can shoot : " + CanShoot);
         if(CanShoot)
@@ -334,6 +298,16 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
             Debug.Log("Shooting the Projectile from " + name);
             ShootBall();
         }
+    }
+
+    private void InputReader_OnStatisticTabVisibility(bool value)
+    {
+        ScoreboardManager.Instance.AdjustScoreboardVisibility(value);
+    }
+
+    private void GameStateManager_OnGameStateChanged(GameState newState)
+    {
+        this.CurrentGameState = newState;
     }
 
     #endregion
@@ -641,7 +615,12 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
 
     public bool IsPlayerAllowedToMove()
     {
-        return (CurrentGameState != GameState.InGame || CurrentGameState != GameState.WaitingForPlayers);
+        return (CurrentGameState == GameState.InGame || CurrentGameState == GameState.WaitingForPlayers || CurrentGameState == GameState.PostGame);
+    }
+
+    public bool IsPlayerAllowedToMoveOrAction()
+    {
+        return (CurrentGameState == GameState.InGame || CurrentGameState == GameState.WaitingForPlayers);
     }
 
     public void DistributeStatPoint(StatType statType)

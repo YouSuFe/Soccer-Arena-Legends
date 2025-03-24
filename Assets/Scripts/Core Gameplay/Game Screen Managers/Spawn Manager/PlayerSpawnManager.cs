@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Unity.Cinemachine;
 using Unity.Netcode;
@@ -106,6 +107,8 @@ public class PlayerSpawnManager : NetworkBehaviour
 
         clientUserData.Remove(clientId);
     }
+
+
     #endregion
 
     #region Player Spawning
@@ -325,5 +328,18 @@ public class PlayerSpawnManager : NetworkBehaviour
         }
     }
 
+    #endregion
+
+    #region Get Session User Data
+    public UserData GetUserData(ulong clientId)
+    {
+        if(clientUserData.TryGetValue(clientId, out UserData userData))
+        {
+            return userData;
+        }
+
+        Debug.LogWarning($"[Server] could not found {clientId} inside Dictionary.");
+        return null;
+    }
     #endregion
 }

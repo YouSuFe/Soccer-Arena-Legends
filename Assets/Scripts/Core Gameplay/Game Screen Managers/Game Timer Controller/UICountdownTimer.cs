@@ -3,15 +3,16 @@ using UnityEngine;
 
 public class UICountdownTimer : MonoBehaviour
 {
-    public TextMeshProUGUI countdownText;
-    public GameObject startCountdownObject;
-    public Color finalSecondsColor = Color.red;
+    [SerializeField] private TextMeshProUGUI countdownText;
+    [SerializeField] private GameObject startCountdownObject;
+    [SerializeField] private Color defaultColor;
+    [SerializeField] private Color finalSecondsColor = Color.red;
 
     private Color originalColor;
 
     private void Awake()
     {
-        originalColor = countdownText.color;
+        originalColor = defaultColor;
     }
 
     private void OnEnable()
@@ -73,7 +74,7 @@ public class UICountdownTimer : MonoBehaviour
         else
         {
             countdownText.text = "GO!";
-            countdownText.color = Color.green;
+            countdownText.color = originalColor;
             Invoke(nameof(FinishCountdown), 1f);
         }
     }
