@@ -19,15 +19,57 @@ public class GameManager : NetworkBehaviour
 
     private void Awake()
     {
-        Instance = this;
+        if (Instance != null)
+        {
+            Destroy(gameObject);
+        }
+        else
+        {
+            Instance = this;
+        }
+
+        CursorController.LockCursor();
     }
 
     public override void OnNetworkSpawn()
     {
         if (!IsServer) return;
+        Debug.Log("[Server:] Game Manager is initialized on On Network Spawn");
 
+        if(IsHost)
+        {
+            UserData userData = HostSingleton.Instance.GameManager.NetworkServer.GetUserDataByClientId(NetworkManager.Singleton.LocalClientId);
+            if (userData == null)
+            {
+                Debug.LogError($"[GameManager] No UserData found for client {NetworkManager.Singleton.LocalClientId}");
+                return;
+            }
+
+            string authId = userData.userAuthId;
+
+            // First time? Create server-owned stat object
+            if (!persistentStats.ContainsKey(authId))
+            {
+                GameObject statObj = Instantiate(playerStatePrefab);
+                NetworkObject netObj = statObj.GetComponent<NetworkObject>();
+                netObj.Spawn(); // server-owned
+
+                var statSync = statObj.GetComponent<PlayerStatSync>();
+                statSync.Initialize(userData.userName);
+                persistentStats[authId] = statSync;
+            }
+
+            // Map current session to persistent identity
+            clientToUserMap[NetworkManager.Singleton.LocalClientId] = authId;
+        }
         NetworkManager.OnClientConnectedCallback += HandleClientConnected;
         NetworkManager.OnClientDisconnectCallback += HandleClientDisconnected;
+    }
+
+    private void Start()
+    {
+        if (!IsServer) return;
+        Debug.Log("[Server:] Game Manager is initialized on Start");
     }
 
     public override void OnNetworkDespawn()
@@ -36,6 +78,7 @@ public class GameManager : NetworkBehaviour
 
         NetworkManager.OnClientConnectedCallback -= HandleClientConnected;
         NetworkManager.OnClientDisconnectCallback -= HandleClientDisconnected;
+
     }
 
     private void HandleClientConnected(ulong clientId)
@@ -151,5 +194,12 @@ public class GameManager : NetworkBehaviour
         }
         persistentStats.Clear();
         clientToUserMap.Clear();
+    }
+
+    public override void OnDestroy()
+    {
+        base.OnDestroy();
+        CleanupStats();
+        CursorController.UnlockCursor();
     }
 }

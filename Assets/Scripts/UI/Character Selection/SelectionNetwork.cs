@@ -70,6 +70,13 @@ public class SelectionNetwork : NetworkBehaviour
         Instance.ExecuteForceLockIn();
     }
 
+    [Command] // Required by third-party software
+    public static void StartTheGame()
+    {
+        // ✅ Calls the instance method that contains actual logic
+        HostSingleton.Instance.GameManager.NetworkServer.StartGame();
+    }
+
     /// <summary>
     /// 🚀 The actual lock-in logic. This method is NOT static, so it can modify NetworkLists.
     /// </summary>

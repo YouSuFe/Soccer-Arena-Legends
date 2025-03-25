@@ -15,14 +15,10 @@ public class UICountdownTimer : MonoBehaviour
         originalColor = defaultColor;
     }
 
-    private void OnEnable()
-    {
-        TrySubscribeToPrepTimer();
-    }
-
     private void Start()
     {
         TrySubscribeToPrepTimer();
+
 
         // Initialize immediately
         if (TimerManager.Instance != null)
@@ -30,6 +26,9 @@ public class UICountdownTimer : MonoBehaviour
             float time = TimerManager.Instance.GetPrepDurationValue();
             UpdatePrepUI(time);
         }
+
+        // Disable object after subscription and initialization happened.
+        startCountdownObject.SetActive(false); // Start hidden
     }
 
     private void OnDisable()
@@ -39,6 +38,18 @@ public class UICountdownTimer : MonoBehaviour
         {
             Debug.Log($"On Disable from {name} Countdown Timer. Subscribtion is happened!");
             TimerManager.Instance.PrepNetworkDuration.OnValueChanged -= HandlePrepValueChanged;
+        }
+
+        if (MultiplayerGameStateManager.Instance != null)
+        {
+            Debug.Log($"Subscribe from {name} MultiplayerGameStateManager. Subscribtion is happened!");
+            MultiplayerGameStateManager.Instance.OnGameStateChanged += HandleGameStateChanged;
+
+        }
+        else
+        {
+            Debug.LogWarning($"Subscribe from {name} MultiplayerGameStateManager. Subscribtion is not happened!");
+
         }
     }
 
@@ -50,8 +61,37 @@ public class UICountdownTimer : MonoBehaviour
         {
             Debug.Log($"Subscribe from {name} Countdown Timer. Subscribtion is happened!");
 
-            TimerManager.Instance.PrepNetworkDuration.OnValueChanged -= HandlePrepValueChanged;
             TimerManager.Instance.PrepNetworkDuration.OnValueChanged += HandlePrepValueChanged;
+        }
+        else
+        {
+            Debug.LogWarning($"Subscribe from {name} Countdown Timer. Timer MAnager is null");
+
+        }
+
+        if (MultiplayerGameStateManager.Instance != null )
+        {
+            Debug.Log($"Subscribe from {name} MultiplayerGameStateManager. Subscribtion is happened!");
+            MultiplayerGameStateManager.Instance.OnGameStateChanged += HandleGameStateChanged;
+
+        }
+        else
+        {
+            Debug.LogWarning($"Subscribe from {name} MultiplayerGameStateManager. Subscribtion is not happened!");
+
+        }
+    }
+
+    private void HandleGameStateChanged(GameState newState)
+    {
+        if (newState == GameState.PreGame)
+        {
+            startCountdownObject.SetActive(true); // Show countdown
+            UpdatePrepUI(TimerManager.Instance.GetPrepDurationValue()); // Force update immediately
+        }
+        else
+        {
+            startCountdownObject.SetActive(false); // Hide when no longer in PreGame
         }
     }
 
@@ -64,9 +104,6 @@ public class UICountdownTimer : MonoBehaviour
     {
         if (timeRemaining > 0)
         {
-            if (!startCountdownObject.activeSelf)
-                startCountdownObject.SetActive(true);
-
             int displayTime = Mathf.CeilToInt(timeRemaining);
             countdownText.text = displayTime.ToString();
             countdownText.color = displayTime <= 3 ? finalSecondsColor : originalColor;

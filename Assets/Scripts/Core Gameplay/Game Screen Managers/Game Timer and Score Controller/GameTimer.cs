@@ -5,11 +5,6 @@ public class GameTimer : MonoBehaviour
 {
     [SerializeField] private TextMeshProUGUI gameTimerText;
 
-    private void OnEnable()
-    {
-        TrySubscribeToGameTimer();
-    }
-
     private void Start()
     {
         TrySubscribeToGameTimer();
@@ -33,7 +28,7 @@ public class GameTimer : MonoBehaviour
     {
         if (TimerManager.Instance != null)
         {
-            TimerManager.Instance.GameNetworkDuration.OnValueChanged -= HandleGameValueChanged;
+            Debug.Log($"Subscribe from {name} MultiplayerGameStateManager. Subscribtion is happened!");
             TimerManager.Instance.GameNetworkDuration.OnValueChanged += HandleGameValueChanged;
         }
     }

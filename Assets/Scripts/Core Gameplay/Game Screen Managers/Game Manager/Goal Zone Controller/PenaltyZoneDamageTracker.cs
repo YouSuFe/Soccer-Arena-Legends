@@ -4,16 +4,23 @@ using UnityEngine;
 
 /// <summary>
 /// Triggers damage over time to enemy players that enter the penalty zone.
-/// Stops damage when they leave or die. Only the server runs this logic.
+/// Stops damage when they leave or die. Handles cleanup when game state changes.
+/// Only runs on the server.
 /// </summary>
 public class PenaltyZoneDamageTracker : NetworkBehaviour
 {
+    #region === Zone Configuration ===
+
     [Header("Zone Configuration")]
     [Tooltip("This zone belongs to a team. Only players from the opposing team will take damage.")]
     [SerializeField] private Team owningTeam;
 
     [Tooltip("Time (in seconds) between each damage tick.")]
     [SerializeField] private float damageIntervalSeconds = 0.7f;
+
+    #endregion
+
+    #region === Zone Tracking ===
 
     /// <summary>
     /// Tracks all enemy players currently inside this zone.
@@ -27,53 +34,129 @@ public class PenaltyZoneDamageTracker : NetworkBehaviour
     /// </summary>
     private readonly List<ulong> playersToRemove = new();
 
-    private void Update()
+    private readonly List<ulong> tempPlayerKeys = new(); // Declare at the top of your class to avoid GC
+
+    #endregion
+
+    #region === Network Lifecycle ===
+
+    public override void OnNetworkSpawn()
     {
         if (!IsServer) return;
 
+        MultiplayerGameStateManager.Instance.OnGameStateChanged += OnGameStateChanged;
+    }
+
+    public override void OnNetworkDespawn()
+    {
+        if (!IsServer) return;
+
+        if (MultiplayerGameStateManager.Instance != null)
+            MultiplayerGameStateManager.Instance.OnGameStateChanged -= OnGameStateChanged;
+    }
+
+    #endregion
+
+    #region === Game State Handling ===
+
+    /// <summary>
+    /// Called when the game state changes. Clears zone data if game is not in an active damage phase.
+    /// </summary>
+    private void OnGameStateChanged(GameState newState)
+    {
+        if (newState == GameState.PreGame || newState == GameState.EndGame)
+        {
+            ForceClearPenaltyZone();
+        }
+    }
+
+    /// <summary>
+    /// Clears all players from the zone and unsubscribes from their death events.
+    /// Useful during game state transitions or resets.
+    /// </summary>
+    private void ForceClearPenaltyZone()
+    {
+        foreach (var kvp in playersInsideZone)
+        {
+            var player = kvp.Value.PlayerInstance;
+            if (player != null)
+            {
+                player.OnDeath -= kvp.Value.OnPlayerDeathCallback;
+            }
+        }
+
+        playersInsideZone.Clear();
+        playersToRemove.Clear(); // Ensure clean state
+    }
+
+    #endregion
+
+    #region === Zone Logic ===
+
+    private void Update()
+    {
+        if (!IsServer) return;
+        if (MultiplayerGameStateManager.Instance.GetCurrentState() != GameState.InGame) return;
+
         float deltaTime = Time.deltaTime;
         playersToRemove.Clear();
+        tempPlayerKeys.Clear();
+        tempPlayerKeys.AddRange(playersInsideZone.Keys);
 
-        foreach (var entry in playersInsideZone)
+        foreach (ulong clientId in tempPlayerKeys)
         {
-            ulong clientId = entry.Key;
-            PlayerZoneTimerData zoneData = entry.Value;
+            if (!playersInsideZone.TryGetValue(clientId, out var zoneData))
+            {
+                Debug.LogWarning($"[PenaltyZone] Client {clientId} missing from dictionary.");
+                continue;
+            }
 
             if (zoneData.PlayerInstance == null)
             {
+                Debug.LogWarning($"[PenaltyZone] Client {clientId}'s PlayerInstance is null. Scheduling removal.");
                 playersToRemove.Add(clientId);
                 continue;
             }
 
+            // Tick timer
             zoneData.RemainingDamageTime -= deltaTime;
 
             if (zoneData.RemainingDamageTime <= 0f)
             {
-                UserData userData = PlayerSpawnManager.Instance.GetUserData(clientId);
+                var userData = PlayerSpawnManager.Instance.GetUserData(clientId);
                 if (userData == null || (Team)userData.teamIndex == owningTeam)
                 {
+                    Debug.Log($"[PenaltyZone] Client {clientId} no longer valid (team or data). Removing.");
                     playersToRemove.Add(clientId);
                     continue;
                 }
 
                 int damageAmount = zoneData.PlayerInstance.ActiveBall != null ? 500 : 20;
+                Debug.Log($"[PenaltyZone] Client {clientId} takes damage: {damageAmount}");
 
                 zoneData.PlayerInstance.TakeDamage(damageAmount);
-
-                // 🔥 Play effect on the damaged player only
                 PlayPenaltyEffectClientRpc(clientId, zoneData.PlayerInstance.transform.position);
 
                 zoneData.RemainingDamageTime = damageIntervalSeconds;
-                playersInsideZone[clientId] = zoneData; // Update the struct back
             }
+
+            // ✅ Always assign updated struct back
+            playersInsideZone[clientId] = zoneData;
         }
 
-        // Cleanup removed players (dead or invalid)
         for (int i = 0; i < playersToRemove.Count; i++)
         {
             playersInsideZone.Remove(playersToRemove[i]);
+            Debug.Log($"[PenaltyZone] Removed client {playersToRemove[i]} from zone.");
         }
+
+        tempPlayerKeys.Clear();
     }
+
+
+    #endregion
+
+    #region === Trigger Handlers ===
 
     private void OnTriggerEnter(Collider other)
     {
@@ -88,27 +171,28 @@ public class PenaltyZoneDamageTracker : NetworkBehaviour
         var userData = PlayerSpawnManager.Instance.GetUserData(clientId);
         if (userData == null || (Team)userData.teamIndex == owningTeam) return;
 
-        // Create death callback bound to this specific client
         void OnPlayerDeath()
         {
             if (playersInsideZone.ContainsKey(clientId))
             {
                 playersInsideZone.Remove(clientId);
                 player.OnDeath -= OnPlayerDeath;
+                Debug.Log($"[PenaltyZone] Player {clientId} died and was removed from zone.");
             }
         }
 
-        // Subscribe to death
         player.OnDeath += OnPlayerDeath;
 
-        // Track the player
         playersInsideZone.Add(clientId, new PlayerZoneTimerData
         {
             PlayerInstance = player,
-            RemainingDamageTime = 0f, // Trigger immediate damage
+            RemainingDamageTime = 0f,
             OnPlayerDeathCallback = OnPlayerDeath
         });
+
+        Debug.Log($"[PenaltyZone] Client {clientId} ENTERED the zone.");
     }
+
 
     private void OnTriggerExit(Collider other)
     {
@@ -122,8 +206,33 @@ public class PenaltyZoneDamageTracker : NetworkBehaviour
         {
             player.OnDeath -= zoneData.OnPlayerDeathCallback;
             playersInsideZone.Remove(clientId);
+
+            Debug.Log($"[PenaltyZone] Client {clientId} EXITED the zone.");
         }
     }
+
+    #endregion
+
+    #region === Utilities ===
+
+    /// <summary>
+    /// Removes a player manually from the zone. Useful if player is moved/teleported outside.
+    /// For now, nothing to do. But, maybe become usefull
+    /// </summary>
+    public void PlayerLeftZone(PlayerAbstract player)
+    {
+        ulong clientId = player.OwnerClientId;
+
+        if (playersInsideZone.TryGetValue(clientId, out var zoneData))
+        {
+            player.OnDeath -= zoneData.OnPlayerDeathCallback;
+            playersInsideZone.Remove(clientId);
+        }
+    }
+
+    #endregion
+
+    #region === Visual Effects ===
 
     [ClientRpc]
     private void PlayPenaltyEffectClientRpc(ulong targetClientId, Vector3 hitPosition)
@@ -138,6 +247,10 @@ public class PenaltyZoneDamageTracker : NetworkBehaviour
         //    .Play(SoundLibrary.Instance.penaltyZoneDamage); // Your custom SFX
     }
 
+    #endregion
+
+    #region === Data Structs ===
+
     /// <summary>
     /// Tracks data for each player in the zone.
     /// </summary>
@@ -147,4 +260,6 @@ public class PenaltyZoneDamageTracker : NetworkBehaviour
         public float RemainingDamageTime;
         public System.Action OnPlayerDeathCallback;
     }
+
+    #endregion
 }

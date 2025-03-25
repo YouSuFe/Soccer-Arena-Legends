@@ -109,6 +109,6 @@ public class TimerManager : NetworkBehaviour
 
     private void OnGameTimerFinished()
     {
-        MultiplayerGameStateManager.Instance.SetGameState(GameState.PostGame);
+        MultiplayerGameStateManager.Instance.SetGameState(GameState.EndGame);
     }
 }

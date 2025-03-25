@@ -34,14 +34,14 @@ public class TeamScoreUIController : MonoBehaviour
 
     private void OnRedScoreChanged(int previous, int current)
     {
-        string scoreText = $"Red Team - {current}";
+        string scoreText = $"{current}";
         if (redTeamMainScoreText != null) redTeamMainScoreText.text = scoreText;
         if (redTeamScoreboardText != null) redTeamScoreboardText.text = scoreText;
     }
 
     private void OnBlueScoreChanged(int previous, int current)
     {
-        string scoreText = $"Blue Team - {current}";
+        string scoreText = $"{current}";
         if (blueTeamMainScoreText != null) blueTeamMainScoreText.text = scoreText;
         if (blueTeamScoreboardText != null) blueTeamScoreboardText.text = scoreText;
     }

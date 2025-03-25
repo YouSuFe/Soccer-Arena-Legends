@@ -18,6 +18,8 @@ public class MultiplayerGameStateManager : NetworkBehaviour
 
     private NetworkVariable<GameState> gameState = new NetworkVariable<GameState>(GameState.WaitingForPlayers);
 
+    private float startCountDown = 3f;
+
     public event Action<GameState> OnGameStateChanged;
 
     private void Awake()
@@ -28,12 +30,17 @@ public class MultiplayerGameStateManager : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
+        Debug.Log($"Game state Manager's OnNetworkSpawn is called on {name}");
+        gameState.OnValueChanged += HandleGameStateChanged;
+
+        // ToDo : Check if this code necessary for late joiners. Try it on Prep State, if Late Joiners also call the regular method, then do not need this.
+        //HandleGameStateChanged(gameState.Value, gameState.Value);
+
         if (IsServer)
         {
             StartCoroutine(CheckForAllPlayersConnected());
         }
 
-        gameState.OnValueChanged += HandleGameStateChanged;
     }
 
     #region Game State Handling
@@ -64,6 +71,7 @@ public class MultiplayerGameStateManager : NetworkBehaviour
     {
         if (IsServer)
         {
+            Debug.Log($"The game state changed from {gameState.Value} to {newState} from SetGameState");
             gameState.Value = newState;
         }
     }
@@ -105,7 +113,13 @@ public class MultiplayerGameStateManager : NetworkBehaviour
 
             yield return null;
         }
+        StartCoroutine(StartGame());
+    }
 
+    IEnumerator StartGame()
+    {
+        yield return new WaitForSeconds(startCountDown);
+        Debug.Log("Starting to game with changing the state to PreGame");
         SetGameState(GameState.PreGame);
     }
 
@@ -122,17 +136,12 @@ public class MultiplayerGameStateManager : NetworkBehaviour
 
             if (NetworkManager.Singleton.ConnectedClients.TryGetValue(clientId, out var clientObj))
             {
-                var player = clientObj.PlayerObject.GetComponent<PlayerController>();
+                //var player = clientObj.PlayerObject.GetComponent<PlayerController>();
             }
         }
 
-        StartCoroutine(WaitAndStartGame());
-    }
-
-    private IEnumerator WaitAndStartGame()
-    {
-        yield return new WaitForSeconds(3f); // Show countdown UI here if needed
-        SetGameState(GameState.InGame);
+        Debug.Log("Trying to start Prep Timer from Handle Pre Game");
+        TimerManager.Instance.StartPrepTimer(); // 🔥 Show countdown UI
     }
 
     private void HandleInGame()
@@ -141,6 +150,8 @@ public class MultiplayerGameStateManager : NetworkBehaviour
         {
             SetGameState(GameState.EndGame);
         }
+        TimerManager.Instance.StartGameTimer(); // 🔥 Show countdown UI
+
     }
 
     private void HandlePostGame()

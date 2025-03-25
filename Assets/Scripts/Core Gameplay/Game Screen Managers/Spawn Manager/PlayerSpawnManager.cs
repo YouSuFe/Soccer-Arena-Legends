@@ -14,7 +14,6 @@ public class PlayerSpawnManager : NetworkBehaviour
     [Header("Cameras")]
     [SerializeField] private CinemachineCamera fpsCamera;
     [SerializeField] private CinemachineCamera lookAtCamera;
-    bool isCameraAssigned = false;
 
     private void Awake()
     {
@@ -43,6 +42,8 @@ public class PlayerSpawnManager : NetworkBehaviour
     [SerializeField] private Transform ballSpawnPoint;
 
     private Dictionary<ulong, UserData> clientUserData = new Dictionary<ulong, UserData>(); // Stores user data for each client
+    private Dictionary<ulong, UserData> disconnectedUserData = new(); // Stores disconnected user's for reconnection
+
     private NetworkServer networkServer;
     private SpawnPointManager spawnPointManager;
 
@@ -73,7 +74,11 @@ public class PlayerSpawnManager : NetworkBehaviour
         if (IsHost)
         {
             UserData userData = networkServer.GetUserDataByClientId(NetworkManager.Singleton.LocalClientId);
-            SpawnPlayer(NetworkManager.Singleton.LocalClientId, userData.characterId, userData.weaponId, userData.teamIndex);
+
+            // Store Host's user data in the dictionary
+            clientUserData[NetworkManager.Singleton.LocalClientId] = userData;
+
+            SpawnPlayer(NetworkManager.Singleton.LocalClientId, userData.characterId, userData.weaponId, userData.teamIndex, false, false);
         }
     }
 
@@ -83,6 +88,26 @@ public class PlayerSpawnManager : NetworkBehaviour
 
     private void OnClientConnected(ulong clientId)
     {
+        // ToDo: Check if current player disconnects, and reconnects, their data lost or not. If lost, then try to use this logic.
+        // Do same thing for Sync Score Board Stats.
+        //UserData userData;
+
+        //if (disconnectedUserData.TryGetValue(clientId, out var restoredData))
+        //{
+        //    Debug.Log($"Restoring disconnected player's UserData for client {clientId}");
+        //    userData = restoredData;
+        //    disconnectedUserData.Remove(clientId);
+        //}
+        //else
+        //{
+        //    userData = networkServer.GetUserDataByClientId(clientId); // Normal case
+        //}
+
+        //if (userData == null)
+        //{
+        //    Debug.LogError($"[OnClientConnected] No UserData found for client {clientId}");
+        //    return;
+        //}
         UserData userData = networkServer.GetUserDataByClientId(clientId);
 
         if(userData == null)
@@ -106,6 +131,15 @@ public class PlayerSpawnManager : NetworkBehaviour
         Debug.Log($"[Server] Player {clientId} is disconnected. Number of reamaining players : {numPlayer}");
 
         clientUserData.Remove(clientId);
+
+        // ToDo: Check if current player disconnects, and reconnects, their data lost or not. If lost, then try to use this logic.
+        //Debug.Log($"[Server] Player {clientId} disconnected.");
+
+        //if (clientUserData.TryGetValue(clientId, out var userData))
+        //{
+        //    disconnectedUserData[clientId] = userData; // Backup for reconnection
+        //    clientUserData.Remove(clientId);           // Optional: only if not needed in main list
+        //}
     }
 
 
@@ -175,12 +209,9 @@ public class PlayerSpawnManager : NetworkBehaviour
         playerScript.CreateAndAssignWeapon(weaponId);
         playerScript.SetBallOwnershipManagerAndEvents(spawnedBall.GetComponent<BallOwnershipManager>());
 
-        // Assign Cameras when player spawned for the first time.
-        if(isCameraAssigned == false)
-        {
-            AssignCinemachineCameraToClientRpc(clientId, spawnedCharacter.NetworkObjectId, spawnedBall.GetComponent<NetworkObject>().NetworkObjectId);
-            isCameraAssigned = true;
-        }
+        // Assign Cameras when player spawned
+        AssignCinemachineCameraToClientRpc(clientId, spawnedCharacter.NetworkObjectId, spawnedBall.GetComponent<NetworkObject>().NetworkObjectId);
+
         // ClientRpc to assign BallOwnershipManager to the specific client
         AssignBallManagerToClientRpc(clientId, spawnedCharacter.NetworkObjectId, spawnedBall.GetComponent<NetworkObject>().NetworkObjectId);
     }
@@ -271,19 +302,19 @@ public class PlayerSpawnManager : NetworkBehaviour
     [ClientRpc]
     private void AssignCinemachineCameraToClientRpc(ulong clientId, ulong playerObjectId, ulong ballObjectId)
     {
+        if (NetworkManager.Singleton.LocalClientId != clientId) return;
+
         if (fpsCamera == null)
         {
-            Debug.LogError("FPS Camera is not assigned in GameInitializationManager.");
+            Debug.LogError("FPS Camera is not assigned in Player Spawn Manager.");
             return;
         }
 
         if (lookAtCamera == null)
         {
-            Debug.LogError("LookAt Camera is not assigned in GameInitializationManager.");
+            Debug.LogError("LookAt Camera is not assigned in Player Spawn Manager.");
             return;
         }
-
-        if (NetworkManager.Singleton.LocalClientId != clientId) return;
 
         if (!NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(playerObjectId, out NetworkObject playerObject) ||
             !NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(ballObjectId, out NetworkObject ballObject))
@@ -317,7 +348,7 @@ public class PlayerSpawnManager : NetworkBehaviour
         CameraSwitchHandler cameraSwitchHandler = playerInstance.GetComponentInChildren<CameraSwitchHandler>();
         if (cameraSwitchHandler != null)
         {
-            Debug.LogError("We are inside the camera swticher");
+            Debug.Log("Assigning Camera Switcher's camera properties.");
             cameraSwitchHandler.fpsCamera = fpsCamera;
             cameraSwitchHandler.lookAtCamera = lookAtCamera;
             cameraSwitchHandler.SetCameraMode(cameraSwitchHandler.currentCameraMode);
