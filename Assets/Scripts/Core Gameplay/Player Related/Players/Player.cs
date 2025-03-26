@@ -115,7 +115,8 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
 
     protected TargetingSystem TargetingSystem { get; private set; }
 
-    protected NetworkVariable<NetworkObjectReference> networkedWeapon = new NetworkVariable<NetworkObjectReference>();
+    // Not sure to use it for weapons.
+    //protected NetworkVariable<NetworkObjectReference> networkedWeapon = new NetworkVariable<NetworkObjectReference>();
 
     #endregion
 
@@ -141,11 +142,11 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
 
         SubscribeEvents();
 
-        Health.OnValueChanged += (oldValue, newValue) =>
+        if(IsOwner)
         {
-            Debug.Log($"[Client] Health Updated: {newValue}");
-        };
-
+            CanShoot = false;
+            activeBall = null;
+        }
     }
 
     public override void OnNetworkDespawn()
@@ -528,6 +529,11 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
         }
     }
 
+    public bool CheckIfCurrentlyHasBall()
+    {
+        return ActiveBall != null && CanShoot;
+    }
+
     protected virtual void Die()
     {
         // Invoke the OnDeath event
@@ -582,6 +588,7 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
         // Check if health is zero or less
         if (Health.Value <= 0)
         {
+            // ToDo: Make it Client RPC for player to react it. 
             Die(); // Trigger death if health is zero or below
         }
     }

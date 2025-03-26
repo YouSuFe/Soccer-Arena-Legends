@@ -373,4 +373,14 @@ public class PlayerSpawnManager : NetworkBehaviour
         return null;
     }
     #endregion
+
+    #region Clean Up
+
+    public override void OnDestroy()
+    {
+        base.OnDestroy();
+        NetworkManager.Singleton.OnClientConnectedCallback -= OnClientConnected;
+        NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnected;
+    }
+    #endregion
 }

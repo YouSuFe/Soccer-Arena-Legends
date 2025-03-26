@@ -199,7 +199,14 @@ public class GameManager : NetworkBehaviour
     public override void OnDestroy()
     {
         base.OnDestroy();
-        CleanupStats();
+
         CursorController.UnlockCursor();
+
+        if (!IsServer) return;
+
+        NetworkManager.OnClientConnectedCallback -= HandleClientConnected;
+        NetworkManager.OnClientDisconnectCallback -= HandleClientDisconnected;
+
+        CleanupStats();
     }
 }

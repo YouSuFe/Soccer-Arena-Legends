@@ -17,6 +17,8 @@ public class PenaltyZoneDamageTracker : NetworkBehaviour
 
     [Tooltip("Time (in seconds) between each damage tick.")]
     [SerializeField] private float damageIntervalSeconds = 0.7f;
+    [SerializeField] private int regularDamage = 10;
+    [SerializeField] private int damageWithBall = 500;
 
     #endregion
 
@@ -131,7 +133,7 @@ public class PenaltyZoneDamageTracker : NetworkBehaviour
                     continue;
                 }
 
-                int damageAmount = zoneData.PlayerInstance.ActiveBall != null ? 500 : 20;
+                int damageAmount = zoneData.PlayerInstance.CheckIfCurrentlyHasBall() ? damageWithBall : regularDamage;
                 Debug.Log($"[PenaltyZone] Client {clientId} takes damage: {damageAmount}");
 
                 zoneData.PlayerInstance.TakeDamage(damageAmount);

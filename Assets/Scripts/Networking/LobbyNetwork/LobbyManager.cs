@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Unity.Services.Authentication;
 using Unity.Services.Lobbies;
 using Unity.Services.Lobbies.Models;
@@ -426,6 +427,24 @@ public class LobbyManager : MonoBehaviour
 
     #region Utility Methods
 
+    // Fetch the latest data for lobby
+    public async Task<Lobby> GetLatestLobbyAsync()
+    {
+        if (joinedLobby == null)
+            return null;
+
+        try
+        {
+            joinedLobby = await LobbyService.Instance.GetLobbyAsync(joinedLobby.Id);
+            return joinedLobby;
+        }
+        catch (LobbyServiceException e)
+        {
+            Debug.LogError($"[GetLatestLobbyAsync] Failed to fetch latest lobby: {e.Message}");
+            return null;
+        }
+    }
+
     public async void MigrateHost(string newHostPlayerId)
     {
         if (!IsLobbyHost())
@@ -555,6 +574,16 @@ public class LobbyManager : MonoBehaviour
         return false;
     }
 
+    public bool CanStartGame()
+{
+    if (!IsLobbyHost()) return false;
+
+    int blueCount = GetTeamCount(GameEnumsUtil.PlayerTeam.Blue);
+    int redCount = GetTeamCount(GameEnumsUtil.PlayerTeam.Red);
+
+    return blueCount > 0 && redCount > 0;
+}
+
     #endregion
 
     #region Player Lobby
@@ -656,6 +685,49 @@ public class LobbyManager : MonoBehaviour
             }
         }
         return -1;
+    }
+
+    public int GetTeamCount(GameEnumsUtil.PlayerTeam team)
+    {
+        if (joinedLobby == null || joinedLobby.Players == null) return 0;
+
+        int count = 0;
+        foreach (var player in joinedLobby.Players)
+        {
+            if (player.Data.ContainsKey(KEY_PLAYER_TEAM))
+            {
+                var teamEnum = GameEnumsUtil.StringToEnum(player.Data[KEY_PLAYER_TEAM].Value, GameEnumsUtil.PlayerTeam.Spectator);
+                if (teamEnum == team) count++;
+            }
+        }
+        return count;
+    }
+
+    public bool CanSwitchTeam()
+    {
+        if (IsLobbyHost()) return false; // Host can't switch
+
+        string playerId = AuthenticationService.Instance.PlayerId;
+
+        GameEnumsUtil.PlayerTeam myTeam = GameEnumsUtil.PlayerTeam.Spectator;
+        foreach (var player in joinedLobby.Players)
+        {
+            if (player.Id == playerId && player.Data.ContainsKey(KEY_PLAYER_TEAM))
+            {
+                myTeam = GameEnumsUtil.StringToEnum(player.Data[KEY_PLAYER_TEAM].Value, GameEnumsUtil.PlayerTeam.Spectator);
+                break;
+            }
+        }
+
+        if (myTeam == GameEnumsUtil.PlayerTeam.Spectator)
+            return false;
+
+        int myTeamCount = GetTeamCount(myTeam);
+        int otherTeamCount = GetTeamCount(
+            myTeam == GameEnumsUtil.PlayerTeam.Blue ? GameEnumsUtil.PlayerTeam.Red : GameEnumsUtil.PlayerTeam.Blue
+        );
+
+        return myTeamCount > otherTeamCount;
     }
 
     #endregion

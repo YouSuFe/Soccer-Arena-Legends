@@ -4,7 +4,7 @@ using UnityEngine;
 
 public enum StatType {Health, Strength, Speed }
 
-public class Stats
+public class Stats : IDisposable
 {
     readonly PlayerBaseStats playerBaseStats; // Reference to the player's base stats
     readonly StatsMediator mediator; // Mediator to handle any active stat modifiers(power ups, debuffs etc.)
@@ -81,6 +81,11 @@ public class Stats
     public override string ToString()
     {
         return $"Health: {GetCurrentStat(StatType.Health)}, Attack: {GetCurrentStat(StatType.Strength)}, Speed: {GetCurrentStat(StatType.Speed)}";
+    }
+
+    public void Dispose()
+    {
+        playerBaseStats.OnStatChanged -= PlayerBaseStats_OnStatChanged;
     }
 }
 

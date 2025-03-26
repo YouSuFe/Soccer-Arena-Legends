@@ -68,6 +68,9 @@ public class TimerManager : NetworkBehaviour
 
     public void StartPrepTimer()
     {
+        if (prepTimer != null)
+            prepTimer.OnTimeUp -= OnPrepTimerFinished;
+
         prepTimer = new CountdownTimer(PrepNetworkDuration.Value);
         prepTimer.OnTimeUp += OnPrepTimerFinished;
         prepTimer.Start();
@@ -77,6 +80,9 @@ public class TimerManager : NetworkBehaviour
 
     public void StartPostTimer()
     {
+        if (postTimer != null)
+            postTimer.OnTimeUp -= OnPostTimerFinished;
+
         postTimer = new CountdownTimer(postDuration);
         postTimer.OnTimeUp += OnPostTimerFinished;
         postTimer.Start();
@@ -86,6 +92,9 @@ public class TimerManager : NetworkBehaviour
 
     public void StartGameTimer()
     {
+        if (gameTimer != null)
+            gameTimer.OnTimeUp -= OnGameTimerFinished;
+
         gameTimer = new CountdownTimer(GameNetworkDuration.Value);
         gameTimer.OnTimeUp += OnGameTimerFinished;
         gameTimer.Start();
@@ -110,5 +119,19 @@ public class TimerManager : NetworkBehaviour
     private void OnGameTimerFinished()
     {
         MultiplayerGameStateManager.Instance.SetGameState(GameState.EndGame);
+    }
+
+    public override void OnDestroy()
+    {
+        base.OnDestroy();
+
+        if (prepTimer != null)
+            prepTimer.OnTimeUp -= OnPrepTimerFinished;
+
+        if (postTimer != null)
+            postTimer.OnTimeUp -= OnPostTimerFinished;
+
+        if (gameTimer != null)
+            gameTimer.OnTimeUp -= OnGameTimerFinished;
     }
 }

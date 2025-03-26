@@ -43,6 +43,13 @@ public class MultiplayerGameStateManager : NetworkBehaviour
 
     }
 
+    public override void OnDestroy()
+    {
+        base.OnDestroy();
+        gameState.OnValueChanged -= HandleGameStateChanged;
+
+    }
+
     #region Game State Handling
 
     private void HandleGameStateChanged(GameState previous, GameState next)

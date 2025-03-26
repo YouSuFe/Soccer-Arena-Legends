@@ -49,6 +49,18 @@ public abstract class Entity : NetworkBehaviour
         }
     }
 
+    public override void OnNetworkDespawn()
+    {
+        base.OnNetworkDespawn();
+        if (IsOwner)  // Only the owner initializes their local stats
+        {
+
+            Stats.Mediator.OnStatChanged -= OnLocalStatChanged;
+
+            Debug.Log($"[Client {OwnerClientId}] Stats De-Initialized: {Stats}");
+        }
+    }
+
     // This method will be triggered on all clients when a stat is changed
     private void OnLocalStatChanged(StatType statType)
     {
@@ -87,5 +99,12 @@ public abstract class Entity : NetworkBehaviour
         {
             Stats.Mediator.Update(Time.deltaTime);
         }
+    }
+
+    public override void OnDestroy()
+    {
+        base.OnDestroy();
+
+        Stats?.Dispose();
     }
 }

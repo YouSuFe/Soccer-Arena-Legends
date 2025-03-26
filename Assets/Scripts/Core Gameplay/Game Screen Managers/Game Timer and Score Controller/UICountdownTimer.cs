@@ -43,7 +43,7 @@ public class UICountdownTimer : MonoBehaviour
         if (MultiplayerGameStateManager.Instance != null)
         {
             Debug.Log($"Subscribe from {name} MultiplayerGameStateManager. Subscribtion is happened!");
-            MultiplayerGameStateManager.Instance.OnGameStateChanged += HandleGameStateChanged;
+            MultiplayerGameStateManager.Instance.OnGameStateChanged -= HandleGameStateChanged;
 
         }
         else
