@@ -10,9 +10,8 @@ public class NetworkServer : IDisposable
 {
     private const string Game_Scene_Name = "Game";
     private const string Menu_Scene_Name = "Menu";
-    private NetworkManager networkManager;
 
-    private NetworkObject playerPrefab;
+    private NetworkManager networkManager;
 
     public Action<string> OnClientLeft;
 
@@ -215,9 +214,24 @@ public class NetworkServer : IDisposable
 
         Debug.Log("The game is ended. Making all players left!");
 
+        if (networkManager == null)
+        {
+            Debug.LogWarning("From NetworkServer, networkManager is null");
+            return;
+        }
         NetworkManager.Singleton.SceneManager.LoadScene(Menu_Scene_Name, LoadSceneMode.Single);
+
+        NetworkManager.Singleton.SceneManager.OnLoadComplete += SceneManager_OnLoadComplete;
+
     }
 
+    private void SceneManager_OnLoadComplete(ulong clientId, string sceneName, LoadSceneMode loadSceneMode)
+    {
+        Dispose();
+
+        // Make the lobby's relay code resetted.
+        LobbyManager.Instance.UpdateLobbyRelayCode("");
+    }
 
     public void Dispose()
     {

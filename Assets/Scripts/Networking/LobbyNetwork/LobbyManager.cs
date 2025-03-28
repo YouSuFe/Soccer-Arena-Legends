@@ -575,14 +575,19 @@ public class LobbyManager : MonoBehaviour
     }
 
     public bool CanStartGame()
-{
-    if (!IsLobbyHost()) return false;
+    {
+        if (!IsLobbyHost()) return false;
 
-    int blueCount = GetTeamCount(GameEnumsUtil.PlayerTeam.Blue);
-    int redCount = GetTeamCount(GameEnumsUtil.PlayerTeam.Red);
+        int blueCount = GetTeamCount(GameEnumsUtil.PlayerTeam.Blue);
+        int redCount = GetTeamCount(GameEnumsUtil.PlayerTeam.Red);
 
-    return blueCount > 0 && redCount > 0;
-}
+        return blueCount > 0 && redCount > 0;
+    }
+
+    public bool IsRelayCodeValid(Lobby lobby)
+    {
+        return lobby.Data.ContainsKey("RelayJoinCode") && !string.IsNullOrEmpty(lobby.Data["RelayJoinCode"].Value);
+    }
 
     #endregion
 
@@ -705,6 +710,7 @@ public class LobbyManager : MonoBehaviour
 
     public bool CanSwitchTeam()
     {
+        if (GetJoinedLobby() == null) return false;
         if (IsLobbyHost()) return false; // Host can't switch
 
         string playerId = AuthenticationService.Instance.PlayerId;

@@ -1,6 +1,5 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Unity.Services.Lobbies.Models;
 using UnityEngine;
 using UnityEngine.UI;
@@ -14,6 +13,13 @@ public class LobbyListUI : MonoBehaviour
     [SerializeField] private Button refreshButton;
 
     private void Awake() {
+        if (Instance != null && Instance != this)
+        {
+            Debug.LogError("Öylemiymiş yav, hadi yav");
+            Destroy(gameObject); // Destroy the duplicate
+            return;
+        }
+
         Instance = this;
 
         refreshButton.onClick.AddListener(RefreshButtonClick);
@@ -27,6 +33,8 @@ public class LobbyListUI : MonoBehaviour
 
         Hide();
     }
+
+
 
     private void LobbyManager_OnKickedFromLobby(Lobby lobby) {
         Show();
@@ -45,6 +53,17 @@ public class LobbyListUI : MonoBehaviour
     }
 
     private void UpdateLobbyList(List<Lobby> lobbyList) {
+        if (container == null)
+        {
+            Debug.Log("Container is null");
+            if(lobbySingleTemplate == null)
+            {
+                Debug.Log("Template is null");
+                return;
+            }
+            return;
+        }
+
         foreach (Transform child in container) {
             if (child == lobbySingleTemplate) continue;
 
@@ -59,8 +78,15 @@ public class LobbyListUI : MonoBehaviour
         }
     }
 
-    private void RefreshButtonClick() {
+    private async void RefreshButtonClick()
+    {
+        refreshButton.interactable = false;
+
         LobbyManager.Instance.RefreshLobbyList();
+
+        await Task.Delay(2000); // Optional small delay
+
+        refreshButton.interactable = true;
     }
 
     private void Hide() {
@@ -69,6 +95,17 @@ public class LobbyListUI : MonoBehaviour
 
     private void Show() {
         gameObject.SetActive(true);
+    }
+
+    private void OnDestroy()
+    {
+        if (LobbyManager.Instance != null)
+        {
+            LobbyManager.Instance.OnLobbyListChanged -= LobbyManager_OnLobbyListChanged;
+            LobbyManager.Instance.OnJoinedLobby -= LobbyManager_OnJoinedLobby;
+            LobbyManager.Instance.OnLeftLobby -= LobbyManager_OnLeftLobby;
+            LobbyManager.Instance.OnKickedFromLobby -= LobbyManager_OnKickedFromLobby;
+        }
     }
 
 }

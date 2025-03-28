@@ -206,6 +206,7 @@ public class PlayerSpawnManager : NetworkBehaviour
         // Assign Weapon to PlayerCharacter Script
         PlayerAbstract playerScript = spawnedCharacter.GetComponent<PlayerAbstract>();
 
+
         playerScript.CreateAndAssignWeapon(weaponId);
         playerScript.SetBallOwnershipManagerAndEvents(spawnedBall.GetComponent<BallOwnershipManager>());
 

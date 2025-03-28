@@ -153,7 +153,7 @@ public class HostGameManager : IDisposable
         {
             await LobbyService.Instance.DeleteLobbyAsync(lobbyId);
         }
-            catch (LobbyServiceException e)
+        catch (LobbyServiceException e)
         {
             Debug.Log(e);
         }

@@ -89,6 +89,7 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
 
 
     public bool CanShoot { get; private set; }
+    public bool IsPlayerDeath { get; private set; }
 
     // Event for when the player dies
     public event Action OnDeath;
@@ -142,8 +143,15 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
 
         SubscribeEvents();
 
-        if(IsOwner)
+        if(IsServer)
         {
+            IsPlayerDeath = false;
+        }
+
+        if (IsOwner)
+        {
+            InputReader.EnableInputActions();
+
             CanShoot = false;
             activeBall = null;
         }
@@ -154,8 +162,12 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
         base.OnNetworkDespawn();
         UnSubscribeEvents();
 
+        if(IsOwner)
+        {
+            InputReader.DisableInputActions();
+        }
         // ToDo: Move this to death function and disconnect function, When Player dies, remove the ball or related objects.
-        if(activeBall != null)
+        if (activeBall != null)
         {
             ballOwnershipManager.NetworkObject.TryRemoveParent();
         }
@@ -178,8 +190,6 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
             playerCamera = Camera.main; // Finds the camera tagged as MainCamera
         }
 
-
-        InputReader.EnableInputActions();
     }
 
     public override void Update()
@@ -536,6 +546,9 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
 
     protected virtual void Die()
     {
+        // ToDo: For now, it works in server, when make this Client Rpc, move this logics into server part.
+        IsPlayerDeath = true;
+
         // Invoke the OnDeath event
         OnDeath?.Invoke();
 

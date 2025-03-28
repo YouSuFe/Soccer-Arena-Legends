@@ -81,6 +81,13 @@ public class PlayerController : NetworkBehaviour
         }
     }
 
+    public override void OnNetworkDespawn()
+    {
+        base.OnNetworkDespawn();
+        currentState.OnValueChanged -= OnStateChanged;
+
+    }
+
     /// <summary>
     /// Initializes the movement state machine and sets up input handling for the local player.
     /// </summary>

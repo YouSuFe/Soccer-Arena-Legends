@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using QFSW.QC;
 using Unity.Services.Lobbies.Models;
 using UnityEngine;
 using UnityEngine.UI;
@@ -66,6 +67,16 @@ public class LobbyScreenButtonsController : MonoBehaviour
         await HostSingleton.Instance.GameManager.StartHostAsync();
     }
 
+#if UNITY_EDITOR
+    // ToDo: Delete this after
+    [Command]
+    public async static void StartGameSession()
+    {
+
+        Debug.Log("Starting game...");
+        await HostSingleton.Instance.GameManager.StartHostAsync();
+    }
+#endif
     private async void HandleChangeTeam()
     {
         if (!LobbyManager.Instance.CanSwitchTeam())
@@ -85,7 +96,7 @@ public class LobbyScreenButtonsController : MonoBehaviour
 
         LobbyManager.Instance.UpdatePlayerTeam(newTeam);
 
-        await Task.Delay(1000); // Optional small delay
+        await Task.Delay(500); // Optional small delay
 
         changeTeamButton.interactable = true; // Re-enable after operation
     }
@@ -113,6 +124,7 @@ public class LobbyScreenButtonsController : MonoBehaviour
         // Start Game Button
         startGameButton.gameObject.SetActive(isHost);
         startGameButton.interactable = LobbyManager.Instance.CanStartGame();
+        startGameButton.interactable = true;
 
         // Change Team Button (always visible, only interactable when allowed)
         changeTeamButton.gameObject.SetActive(!isHost);

@@ -1,3 +1,4 @@
+using QFSW.QC;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -45,11 +46,21 @@ public class ExitGame : NetworkBehaviour
         NotifyClientsGameEnded();
 
         // Shut down the NetworkManager
-        NetworkManager.Singleton.Shutdown();
+        HostSingleton.Instance.GameManager.NetworkServer.EndGame();
         Debug.Log("Server shutting down and cleaning up resources.");
 
         // Transition to menu
-        SceneManager.LoadScene("MenuSceneName");
+        SceneManager.LoadScene("Menu");
+    }
+    [Command]
+    public static void EndGameSession()
+    {
+        // Shut down the NetworkManager
+        HostSingleton.Instance.GameManager.NetworkServer.EndGame();
+        Debug.Log("Server shutting down and cleaning up resources.");
+
+        // Transition to menu
+        SceneManager.LoadScene("Menu");
     }
 
     private void NotifyClientsGameEnded()

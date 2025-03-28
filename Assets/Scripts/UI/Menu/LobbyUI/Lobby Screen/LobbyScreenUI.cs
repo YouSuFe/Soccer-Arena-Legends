@@ -134,8 +134,15 @@ public class LobbyScreenUI : MonoBehaviour
 
             if (!LobbyManager.Instance.IsLobbyHost())
             {
-                Debug.Log("[LobbyScreenUI] Client detected, starting connection...");
-                await ClientSingleton.Instance.GameManager.StartClientAsync(joinCode);
+                if (!string.IsNullOrEmpty(joinCode))
+                {
+                    Debug.Log("[LobbyScreenUI] Client detected, starting connection...");
+                    await ClientSingleton.Instance.GameManager.StartClientAsync(joinCode);
+                }
+                else
+                {
+                    Debug.LogWarning("[LobbyScreenUI] Relay Join Code is empty or null, client will not connect.");
+                }
             }
             else
             {

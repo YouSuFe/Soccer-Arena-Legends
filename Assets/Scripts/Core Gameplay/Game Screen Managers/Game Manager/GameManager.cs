@@ -206,7 +206,5 @@ public class GameManager : NetworkBehaviour
 
         NetworkManager.OnClientConnectedCallback -= HandleClientConnected;
         NetworkManager.OnClientDisconnectCallback -= HandleClientDisconnected;
-
-        CleanupStats();
     }
 }
