@@ -1,5 +1,6 @@
 using System;
 using Unity.Netcode;
+using Unity.Netcode.Components;
 using UnityEngine;
 
 public enum BallAttachmentStatus
@@ -39,6 +40,9 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
 
     [Header("Input Reader")]
     [field: SerializeField] public InputReader InputReader { get; private set; }
+
+    [Header("Player Respawn")]
+    [SerializeField] private float playerRespawnDelay = 10f;
 
     [Header("Game State Settings")]
     //[SerializeField] private GameStateEventChannel gameStateEventChannel;
@@ -544,17 +548,155 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
         return ActiveBall != null && CanShoot;
     }
 
+
+    #region Spawn-Despawn Logic
+
+    /// <summary>
+    /// Handles player death flow. Called when health reaches zero.
+    /// </summary>
     protected virtual void Die()
     {
-        // ToDo: For now, it works in server, when make this Client Rpc, move this logics into server part.
-        IsPlayerDeath = true;
+        HandleServerDeath();
+    }
 
-        // Invoke the OnDeath event
+    /// <summary>
+    /// Server-only logic when a player dies.  
+    /// Determines whether to respawn instantly (via revive shield) or go into delayed queue.
+    /// </summary>
+    public void HandleServerDeath()
+    {
+        if (!IsServer) return;
+
+        IsPlayerDeath = true;
         OnDeath?.Invoke();
 
-        // Handle other death-related logic here, like disabling player controls
-        Debug.Log($"{gameObject.name} died.");
+        // Detach ball if holding
+        if (activeBall != null)
+        {
+            ballOwnershipManager?.NetworkObject?.TryRemoveParent();
+        }
+
+        // 👇 CHECK for revive shields
+        bool reviveNow = false;
+
+        if (PlayerSpawnManager.Instance.ShouldAutoRevivePlayer(OwnerClientId))
+        {
+            reviveNow = true;
+            PlayerSpawnManager.Instance.RemovePlayerReviveShield(OwnerClientId);
+        }
+        else if (PlayerSpawnManager.Instance.GetUserData(OwnerClientId) is UserData userData &&
+                 PlayerSpawnManager.Instance.ShouldAutoReviveTeam(userData.teamIndex))
+        {
+            reviveNow = true;
+        }
+
+        if (reviveNow)
+        {
+            // 🟢 Revive immediately
+            PlayerSpawnManager.Instance.RespawnPlayer(OwnerClientId);
+            return;
+        }
+
+        // 🔴 Otherwise go into respawn queue
+        PlayerSpawnManager.Instance.QueueRespawn(OwnerClientId, playerRespawnDelay);
+
+        // ❌ Do NOT destroy the object
+        NetworkObject.Despawn(false);
+
+        // 🔄 Notify client to disable controls
+        NotifyOwnerOfDeathClientRpc(OwnerClientId);
     }
+
+    /// <summary>
+    /// Client-side reaction to death: disables controls and UI
+    /// </summary>
+    [ClientRpc]
+    private void NotifyOwnerOfDeathClientRpc(ulong clientId)
+    {
+        if (NetworkManager.Singleton.LocalClientId != clientId) return;
+
+        HandleOwnerClientDeath();
+    }
+
+    /// <summary>
+    /// Disables player input and abilities on the owning client.
+    /// </summary>
+    private void HandleOwnerClientDeath()
+    {
+        InputReader.DisableInputActions();
+        CanShoot = false;
+
+        // Example:
+        // playerUIManager?.ShowDeathScreen();
+        // Animator?.SetTrigger("Die");
+
+        Debug.Log("[Client] Player input/UI disabled due to death.");
+    }
+
+    /// <summary>
+    /// Resets the player's server state and prepares it for a respawn.
+    /// </summary>
+    public void ResetAndRespawnPlayer(Vector3 spawnPosition)
+    {
+        if (!IsServer) return;
+
+        transform.position = spawnPosition;
+        transform.rotation = Quaternion.identity;
+
+        IsPlayerDeath = false;
+
+        Stats.Mediator.RemoveAllModifiers();
+
+        Health.Value = Stats.GetBaseStat(StatType.Health);
+        Strength.Value = Stats.GetBaseStat(StatType.Strength);
+        Speed.Value = Stats.GetBaseStat(StatType.Speed);
+        PlayerStamina = PlayerMaxStamina;
+
+        // 👇 Tell client to re-enable movement/input/UI
+        NotifyClientOfRespawnClientRpc(OwnerClientId);
+
+        Debug.Log($"{name} has been respawned at {spawnPosition}.");
+    }
+
+    /// <summary>
+    /// Called on the owner client after they are respawned.
+    /// </summary>
+    [ClientRpc]
+    private void NotifyClientOfRespawnClientRpc(ulong clientId)
+    {
+        if (NetworkManager.Singleton.LocalClientId != clientId) return;
+
+        // Animator?.SetTrigger("Respawn");
+        // playerUIManager?.HideDeathScreen();
+        // InputReader.EnableInputActions();
+
+        Debug.Log("[Client] Player respawned and input re-enabled.");
+    }
+
+    /// <summary>
+    /// Teleports player to a spawn point without resetting stats.  
+    /// Used when player is alive but should be moved (e.g., start of round).
+    /// </summary>
+    public void TeleportToSpawn(Vector3 newPosition)
+    {
+        if (!IsServer) return;
+
+        var netTransform = GetComponent<NetworkTransform>();
+        if (netTransform != null)
+        {
+            Vector3 currentScale = transform.localScale;
+            netTransform.Teleport(newPosition, Quaternion.identity, currentScale);
+        }
+        else
+        {
+            transform.position = newPosition;
+            transform.rotation = Quaternion.identity;
+        }
+
+        Debug.Log($"{name} teleported to spawn at {newPosition}");
+    }
+
+    #endregion
 
     #endregion
 

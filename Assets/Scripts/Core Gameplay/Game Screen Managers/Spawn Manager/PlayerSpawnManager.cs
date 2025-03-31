@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using Unity.Cinemachine;
 using Unity.Netcode;
@@ -11,9 +12,6 @@ public class PlayerSpawnManager : NetworkBehaviour
 
     public static PlayerSpawnManager Instance;
 
-    [Header("Cameras")]
-    [SerializeField] private CinemachineCamera fpsCamera;
-    [SerializeField] private CinemachineCamera lookAtCamera;
 
     private void Awake()
     {
@@ -31,18 +29,45 @@ public class PlayerSpawnManager : NetworkBehaviour
 
     #region Fields and References
 
+    [Header("Databases")]
+    [SerializeField] private CharacterDatabase characterDatabase;
+    [SerializeField] private WeaponDatabase weaponDatabase;
+
+    [Header("Cameras")]
+    [SerializeField] private CinemachineCamera fpsCamera;
+    [SerializeField] private CinemachineCamera lookAtCamera;
+
+    [Header("Ball")]
     [SerializeField] private GameObject ballPrefab; // Networked ball prefab
     private GameObject spawnedBall;
 
-    public CharacterDatabase characterDatabase;
-    public WeaponDatabase weaponDatabase;
-
+    [Header("Spawn")]
     [SerializeField] private Transform[] blueTeamSpawnPoints;
     [SerializeField] private Transform[] redTeamSpawnPoints;
     [SerializeField] private Transform ballSpawnPoint;
 
+
     private Dictionary<ulong, UserData> clientUserData = new Dictionary<ulong, UserData>(); // Stores user data for each client
     private Dictionary<ulong, UserData> disconnectedUserData = new(); // Stores disconnected user's for reconnection
+    private Dictionary<ulong, PlayerAbstract> activePlayers = new();
+
+    // coroutine for dead players
+    private Dictionary<ulong, Coroutine> pendingRespawnTimers = new();
+    private Dictionary<ulong, float> respawnExpireTime = new(); // Used to calculate time left
+
+    /// <summary>
+    /// Holds revive timers for individual players.  
+    /// If a player dies while inside this revive shield window, they will be immediately respawned.
+    /// Used for "Self-Revive If Killed Soon" type skills.
+    /// </summary>
+    private Dictionary<ulong, float> reviveShieldPerPlayer = new();
+
+    /// <summary>
+    /// Holds revive shield state per team.  
+    /// If any teammate dies while this is active, they will be instantly revived.  
+    /// Used for "Team-wide Safety Bubble" skills.
+    /// </summary>
+    private Dictionary<int, float> reviveShieldPerTeam = new();
 
     private NetworkServer networkServer;
     private SpawnPointManager spawnPointManager;
@@ -130,7 +155,10 @@ public class PlayerSpawnManager : NetworkBehaviour
         int numPlayer = NetworkManager.Singleton.ConnectedClients.Count;
         Debug.Log($"[Server] Player {clientId} is disconnected. Number of reamaining players : {numPlayer}");
 
+        CancelRespawn(clientId);
+
         clientUserData.Remove(clientId);
+        activePlayers.Remove(clientId);
 
         // ToDo: Check if current player disconnects, and reconnects, their data lost or not. If lost, then try to use this logic.
         //Debug.Log($"[Server] Player {clientId} disconnected.");
@@ -144,6 +172,8 @@ public class PlayerSpawnManager : NetworkBehaviour
 
 
     #endregion
+
+    #region Regular Spawn Logic
 
     #region Player Spawning
 
@@ -163,58 +193,51 @@ public class PlayerSpawnManager : NetworkBehaviour
     {
         if (!IsServer) return;
 
-        // Validate Character and Weapon IDs
         if (!characterDatabase.IsValidCharacterId(characterId) || !weaponDatabase.IsValidWeaponId(weaponId))
         {
             Debug.LogError($"Invalid characterId ({characterId}) or weaponId ({weaponId}) for client {clientId}");
             return;
         }
 
-        // Prevent duplicate SpawnAsPlayerObject
-        if (!isRespawn && NetworkManager.Singleton.ConnectedClients[clientId].PlayerObject != null)
+        Vector3 spawnPosition = isBulkSpawn
+            ? spawnPointManager.GetUniqueSpawnPoint(teamIndex)
+            : spawnPointManager.GetSingleSpawnPoint(teamIndex);
+
+        // 🆕: Check if player already exists
+        if (activePlayers.TryGetValue(clientId, out var player))
         {
-            Debug.LogWarning($"[SpawnPlayer] Client {clientId} already has a player object.");
+            if (player.IsPlayerDeath)
+            {
+                player.ResetAndRespawnPlayer(spawnPosition);
+                player.NetworkObject.Spawn();
+            }
+            else
+            {
+                player.TeleportToSpawn(spawnPosition);
+            }
+
+            AssignClientVisuals(clientId, player);
             return;
         }
 
-        // Get Character Network Prefab
+        // 🆕: Fresh spawn
         Character selectedCharacter = characterDatabase.GetCharacterById(characterId);
         NetworkObject characterPrefab = selectedCharacter.GameplayPrefab;
-
         if (characterPrefab == null)
         {
-            Debug.LogError($"Character {selectedCharacter.DisplayName} does not have a valid GameplayPrefab.");
+            Debug.LogError($"Character {selectedCharacter.DisplayName} has no valid GameplayPrefab.");
             return;
         }
 
-        // Get a random spawn point based on team and if it is bulk
-        Vector3 spawnPosition = isBulkSpawn
-                   ? spawnPointManager.GetUniqueSpawnPoint(teamIndex) // For bulk spawning (avoids overlap)
-                   : spawnPointManager.GetSingleSpawnPoint(teamIndex); // For single player spawning
+        NetworkObject newPlayer = Instantiate(characterPrefab, spawnPosition, Quaternion.identity);
+        newPlayer.SpawnAsPlayerObject(clientId);
 
-        // Spawn Player Character
-        NetworkObject spawnedCharacter = Instantiate(characterPrefab, spawnPosition, Quaternion.identity);
-
-        if (isRespawn)
-        {
-            spawnedCharacter.Spawn(); // Regular network spawn
-        }
-        else
-        {
-            spawnedCharacter.SpawnAsPlayerObject(clientId); // Assigns as player object
-        }
-        // Assign Weapon to PlayerCharacter Script
-        PlayerAbstract playerScript = spawnedCharacter.GetComponent<PlayerAbstract>();
-
-
+        var playerScript = newPlayer.GetComponent<PlayerAbstract>();
         playerScript.CreateAndAssignWeapon(weaponId);
         playerScript.SetBallOwnershipManagerAndEvents(spawnedBall.GetComponent<BallOwnershipManager>());
 
-        // Assign Cameras when player spawned
-        AssignCinemachineCameraToClientRpc(clientId, spawnedCharacter.NetworkObjectId, spawnedBall.GetComponent<NetworkObject>().NetworkObjectId);
-
-        // ClientRpc to assign BallOwnershipManager to the specific client
-        AssignBallManagerToClientRpc(clientId, spawnedCharacter.NetworkObjectId, spawnedBall.GetComponent<NetworkObject>().NetworkObjectId);
+        activePlayers[clientId] = playerScript;
+        AssignClientVisuals(clientId, playerScript);
     }
 
     /// <summary>
@@ -222,35 +245,333 @@ public class PlayerSpawnManager : NetworkBehaviour
     /// </summary>
     public void RespawnPlayer(ulong clientId)
     {
-        if (!clientUserData.ContainsKey(clientId))
+        if (!clientUserData.TryGetValue(clientId, out var userData))
         {
-            Debug.LogError($"[RespawnPlayer] No UserData found for client {clientId}");
+            Debug.LogError($"[RespawnPlayer] No UserData for client {clientId}");
             return;
         }
 
-        UserData userData = clientUserData[clientId];
-
-        // False = not bulk, true = isRespawn
-        SpawnPlayer(clientId, userData.characterId, userData.weaponId, userData.teamIndex, false);
+        SpawnPlayer(clientId, userData.characterId, userData.weaponId, userData.teamIndex, false, true);
     }
 
     /// <summary>
     /// Spawns all players at once at unique spawn points.
     /// </summary>
-    public void SpawnAllPlayers()
+    public void ResetAllPlayersToSpawn()
     {
         if (!IsServer) return;
 
         spawnPointManager.ResetSpawnPoints();
+
+        //  Cancel all queued single respawns
+        foreach (var pair in pendingRespawnTimers)
+        {
+            StopCoroutine(pair.Value);
+        }
+        pendingRespawnTimers.Clear();
+        respawnExpireTime.Clear();
 
         foreach (var entry in clientUserData)
         {
             ulong clientId = entry.Key;
             UserData userData = entry.Value;
 
-            SpawnPlayer(clientId, userData.characterId, userData.weaponId, userData.teamIndex, true);
+            SpawnPlayer(clientId, userData.characterId, userData.weaponId, userData.teamIndex, true, true);
         }
     }
+
+    private void AssignClientVisuals(ulong clientId, PlayerAbstract playerScript)
+    {
+        ulong playerObjId = playerScript.NetworkObjectId;
+        ulong ballObjId = spawnedBall.GetComponent<NetworkObject>().NetworkObjectId;
+
+        AssignCinemachineCameraToClientRpc(clientId, playerObjId, ballObjId);
+        AssignBallManagerToClientRpc(clientId, playerObjId, ballObjId);
+    }
+
+    #endregion
+
+    #region Respawn Coroutines
+
+    public void QueueRespawn(ulong clientId, float delay)
+    {
+        if (!IsServer) return;
+
+        // Avoid duplicate coroutines
+        if (pendingRespawnTimers.ContainsKey(clientId)) return;
+
+        Coroutine timer = StartCoroutine(RespawnAfterDelay(clientId, delay));
+        pendingRespawnTimers[clientId] = timer;
+    }
+
+    private IEnumerator RespawnAfterDelay(ulong clientId, float delay)
+    {
+        float targetTime = Time.time + delay;
+        respawnExpireTime[clientId] = targetTime;
+
+        while (Time.time < targetTime)
+        {
+            yield return null;
+        }
+
+        if (!pendingRespawnTimers.ContainsKey(clientId)) yield break;
+
+        RespawnPlayer(clientId);
+        pendingRespawnTimers.Remove(clientId);
+        respawnExpireTime.Remove(clientId);
+    }
+
+    // This is for cancelling the spawn for disconnected or left client to not have errors  
+    public void CancelRespawn(ulong clientId)
+    {
+        if (!IsServer) return;
+
+        if (pendingRespawnTimers.TryGetValue(clientId, out Coroutine coroutine))
+        {
+            StopCoroutine(coroutine);
+            pendingRespawnTimers.Remove(clientId);
+            respawnExpireTime.Remove(clientId);
+            Debug.Log($"[Server] Cancelled respawn for client {clientId}");
+        }
+    }
+
+    public float GetRemainingRespawnTime(ulong clientId)
+    {
+        if (respawnExpireTime.TryGetValue(clientId, out float expiry))
+            return Mathf.Max(0f, expiry - Time.time);
+
+        return -1f;
+    }
+
+    #endregion
+
+    #endregion
+
+    #region Skill-Based Spawn Logic
+
+    #region Revive Shields
+
+    /// <summary>
+    /// Activates a revive shield for a single player.  
+    /// If this player dies within `duration`, they will automatically respawn.  
+    /// Useful for personal passive skills.
+    /// </summary>
+    public void ActivateReviveShieldForPlayer(ulong clientId, float duration)
+    {
+        reviveShieldPerPlayer[clientId] = Time.time + duration;
+    }
+
+    /// <summary>
+    /// Checks if the player's revive shield is active and not expired.
+    /// </summary>
+    public bool ShouldAutoRevivePlayer(ulong clientId)
+    {
+        return reviveShieldPerPlayer.TryGetValue(clientId, out float expiry) && Time.time <= expiry;
+    }
+
+    /// <summary>
+    /// Removes a revive shield (after successful auto-revive).
+    /// </summary>
+    public void RemovePlayerReviveShield(ulong clientId)
+    {
+        reviveShieldPerPlayer.Remove(clientId);
+    }
+
+    /// <summary>
+    /// Activates a revive shield for the entire team.  
+    /// Any teammate who dies within the duration will be revived instantly.  
+    /// Ideal for support-oriented AOE skills.
+    /// </summary>
+    public void ActivateReviveShieldForTeam(int teamIndex, float duration)
+    {
+        reviveShieldPerTeam[teamIndex] = Time.time + duration;
+    }
+
+    /// <summary>
+    /// Checks if the given team is under a revive shield window.
+    /// </summary>
+    public bool ShouldAutoReviveTeam(int teamIndex)
+    {
+        return reviveShieldPerTeam.TryGetValue(teamIndex, out float expiry) && Time.time <= expiry;
+    }
+
+
+    #endregion
+
+    #region Skill Effects (Revive, Delay, etc.)
+
+    /// <summary>
+    /// Instantly revives a teammate.  
+    /// Only works if they are on the same team and currently dead.  
+    /// Used in "Single Teammate Revive" type skills.
+    /// </summary>
+    public void ForceRespawnPlayer(ulong requesterClientId, ulong targetClientId)
+    {
+        if (!IsServer) return;
+
+        if (!clientUserData.TryGetValue(requesterClientId, out var requester) ||
+            !clientUserData.TryGetValue(targetClientId, out var target))
+            return;
+
+        if (requester.teamIndex != target.teamIndex) return;
+
+        if (activePlayers.TryGetValue(targetClientId, out var player) && player.IsPlayerDeath)
+        {
+            CancelRespawn(targetClientId);
+            RespawnPlayer(targetClientId);
+        }
+    }
+
+    /// <summary>
+    /// Revives all dead teammates of a given team.  
+    /// Used for full team revive ultimates.
+    /// </summary>
+    public void ForceRespawnTeam(int teamIndex)
+    {
+        foreach (var pair in clientUserData)
+        {
+            ulong clientId = pair.Key;
+            if (pair.Value.teamIndex != teamIndex) continue;
+
+            if (activePlayers.TryGetValue(clientId, out var player) && player.IsPlayerDeath)
+            {
+                CancelRespawn(clientId);
+                RespawnPlayer(clientId);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Finds the teammate with the least remaining respawn time  
+    /// and revives them instantly.  
+    /// Used for single-target support abilities.
+    /// </summary>
+    public void ForceRespawnBestAlly(ulong requesterClientId)
+    {
+        if (!clientUserData.TryGetValue(requesterClientId, out var requester)) return;
+
+        int team = requester.teamIndex;
+
+        if (TryGetDeadPlayerWithLeastRespawnTime(
+            id => id != requesterClientId && clientUserData[id].teamIndex == team,
+            out ulong bestAlly))
+        {
+            ForceRespawnPlayer(requesterClientId, bestAlly);
+        }
+    }
+
+    /// <summary>
+    /// Finds the enemy with the shortest remaining respawn timer  
+    /// and extends it by a given amount.  
+    /// Used for "Single Enemy Delay" type skills.
+    /// </summary>
+    public void ExtendRespawnOfEnemyWithLeastTime(ulong requesterClientId, float extraDelay)
+    {
+        if (!clientUserData.TryGetValue(requesterClientId, out var requester)) return;
+
+        int team = requester.teamIndex;
+
+        if (TryGetDeadPlayerWithLeastRespawnTime(
+            id => clientUserData[id].teamIndex != team,
+            out ulong enemyId))
+        {
+            ExtendRespawnTimeForSingleEnemy(requesterClientId, enemyId, extraDelay);
+        }
+    }
+
+    /// <summary>
+    /// Adds delay to a single dead enemy's respawn time.  
+    /// Cannot be used on teammates.  
+    /// Used by debuff or trap skills.
+    /// </summary>
+    public void ExtendRespawnTimeForSingleEnemy(ulong requesterClientId, ulong targetClientId, float extraDelay)
+    {
+        if (!clientUserData.TryGetValue(requesterClientId, out var requester) ||
+            !clientUserData.TryGetValue(targetClientId, out var target))
+            return;
+
+        if (requester.teamIndex == target.teamIndex) return;
+
+        if (activePlayers.TryGetValue(targetClientId, out var player) && player.IsPlayerDeath)
+        {
+            if (pendingRespawnTimers.TryGetValue(targetClientId, out var oldCoroutine))
+            {
+                StopCoroutine(oldCoroutine);
+
+                float newExpiry = respawnExpireTime[targetClientId] + extraDelay;
+                float newDelay = newExpiry - Time.time;
+
+                Coroutine newTimer = StartCoroutine(RespawnAfterDelay(targetClientId, newDelay));
+                pendingRespawnTimers[targetClientId] = newTimer;
+                respawnExpireTime[targetClientId] = newExpiry;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Adds extra delay to all currently dead enemies on the opposing team.  
+    /// Used for global debuff effects.
+    /// </summary>
+    public void ExtendRespawnTimeForEnemyTeam(int requesterTeamIndex, float extraDelay)
+    {
+        foreach (var pair in clientUserData)
+        {
+            ulong clientId = pair.Key;
+            if (pair.Value.teamIndex == requesterTeamIndex) continue;
+
+            if (activePlayers.TryGetValue(clientId, out var player) && player.IsPlayerDeath)
+            {
+                if (pendingRespawnTimers.TryGetValue(clientId, out var oldCoroutine))
+                {
+                    StopCoroutine(oldCoroutine);
+
+                    float newExpiry = respawnExpireTime[clientId] + extraDelay;
+                    float newDelay = newExpiry - Time.time;
+
+                    Coroutine newTimer = StartCoroutine(RespawnAfterDelay(clientId, newDelay));
+                    pendingRespawnTimers[clientId] = newTimer;
+                    respawnExpireTime[clientId] = newExpiry;
+                }
+            }
+        }
+    }
+
+    #endregion
+
+    #region Shared Utility
+
+    /// <summary>
+    /// Searches dead players and finds the one with the least remaining respawn time  
+    /// based on a given filter condition (team, enemy, etc).
+    /// </summary>
+    /// <param name="filter">Filter to apply to each candidate (e.g., is teammate, is enemy).</param>
+    /// <param name="bestClientId">Returns the best match, if found.</param>
+    private bool TryGetDeadPlayerWithLeastRespawnTime(Func<ulong, bool> filter, out ulong bestClientId)
+    {
+        bestClientId = 0;
+        float shortestTime = float.MaxValue;
+        bool found = false;
+
+        foreach (var kvp in respawnExpireTime)
+        {
+            ulong clientId = kvp.Key;
+            if (!activePlayers.TryGetValue(clientId, out var player)) continue;
+            if (!player.IsPlayerDeath) continue;
+            if (!filter(clientId)) continue;
+
+            float timeLeft = kvp.Value - Time.time;
+            if (timeLeft < shortestTime)
+            {
+                bestClientId = clientId;
+                shortestTime = timeLeft;
+                found = true;
+            }
+        }
+
+        return found;
+    }
+
+    #endregion
 
     #endregion
 
