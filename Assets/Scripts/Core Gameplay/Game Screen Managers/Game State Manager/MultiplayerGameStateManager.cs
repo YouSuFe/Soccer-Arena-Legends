@@ -127,6 +127,11 @@ public class MultiplayerGameStateManager : NetworkBehaviour
     {
         yield return new WaitForSeconds(startCountDown);
         Debug.Log("Starting to game with changing the state to PreGame");
+
+
+        // ToDo: Add a reset all skill and health etc, values resetting.
+
+
         SetGameState(GameState.PreGame);
     }
 
@@ -159,11 +164,14 @@ public class MultiplayerGameStateManager : NetworkBehaviour
         }
         TimerManager.Instance.StartGameTimer(); // 🔥 Show countdown UI
 
+        // Spawn all players on corresponding positions.
+        PlayerSpawnManager.Instance.ResetAllPlayersToSpawn();
+
     }
 
     private void HandlePostGame()
     {
-        // Show post-game stats, etc.
+        TimerManager.Instance.StartPostTimer(); // 🔥 Show countdown UI
     }
 
     private void HandleEndGame()
