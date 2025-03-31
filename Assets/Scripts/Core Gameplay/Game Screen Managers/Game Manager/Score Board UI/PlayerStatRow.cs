@@ -45,7 +45,7 @@ public class PlayerStatRow : MonoBehaviour
         playerNameText.fontSize = isLocalPlayer ? playerNameText.fontSize + 5 : playerNameText.fontSize;
 
         // Set character icon from CharacterDatabase via PlayerSpawnManager
-        Character character = PlayerSpawnManager.Instance.characterDatabase.GetCharacterById(characterId);
+        Character character = PlayerSpawnManager.Instance.CharacterDatabase.GetCharacterById(characterId);
         if (character != null && character.Icon != null)
             characterIconImage.sprite = character.Icon;
     }

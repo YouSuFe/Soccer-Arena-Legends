@@ -136,7 +136,7 @@ public class PenaltyZoneDamageTracker : NetworkBehaviour
                 int damageAmount = zoneData.PlayerInstance.CheckIfCurrentlyHasBall() ? damageWithBall : regularDamage;
                 Debug.Log($"[PenaltyZone] Client {clientId} takes damage: {damageAmount}");
 
-                zoneData.PlayerInstance.TakeDamage(damageAmount);
+                zoneData.PlayerInstance.TakeDamage(damageAmount, DeathType.Zone);
                 PlayPenaltyEffectClientRpc(clientId, zoneData.PlayerInstance.transform.position);
 
                 zoneData.RemainingDamageTime = damageIntervalSeconds;

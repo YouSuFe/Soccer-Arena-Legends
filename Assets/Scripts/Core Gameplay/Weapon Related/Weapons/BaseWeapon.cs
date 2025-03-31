@@ -217,11 +217,11 @@ public abstract class BaseWeapon : NetworkBehaviour, IWeapon, IDamageDealer, ISp
 
             if (isPositionBased && target is IPositionBasedDamageable positionBasedDamageable)
             {
-                positionBasedDamageable.TakeDamage(damage, attackerPosition);
+                positionBasedDamageable.TakeDamage(damage, attackerPosition, DeathType.Knife, OwnerClientId);
             }
             else
             {
-                target.TakeDamage(damage);
+                target.TakeDamage(damage, DeathType.Knife, OwnerClientId);
             }
         }
     }

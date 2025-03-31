@@ -30,8 +30,8 @@ public class PlayerSpawnManager : NetworkBehaviour
     #region Fields and References
 
     [Header("Databases")]
-    [SerializeField] private CharacterDatabase characterDatabase;
-    [SerializeField] private WeaponDatabase weaponDatabase;
+    [field: SerializeField] public CharacterDatabase CharacterDatabase { get; private set; }
+    [field: SerializeField] public WeaponDatabase WeaponDatabase { get; private set; }
 
     [Header("Cameras")]
     [SerializeField] private CinemachineCamera fpsCamera;
@@ -193,7 +193,7 @@ public class PlayerSpawnManager : NetworkBehaviour
     {
         if (!IsServer) return;
 
-        if (!characterDatabase.IsValidCharacterId(characterId) || !weaponDatabase.IsValidWeaponId(weaponId))
+        if (!CharacterDatabase.IsValidCharacterId(characterId) || !WeaponDatabase.IsValidWeaponId(weaponId))
         {
             Debug.LogError($"Invalid characterId ({characterId}) or weaponId ({weaponId}) for client {clientId}");
             return;
@@ -221,7 +221,7 @@ public class PlayerSpawnManager : NetworkBehaviour
         }
 
         // 🆕: Fresh spawn
-        Character selectedCharacter = characterDatabase.GetCharacterById(characterId);
+        Character selectedCharacter = CharacterDatabase.GetCharacterById(characterId);
         NetworkObject characterPrefab = selectedCharacter.GameplayPrefab;
         if (characterPrefab == null)
         {

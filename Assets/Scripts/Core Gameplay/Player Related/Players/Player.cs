@@ -103,11 +103,12 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
     public event Action<SkillType, float> OnSkillCooldownChanged;
     public event Action<float, float> OnStaminaChanged; // Notify listeners when stamina changes
 
-
     // The ball that can player interact with
     protected BallReference activeBall;
     public BallReference ActiveBall { get { return activeBall; } }
 
+    private DeathType lastDeathType;
+    private ulong lastKillerClientId;
 
     protected BallOwnershipManager ballOwnershipManager; // Reference to the instance-based BallOwnershipManager
 
@@ -576,6 +577,29 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
             ballOwnershipManager?.NetworkObject?.TryRemoveParent();
         }
 
+
+
+        // To show UI
+        string killerName = string.Empty;
+        int killerTeamIndex = -1;
+
+        if (lastKillerClientId != OwnerClientId && lastKillerClientId != ulong.MaxValue)
+        {
+            var killerData = PlayerSpawnManager.Instance.GetUserData(lastKillerClientId);
+            if (killerData != null)
+            {
+                killerName = killerData.userName;
+                killerTeamIndex = killerData.teamIndex;
+            }
+        }
+
+        string victimName = PlayerSpawnManager.Instance.GetUserData(OwnerClientId)?.userName ?? "???";
+
+        KillFeedManager.Instance?.ReportKill(killerName, victimName, lastDeathType, killerTeamIndex);
+
+
+
+
         // 👇 CHECK for revive shields
         bool reviveNow = false;
 
@@ -596,6 +620,9 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
             PlayerSpawnManager.Instance.RespawnPlayer(OwnerClientId);
             return;
         }
+
+
+
 
         // 🔴 Otherwise go into respawn queue
         PlayerSpawnManager.Instance.QueueRespawn(OwnerClientId, playerRespawnDelay);
@@ -645,12 +672,7 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
 
         IsPlayerDeath = false;
 
-        Stats.Mediator.RemoveAllModifiers();
-
-        Health.Value = Stats.GetBaseStat(StatType.Health);
-        Strength.Value = Stats.GetBaseStat(StatType.Strength);
-        Speed.Value = Stats.GetBaseStat(StatType.Speed);
-        PlayerStamina = PlayerMaxStamina;
+        ResetStartsForNextRound(true);
 
         // 👇 Tell client to re-enable movement/input/UI
         NotifyClientOfRespawnClientRpc(OwnerClientId);
@@ -693,7 +715,23 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
             transform.rotation = Quaternion.identity;
         }
 
+        ResetStartsForNextRound(false);
+
         Debug.Log($"{name} teleported to spawn at {newPosition}");
+    }
+
+    private void ResetStartsForNextRound(bool isSpawnCall)
+    {
+        Stats.Mediator.RemoveAllModifiers();
+
+        Health.Value = Stats.GetBaseStat(StatType.Health);
+        Strength.Value = Stats.GetBaseStat(StatType.Strength);
+        Speed.Value = Stats.GetBaseStat(StatType.Speed);
+
+        if(isSpawnCall)
+        {
+            PlayerStamina = PlayerMaxStamina;
+        }
     }
 
     #endregion
@@ -703,7 +741,7 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
     #region IDamagable Methods
 
     // It is for IPositionBasedDamageable damage dealers
-    public void TakeDamage(int amount, Vector3 attackerPosition)
+    public void TakeDamage(int amount, Vector3 attackerPosition, DeathType type, ulong attackerClientId = ulong.MaxValue)
     {
         if (!IsServer) return; // Ensure only the server executes this
 
@@ -722,12 +760,14 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
         // Check if health is zero or less
         if (Health.Value <= 0)
         {
+            lastKillerClientId = attackerClientId;
+            lastDeathType = type;
             Die(); // Trigger death if health is zero or below
         }
     }
 
     // It is for IDamageable damage dealers
-    public void TakeDamage(int amount)
+    public void TakeDamage(int amount, DeathType type, ulong attackerClientId = ulong.MaxValue)
     {
         if (!IsServer) return; // Ensure only the server executes this
 
@@ -743,6 +783,8 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
         // Check if health is zero or less
         if (Health.Value <= 0)
         {
+            lastKillerClientId = attackerClientId;
+            lastDeathType = type;
             // ToDo: Make it Client RPC for player to react it. 
             Die(); // Trigger death if health is zero or below
         }
@@ -799,7 +841,7 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
         if (!IsServer) return;
 
         // Get Weapon
-        Weapon selectedWeapon = PlayerSpawnManager.Instance.weaponDatabase.GetWeaponById(weaponId);
+        Weapon selectedWeapon = PlayerSpawnManager.Instance.WeaponDatabase.GetWeaponById(weaponId);
         if (selectedWeapon == null) return;
 
         // Spawn Weapon on Server

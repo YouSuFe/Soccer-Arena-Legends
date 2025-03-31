@@ -117,7 +117,7 @@ public class BallMovementController : NetworkBehaviour
             if (speed > ballSO.BallData.MaxPickupSpeed)
             {
                 int damage = ballSO.BallData.CalculateTotalBallDamage(speed);
-                damageable.TakeDamage(damage);
+                damageable.TakeDamage(damage, DeathType.Ball);
 
                 Debug.Log($"Server: Ball hit {collision.collider.name} with speed {speed} and applied {damage} damage.");
             }

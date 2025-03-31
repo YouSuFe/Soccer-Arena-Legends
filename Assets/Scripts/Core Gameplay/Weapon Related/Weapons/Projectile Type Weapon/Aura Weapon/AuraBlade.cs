@@ -66,7 +66,7 @@ public class AuraBlade : MonoBehaviour, IDestroyable, IDestroyer, IDamageDealer
 
         auraWeapon.GetCurrentPlayer().PlayerUIManager.ShowFloatingDamage(Vector3.zero, damage);
 
-        target.TakeDamage(damage);
+        target.TakeDamage(damage, DeathType.Skill);
     }
 
     #endregion
