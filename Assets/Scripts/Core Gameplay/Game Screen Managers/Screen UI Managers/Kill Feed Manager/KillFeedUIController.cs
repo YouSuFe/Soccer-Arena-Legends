@@ -104,6 +104,8 @@ public class KillFeedUIController : MonoBehaviour
         item.Setup(killer, victim, icon, killerTeam, victimTeam);
         item.gameObject.SetActive(true);
         item.transform.SetAsFirstSibling();
+
+        Canvas.ForceUpdateCanvases(); // Make sure layout is applied before animating
         item.PlayEntry();
 
         StartCoroutine(ReturnToPoolAfterDelay(item, 5f));

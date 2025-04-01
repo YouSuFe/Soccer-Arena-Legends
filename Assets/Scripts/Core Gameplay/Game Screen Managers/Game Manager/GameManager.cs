@@ -149,6 +149,9 @@ public class GameManager : NetworkBehaviour
 
         if (team == 0) BlueTeamScore.Value++;
         else if (team == 1) RedTeamScore.Value++;
+
+        // Set the state post game for the game
+        MultiplayerGameStateManager.Instance.SetGameState(GameState.PostGame);
     }
 
     public void AddKill(ulong clientId)

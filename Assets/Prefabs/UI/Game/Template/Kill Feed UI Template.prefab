@@ -406,11 +406,11 @@ RectTransform:
   - {fileID: 1623390961932954268}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
+  m_AnchorMin: {x: 1, y: 1}
+  m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 400, y: 50}
-  m_Pivot: {x: 0.5, y: 0.5}
+  m_Pivot: {x: 1, y: 1}
 --- !u!222 &5702533382553326437
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -464,6 +464,9 @@ MonoBehaviour:
   killerText: {fileID: 3080200994864826807}
   victimText: {fileID: 8274804427051488516}
   iconImage: {fileID: 5543960423069830712}
+  slideDistance: 400
+  slideDuration: 0.4
+  fadeDuration: 0.3
 --- !u!114 &1059665201488661597
 MonoBehaviour:
   m_ObjectHideFlags: 0
