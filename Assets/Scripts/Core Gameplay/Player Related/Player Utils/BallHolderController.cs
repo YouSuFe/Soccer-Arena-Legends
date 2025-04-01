@@ -179,10 +179,10 @@ public class BallHolderController : MonoBehaviour
     }
 
     #endregion
-    private void OnDrawGizmos()
-    {
-        Gizmos.color = Color.green;
-        Vector3 rayOrigin = player.position + Vector3.up * RayOriginOffset;
-        Gizmos.DrawWireSphere(rayOrigin, 0.6f);
-    }
+    //private void OnDrawGizmos()
+    //{
+    //    Gizmos.color = Color.green;
+    //    Vector3 rayOrigin = player.position + Vector3.up * RayOriginOffset;
+    //    Gizmos.DrawWireSphere(rayOrigin, 0.6f);
+    //}
 }

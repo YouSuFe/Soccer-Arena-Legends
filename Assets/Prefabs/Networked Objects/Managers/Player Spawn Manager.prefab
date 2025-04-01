@@ -45,7 +45,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 2250017584
+  GlobalObjectIdHash: 2388677262
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -71,11 +71,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
+  <CharacterDatabase>k__BackingField: {fileID: 11400000, guid: 204c2f8e41bda4d2ea47809138328500, type: 2}
+  <WeaponDatabase>k__BackingField: {fileID: 11400000, guid: 9a9a19ab72d68486790a2dde430355d5, type: 2}
   fpsCamera: {fileID: 0}
   lookAtCamera: {fileID: 0}
   ballPrefab: {fileID: 2089097753458326465, guid: 20ab22e32f9124d958e35289ecdaa2cb, type: 3}
-  characterDatabase: {fileID: 11400000, guid: 204c2f8e41bda4d2ea47809138328500, type: 2}
-  weaponDatabase: {fileID: 11400000, guid: 9a9a19ab72d68486790a2dde430355d5, type: 2}
   blueTeamSpawnPoints:
   - {fileID: 0}
   - {fileID: 0}

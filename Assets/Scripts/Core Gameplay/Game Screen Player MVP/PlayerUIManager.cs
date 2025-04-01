@@ -74,6 +74,13 @@ public class PlayerUIManager : MonoBehaviour
     [Tooltip("Ready indicator for the ball skill.")]
     public Image ballSkillReadyIndicator;
 
+    [Header("Death UI")]
+    [SerializeField] private GameObject deathPanel;
+    [SerializeField] private TextMeshProUGUI respawnCountdownText;
+    [SerializeField] private CanvasGroup deathPanelCanvasGroup;
+
+    private float liveRespawnTime = -1f;
+
     private Coroutine ballSkillCoroutine;
     private Coroutine weaponSkillCoroutine;
 
@@ -85,6 +92,18 @@ public class PlayerUIManager : MonoBehaviour
     private void Start()
     {
         Hide();
+    }
+
+    private void Update()
+    {
+        if (liveRespawnTime > 0)
+        {
+            liveRespawnTime -= Time.deltaTime;
+            if (respawnCountdownText != null)
+            {
+                respawnCountdownText.text = $"Respawning... {liveRespawnTime:F2} seconds";
+            }
+        }
     }
 
     #region Initializations
@@ -138,6 +157,59 @@ public class PlayerUIManager : MonoBehaviour
         staminaBarImage.fillAmount = 1f;
         staminaText.text = $"{player.PlayerStamina} / {player.PlayerMaxStamina}";
 
+        // Death UI
+        HideDeathScreen(true); // Start hidden, forcefully
+    }   
+
+    #endregion
+
+    #region Death UI Logic
+
+    public void StartRespawnCountdown(float duration)
+    {
+        liveRespawnTime = duration;
+
+        if (deathPanelCanvasGroup != null)
+        {
+            deathPanel.SetActive(true);
+            StartCoroutine(FadeCanvasGroup(deathPanelCanvasGroup, true, 0.5f));
+        }
+        else
+        {
+            deathPanel?.SetActive(true);
+        }
+    }
+
+    public void HideDeathScreen(bool instant = false)
+    {
+        liveRespawnTime = -1f;
+
+        if (instant || deathPanelCanvasGroup == null)
+        {
+            deathPanel?.SetActive(false);
+            return;
+        }
+
+        StartCoroutine(FadeCanvasGroup(deathPanelCanvasGroup, false, 0.5f));
+    }
+
+    private IEnumerator FadeCanvasGroup(CanvasGroup canvasGroup, bool fadeIn, float duration)
+    {
+        float start = canvasGroup.alpha;
+        float end = fadeIn ? 1f : 0f;
+        float time = 0f;
+
+        while (time < duration)
+        {
+            canvasGroup.alpha = Mathf.Lerp(start, end, time / duration);
+            time += Time.deltaTime;
+            yield return null;
+        }
+
+        canvasGroup.alpha = end;
+
+        if (!fadeIn)
+            deathPanel.SetActive(false);
     }
 
     #endregion

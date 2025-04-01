@@ -630,32 +630,26 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
         // ❌ Do NOT destroy the object
         NetworkObject.Despawn(false);
 
+        // 🔄 Disable full player functionality
+        SetPlayerSimulationState(false);
+
         // 🔄 Notify client to disable controls
-        NotifyOwnerOfDeathClientRpc(OwnerClientId);
+        NotifyOwnerOfDeathClientRpc(OwnerClientId, playerRespawnDelay);
     }
 
     /// <summary>
     /// Client-side reaction to death: disables controls and UI
     /// </summary>
     [ClientRpc]
-    private void NotifyOwnerOfDeathClientRpc(ulong clientId)
+    private void NotifyOwnerOfDeathClientRpc(ulong clientId, float respawnDelay)
     {
         if (NetworkManager.Singleton.LocalClientId != clientId) return;
 
-        HandleOwnerClientDeath();
-    }
+        SetPlayerSimulationState(false);
 
-    /// <summary>
-    /// Disables player input and abilities on the owning client.
-    /// </summary>
-    private void HandleOwnerClientDeath()
-    {
-        InputReader.DisableInputActions();
         CanShoot = false;
 
-        // Example:
-        // playerUIManager?.ShowDeathScreen();
-        // Animator?.SetTrigger("Die");
+        playerUIManager?.StartRespawnCountdown(respawnDelay); // ✅ Show panel + timer
 
         Debug.Log("[Client] Player input/UI disabled due to death.");
     }
@@ -674,6 +668,11 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
 
         ResetStartsForNextRound(true);
 
+        // 🔄 Re-enable the player fully
+        SetPlayerSimulationState(true);
+
+        playerUIManager?.HideDeathScreen();
+
         // 👇 Tell client to re-enable movement/input/UI
         NotifyClientOfRespawnClientRpc(OwnerClientId);
 
@@ -688,9 +687,11 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
     {
         if (NetworkManager.Singleton.LocalClientId != clientId) return;
 
+        SetPlayerSimulationState(true);
+
+        playerUIManager?.HideDeathScreen();
+
         // Animator?.SetTrigger("Respawn");
-        // playerUIManager?.HideDeathScreen();
-        // InputReader.EnableInputActions();
 
         Debug.Log("[Client] Player respawned and input re-enabled.");
     }
@@ -722,6 +723,7 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
 
     private void ResetStartsForNextRound(bool isSpawnCall)
     {
+        Debug.Log($"[Reset Starts For Next Round] stats being resetted to {Stats.GetBaseStat(StatType.Health)} {Stats.GetBaseStat(StatType.Strength)} {Stats.GetBaseStat(StatType.Speed)}");
         Stats.Mediator.RemoveAllModifiers();
 
         Health.Value = Stats.GetBaseStat(StatType.Health);
@@ -734,6 +736,62 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
         }
     }
 
+    private void SetPlayerSimulationState(bool isEnabled)
+    {
+        // 🔹 Server-side logic
+        if (IsServer)
+        {
+            Rigidbody rb = PlayerController.Rigidbody;
+            if (rb != null)
+            {
+                rb.isKinematic = !isEnabled; // Disable physics when inactive
+            }
+
+            Collider col = GetComponent<Collider>();
+            if (col != null)
+            {
+                col.enabled = isEnabled;
+            }
+
+            if (PlayerController != null)
+            {
+                PlayerController.enabled = isEnabled;
+            }
+        }
+
+        // 🔹 Client-side logic (owner only)
+        if (IsOwner)
+        {
+            if (InputReader != null)
+            {
+                if (isEnabled)
+                    InputReader.EnableInputActions();
+                else
+                    InputReader.DisableInputActions();
+            }
+        }
+
+        // 🔹 Shared (visuals, animator)
+        if (animator != null)
+        {
+            animator.enabled = isEnabled;
+        }
+
+        var mesh = GetComponentInChildren<SkinnedMeshRenderer>();
+        if (mesh != null)
+        {
+            mesh.enabled = isEnabled;
+        }
+    }
+
+    // 🔄 RPC to sync respawn UI updates (called from server)
+    [ClientRpc]
+    public void UpdateRespawnTimerClientRpc(float newTime)
+    {
+        if (!IsOwner) return;
+        playerUIManager?.StartRespawnCountdown(newTime);
+    }
+
     #endregion
 
     #endregion
@@ -743,7 +801,7 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
     // It is for IPositionBasedDamageable damage dealers
     public void TakeDamage(int amount, Vector3 attackerPosition, DeathType type, ulong attackerClientId = ulong.MaxValue)
     {
-        if (!IsServer) return; // Ensure only the server executes this
+        if (!IsServer || IsPlayerDeath) return; // Ensure only the server executes this
 
         int damageMultiplier = DamageUtils.CalculateBackstabMultiplier(transform, attackerPosition);
         amount *= damageMultiplier;
@@ -769,7 +827,7 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
     // It is for IDamageable damage dealers
     public void TakeDamage(int amount, DeathType type, ulong attackerClientId = ulong.MaxValue)
     {
-        if (!IsServer) return; // Ensure only the server executes this
+        if (!IsServer || IsPlayerDeath) return; // Ensure only the server executes this
 
         DamageHandler damageHandler = new DamageHandler(Stats, Stats.Mediator);
         damageHandler.DealDamage(amount);
@@ -903,6 +961,4 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
     }
 
     #endregion
-
-
 }

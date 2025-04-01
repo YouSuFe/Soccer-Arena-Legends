@@ -504,6 +504,8 @@ public class PlayerSpawnManager : NetworkBehaviour
                 Coroutine newTimer = StartCoroutine(RespawnAfterDelay(targetClientId, newDelay));
                 pendingRespawnTimers[targetClientId] = newTimer;
                 respawnExpireTime[targetClientId] = newExpiry;
+
+                player.UpdateRespawnTimerClientRpc(newDelay); // ✅ Send to UI
             }
         }
     }
@@ -531,6 +533,8 @@ public class PlayerSpawnManager : NetworkBehaviour
                     Coroutine newTimer = StartCoroutine(RespawnAfterDelay(clientId, newDelay));
                     pendingRespawnTimers[clientId] = newTimer;
                     respawnExpireTime[clientId] = newExpiry;
+
+                    player.UpdateRespawnTimerClientRpc(newDelay); // ✅ Send to UI
                 }
             }
         }
