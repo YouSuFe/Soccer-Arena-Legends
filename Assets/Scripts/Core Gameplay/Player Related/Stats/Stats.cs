@@ -38,6 +38,16 @@ public class Stats : IDisposable
         currentStats = new Dictionary<StatType, int>(baseStats);
     }
 
+    public void ResetStatsToBaseValues()
+    {
+        baseStats = new Dictionary<StatType, int>
+        {
+            { StatType.Health, playerBaseStats.GetStatValue(StatType.Health) },
+            { StatType.Strength, playerBaseStats.GetStatValue(StatType.Strength) },
+            { StatType.Speed, playerBaseStats.GetStatValue(StatType.Speed) }
+        };
+
+    }
     // Retrieves the base value of a stat without any modifiers
     public int GetBaseStat(StatType statType)
     {

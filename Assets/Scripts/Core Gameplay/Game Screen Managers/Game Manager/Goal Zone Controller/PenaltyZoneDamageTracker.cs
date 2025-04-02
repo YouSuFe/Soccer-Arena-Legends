@@ -105,6 +105,15 @@ public class PenaltyZoneDamageTracker : NetworkBehaviour
         tempPlayerKeys.Clear();
         tempPlayerKeys.AddRange(playersInsideZone.Keys);
 
+        if (playersInsideZone.Count > 0)
+        {
+            Debug.Log($"[PenaltyZone] Tracking {playersInsideZone.Count} players:");
+            foreach (var kvp in playersInsideZone)
+            {
+                Debug.Log($"  - Client {kvp.Key}, Dead: {kvp.Value.PlayerInstance.IsPlayerDeath}");
+            }
+        }
+
         foreach (ulong clientId in tempPlayerKeys)
         {
             if (!playersInsideZone.TryGetValue(clientId, out var zoneData))
@@ -120,6 +129,14 @@ public class PenaltyZoneDamageTracker : NetworkBehaviour
                 continue;
             }
 
+            if (zoneData.PlayerInstance.IsPlayerDeath)
+            {
+                Debug.Log($"[PenaltyZone] Client {clientId} is dead. Scheduling removal.");
+                playersToRemove.Add(clientId);
+                continue;
+            }
+
+
             // Tick timer
             zoneData.RemainingDamageTime -= deltaTime;
 
@@ -134,7 +151,6 @@ public class PenaltyZoneDamageTracker : NetworkBehaviour
                 }
 
                 int damageAmount = zoneData.PlayerInstance.CheckIfCurrentlyHasBall() ? damageWithBall : regularDamage;
-                Debug.Log($"[PenaltyZone] Client {clientId} takes damage: {damageAmount}");
 
                 zoneData.PlayerInstance.TakeDamage(damageAmount, DeathType.Zone);
                 PlayPenaltyEffectClientRpc(clientId, zoneData.PlayerInstance.transform.position);
@@ -184,6 +200,7 @@ public class PenaltyZoneDamageTracker : NetworkBehaviour
         }
 
         player.OnDeath += OnPlayerDeath;
+        Debug.Log($"[PenaltyZone] Subscribed to death event for Client {clientId}");
 
         playersInsideZone.Add(clientId, new PlayerZoneTimerData
         {
@@ -227,6 +244,7 @@ public class PenaltyZoneDamageTracker : NetworkBehaviour
 
         if (playersInsideZone.TryGetValue(clientId, out var zoneData))
         {
+            Debug.Log($"[PenaltyZone] Manually removing player {clientId} from zone.");
             player.OnDeath -= zoneData.OnPlayerDeathCallback;
             playersInsideZone.Remove(clientId);
         }
@@ -239,7 +257,6 @@ public class PenaltyZoneDamageTracker : NetworkBehaviour
     [ClientRpc]
     private void PlayPenaltyEffectClientRpc(ulong targetClientId, Vector3 hitPosition)
     {
-        Debug.Log($"Client : {targetClientId}, gets hit from damage zone on penalty. From {owningTeam} side.");
         // ToDo: Make these workable when player gets hit,
         //VFXManager.Instance.SpawnHitEffect(hitPosition); // Your custom VFX call
 

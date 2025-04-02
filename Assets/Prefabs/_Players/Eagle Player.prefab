@@ -359,6 +359,11 @@ MonoBehaviour:
   Speed:
     m_InternalValue: 5
   <InputReader>k__BackingField: {fileID: 11400000, guid: 71ed99219920443b89ce98868d684423, type: 2}
+  meshes:
+  - {fileID: 3033828086907824091}
+  - {fileID: 7249505127952177388}
+  playerRespawnDelay: 10
+  CurrentGameState: 0
   ballSkillTrigger: 1
   ballHolder: {fileID: 6412338735632729908}
   playerCamera: {fileID: 0}
@@ -396,6 +401,11 @@ MonoBehaviour:
     ignoreListenerPause: 0
     rolloffMode: 0
   activeParticleVFX: {fileID: 3598296823676955802, guid: dd45780edd80f4fa2877491c3a365466, type: 3}
+--- !u!137 &3033828086907824091 stripped
+SkinnedMeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 7894351165183798955, guid: 5fc84ac41f77e4aa0bc2a97c9f9c29b9, type: 3}
+  m_PrefabInstance: {fileID: 5157760792766368112}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &3685500938189884427 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 8408655423718786427, guid: 5fc84ac41f77e4aa0bc2a97c9f9c29b9, type: 3}
@@ -409,6 +419,11 @@ Transform:
 --- !u!4 &6412338735632729908 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2263401886513827396, guid: 5fc84ac41f77e4aa0bc2a97c9f9c29b9, type: 3}
+  m_PrefabInstance: {fileID: 5157760792766368112}
+  m_PrefabAsset: {fileID: 0}
+--- !u!137 &7249505127952177388 stripped
+SkinnedMeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 2526350736945615260, guid: 5fc84ac41f77e4aa0bc2a97c9f9c29b9, type: 3}
   m_PrefabInstance: {fileID: 5157760792766368112}
   m_PrefabAsset: {fileID: 0}
 --- !u!1 &8129910762021557086 stripped

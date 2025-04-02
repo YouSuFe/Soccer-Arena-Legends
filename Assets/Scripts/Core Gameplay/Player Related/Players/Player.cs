@@ -41,6 +41,9 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
     [Header("Input Reader")]
     [field: SerializeField] public InputReader InputReader { get; private set; }
 
+    [Header("Mesh Renderers")]
+    [SerializeField] private SkinnedMeshRenderer[] meshes;
+
     [Header("Player Respawn")]
     [SerializeField] private float playerRespawnDelay = 10f;
 
@@ -170,12 +173,16 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
         if(IsOwner)
         {
             InputReader.DisableInputActions();
+
         }
         // ToDo: Move this to death function and disconnect function, When Player dies, remove the ball or related objects.
         if (activeBall != null)
         {
             ballOwnershipManager.NetworkObject.TryRemoveParent();
         }
+
+        DestroyCurrentWeapon();
+
     }
 
     protected virtual void Start()
@@ -203,8 +210,8 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
 
         if (IsOwner)
         {
-            //Debug.Log($"Gameobject {gameObject} {NetworkManager.Singleton.LocalClientId} Health: {Health.Value}, Strength: {Strength.Value}, Speed: {Speed.Value}\n{Stats}");
-
+            Debug.Log($"Gameobject {gameObject} {NetworkManager.Singleton.LocalClientId} Health: {Health.Value}, Strength: {Strength.Value}, Speed: {Speed.Value}\n{Stats}");
+            Debug.Log($"Transform : {transform.position}    ");
             // Update the cooldown timer
             if (skillCooldownTimer > 0)
             {
@@ -649,6 +656,11 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
 
         CanShoot = false;
 
+        if(playerUIManager == null)
+        {
+            Debug.LogError($"Player UI Manager is null");
+        }
+
         playerUIManager?.StartRespawnCountdown(respawnDelay); // ✅ Show panel + timer
 
         Debug.Log("[Client] Player input/UI disabled due to death.");
@@ -661,12 +673,9 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
     {
         if (!IsServer) return;
 
-        transform.position = spawnPosition;
-        transform.rotation = Quaternion.identity;
+        TeleportToSpawn(spawnPosition);
 
         IsPlayerDeath = false;
-
-        ResetStartsForNextRound(true);
 
         // 🔄 Re-enable the player fully
         SetPlayerSimulationState(true);
@@ -716,14 +725,15 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
             transform.rotation = Quaternion.identity;
         }
 
-        ResetStartsForNextRound(false);
+        ResetStatsForNextRound(false);
 
         Debug.Log($"{name} teleported to spawn at {newPosition}");
     }
 
-    private void ResetStartsForNextRound(bool isSpawnCall)
+    private void ResetStatsForNextRound(bool isSpawnCall)
     {
-        Debug.Log($"[Reset Starts For Next Round] stats being resetted to {Stats.GetBaseStat(StatType.Health)} {Stats.GetBaseStat(StatType.Strength)} {Stats.GetBaseStat(StatType.Speed)}");
+        Stats.ResetStatsToBaseValues();
+        Debug.Log($"[Reset Stats For Next Round] stats being resetted to {Stats.GetBaseStat(StatType.Health)} {Stats.GetBaseStat(StatType.Strength)} {Stats.GetBaseStat(StatType.Speed)}");
         Stats.Mediator.RemoveAllModifiers();
 
         Health.Value = Stats.GetBaseStat(StatType.Health);
@@ -733,6 +743,10 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
         if(isSpawnCall)
         {
             PlayerStamina = PlayerMaxStamina;
+        }
+        else
+        {
+            PlayerStamina = Math.Clamp(PlayerStamina, PlayerStamina + 10, PlayerMaxStamina);
         }
     }
 
@@ -777,11 +791,12 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
             animator.enabled = isEnabled;
         }
 
-        var mesh = GetComponentInChildren<SkinnedMeshRenderer>();
-        if (mesh != null)
+        foreach(var mesh in meshes)
         {
             mesh.enabled = isEnabled;
         }
+
+        DestroyCurrentWeapon();
     }
 
     // 🔄 RPC to sync respawn UI updates (called from server)
@@ -836,7 +851,7 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
         Health.Value = Stats.GetCurrentStat(StatType.Health);
 
         // Log the remaining health
-        Debug.Log($"Enemy took {amount} damage. Remaining Health: {Health.Value}");
+        Debug.Log($"{name} took {amount} damage. Remaining Health: {Health.Value}");
 
         // Check if health is zero or less
         if (Health.Value <= 0)
@@ -957,6 +972,17 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
 
             weapon.transform.position = weaponHolder.transform.position;
             weapon.transform.rotation = weaponHolder.transform.rotation;
+        }
+    }
+
+    public void DestroyCurrentWeapon()
+    {
+        if (!IsServer) return;
+
+        if (weapon != null && weapon.NetworkObject != null)
+        {
+            weapon.NetworkObject.Despawn(true);
+            weapon = null;
         }
     }
 

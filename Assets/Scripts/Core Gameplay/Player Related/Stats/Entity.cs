@@ -19,8 +19,11 @@ public abstract class Entity : NetworkBehaviour
     public override void OnNetworkSpawn()
     {
         // Initialize Stats for both Owner and Server
-        playerBaseStats = new PlayerBaseStats(baseStats);
-        Stats = new Stats(new StatsMediator(), playerBaseStats);
+        if (Stats == null)
+        {
+            playerBaseStats = new PlayerBaseStats(baseStats);
+            Stats = new Stats(new StatsMediator(), playerBaseStats);
+        }
 
         if (Stats == null)
         {

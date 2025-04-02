@@ -129,7 +129,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   baseRotationSpeed: 200
-  maxRotationSpeed: 1200
+  maxRotationSpeed: 800
   speedMultiplier: 1.015
 --- !u!114 &-2552166792431724436
 MonoBehaviour:

@@ -154,6 +154,9 @@ public class MultiplayerGameStateManager : NetworkBehaviour
 
         Debug.Log("Trying to start Prep Timer from Handle Pre Game");
         TimerManager.Instance.StartPrepTimer(); // 🔥 Show countdown UI
+
+        // Spawn all players on corresponding positions.
+        PlayerSpawnManager.Instance.ResetAllPlayersToSpawn();
     }
 
     private void HandleInGame()
@@ -163,9 +166,6 @@ public class MultiplayerGameStateManager : NetworkBehaviour
             SetGameState(GameState.EndGame);
         }
         TimerManager.Instance.StartGameTimer(); // 🔥 Show countdown UI
-
-        // Spawn all players on corresponding positions.
-        PlayerSpawnManager.Instance.ResetAllPlayersToSpawn();
 
     }
 

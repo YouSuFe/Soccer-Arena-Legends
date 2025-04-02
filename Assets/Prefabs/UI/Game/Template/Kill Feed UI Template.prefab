@@ -464,9 +464,6 @@ MonoBehaviour:
   killerText: {fileID: 3080200994864826807}
   victimText: {fileID: 8274804427051488516}
   iconImage: {fileID: 5543960423069830712}
-  slideDistance: 400
-  slideDuration: 0.4
-  fadeDuration: 0.3
 --- !u!114 &1059665201488661597
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -480,8 +477,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Padding:
-    m_Left: 0
-    m_Right: 0
+    m_Left: 5
+    m_Right: 5
     m_Top: 0
     m_Bottom: 0
   m_ChildAlignment: 5
