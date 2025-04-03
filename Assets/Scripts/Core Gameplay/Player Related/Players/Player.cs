@@ -569,6 +569,7 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
         if (!IsServer) return;
 
         IsPlayerDeath = true;
+
         OnDeath?.Invoke();
 
         ResetBallStateOnDespawn();
@@ -651,6 +652,8 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
 
         CanShoot = false;
 
+        activeBall = null;
+           
         playerUIManager?.StartRespawnCountdown(respawnDelay); // ✅ Show panel + timer
 
         Debug.Log("[Client] Player input/UI disabled due to death.");
@@ -758,53 +761,6 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
         }
     }
 
-    public static void TeleportRandomly(GameObject target, OwnerNetworkTransform netTransform,Rigidbody rb, Vector3 centerPosition)
-    {
-        Vector3 randomOffset = new Vector3(
-            UnityEngine.Random.Range(-7.5f, 7.5f),
-            0,
-            UnityEngine.Random.Range(-7.5f, 7.5f)
-        );
-
-        Vector3 newPosition = centerPosition + randomOffset;
-
-        if (netTransform != null)
-        {
-            if (rb != null)
-            {
-                rb.isKinematic = true;
-                rb.interpolation = RigidbodyInterpolation.None;
-            }
-
-
-            if (netTransform != null)
-            {
-                netTransform.Teleport(newPosition, Quaternion.identity, target.transform.localScale);
-            }
-
-
-            if (rb != null)
-            {
-                rb.isKinematic = false;
-                rb.linearVelocity = Vector3.zero;
-                rb.angularVelocity = Vector3.zero;
-                rb.interpolation = RigidbodyInterpolation.Interpolate;
-            }
-            Debug.Log($"[TeleportUtils] Teleported {target.name} to random position {newPosition}");
-        }
-        else
-        {
-            target.transform.position = newPosition; // Fallback (not recommended with NGO)
-            Debug.LogWarning("[TeleportUtils] No OwnerNetworkTransform found. Used fallback transform.position.");
-        }
-    }
-
-    [Command]
-    public void Teleport()
-    {
-        TeleportRandomly(gameObject, GetComponent<OwnerNetworkTransform>(), PlayerController.Rigidbody, Vector3.zero);
-    }
-
     private void ResetStatsForNextRound(bool isSpawnCall)
     {
         Stats.ResetStatsToBaseValues();
@@ -827,12 +783,16 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
 
     private void ResetBallStateOnDespawn()
     {
-        // Detach ball if holding
         if (activeBall != null)
         {
-            ballOwnershipManager?.NetworkObject?.TryRemoveParent();
-            ballOwnershipManager?.ResetCurrentOwnershipId();
+            if (IsServer)
+            {
+                ballOwnershipManager?.NetworkObject?.TryRemoveParent();
+                ballOwnershipManager?.ResetCurrentOwnershipId();
+            }
+
             activeBall = null;
+            OnLoseBall?.Invoke(); // Notify that we lost the ball
         }
     }
 
