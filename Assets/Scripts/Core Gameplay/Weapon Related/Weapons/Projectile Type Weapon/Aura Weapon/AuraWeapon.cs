@@ -105,9 +105,6 @@ public class AuraWeapon : BaseWeapon
         projectileBehaviour?.Shoot(projectileHolder, playerCamera, auraBladePrefab, auraBladeProjectileSpeed);
 
         // ToDo: Make sound for all player with RPC
-
-        // Reset the skill cooldown timer after executing the skill
-        ResetSkillCooldown();
     }
 
     protected override void PlaySkillEffects()

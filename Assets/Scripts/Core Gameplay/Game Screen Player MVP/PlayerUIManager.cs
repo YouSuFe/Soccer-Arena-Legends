@@ -101,7 +101,7 @@ public class PlayerUIManager : MonoBehaviour
             liveRespawnTime -= Time.deltaTime;
             if (respawnCountdownText != null)
             {
-                respawnCountdownText.text = $"Respawning... {liveRespawnTime:F2} seconds";
+                respawnCountdownText.text = $"{liveRespawnTime:F2} seconds";
             }
         }
     }

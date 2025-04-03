@@ -20,6 +20,7 @@ public class PenaltyZoneDamageTracker : NetworkBehaviour
     [SerializeField] private int regularDamage = 10;
     [SerializeField] private int damageWithBall = 500;
 
+    private const float First_Damage_Interval = 0.2f;
     #endregion
 
     #region === Zone Tracking ===
@@ -205,7 +206,7 @@ public class PenaltyZoneDamageTracker : NetworkBehaviour
         playersInsideZone.Add(clientId, new PlayerZoneTimerData
         {
             PlayerInstance = player,
-            RemainingDamageTime = 0f,
+            RemainingDamageTime = First_Damage_Interval,
             OnPlayerDeathCallback = OnPlayerDeath
         });
 

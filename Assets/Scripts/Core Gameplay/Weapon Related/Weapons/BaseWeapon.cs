@@ -20,7 +20,6 @@ public abstract class BaseWeapon : NetworkBehaviour, IWeapon, IDamageDealer, ISp
     [Header("Cooldown Settings")]
     [Tooltip("Cooldown time for executing the weapon's special skill.")]
     [SerializeField] private float skillCooldownTime = 1f; // Cooldown time for the skill
-    private float skillCooldownTimer = 0f;
 
     [Tooltip("Cooldown time between regular attacks.")]
     [SerializeField] private float regularAttackCooldown = 0.3f;
@@ -95,12 +94,6 @@ public abstract class BaseWeapon : NetworkBehaviour, IWeapon, IDamageDealer, ISp
 
     protected virtual void Update()
     {
-        // Update the skill cooldown timer
-        if (IsServer && skillCooldownTimer > 0)
-        {
-            skillCooldownTimer -= Time.deltaTime;
-        }
-
         if (IsOwner && weaponHolder != null)
         {
             UpdateWeaponTransform();
@@ -299,11 +292,6 @@ public abstract class BaseWeapon : NetworkBehaviour, IWeapon, IDamageDealer, ISp
 
     #region Special Skill Interface Method
 
-    // Check if the special skill can be executed
-    public bool CanExecuteSkill()
-    {
-        return skillCooldownTimer <= 0f;
-    }
 
     public void ExecuteSkill()
     {
@@ -324,8 +312,6 @@ public abstract class BaseWeapon : NetworkBehaviour, IWeapon, IDamageDealer, ISp
     [ServerRpc]
     private void ExecuteSkillServerRpc()
     {
-        if (!CanExecuteSkill()) return; // Prevent abuse
-
         ExecuteSpecialSkill(); // Server executes the skill logic
 
         // Notify clients to play skill effects
@@ -342,12 +328,6 @@ public abstract class BaseWeapon : NetworkBehaviour, IWeapon, IDamageDealer, ISp
 
 
     #region Weapon Actions and Cooldowns
-
-    // Reset the skill cooldown timer
-    protected void ResetSkillCooldown()
-    {
-        skillCooldownTimer = skillCooldownTime;
-    }
 
     protected float GetSkillCooldownTime()
     {

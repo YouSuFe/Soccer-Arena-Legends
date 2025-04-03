@@ -113,12 +113,18 @@ public class TimerManager : NetworkBehaviour
 
     private void OnPostTimerFinished()
     {
+        ResetPrepDurationValue();
         MultiplayerGameStateManager.Instance.SetGameState(GameState.PreGame);
     }
 
     private void OnGameTimerFinished()
     {
         MultiplayerGameStateManager.Instance.SetGameState(GameState.EndGame);
+    }
+
+    private void ResetPrepDurationValue()
+    {
+        PrepNetworkDuration.Value = prepDuration;
     }
 
     public override void OnDestroy()

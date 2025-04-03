@@ -210,8 +210,9 @@ public class PlayerSpawnManager : NetworkBehaviour
             {
                 Debug.Log("Player Spawn Manager : Player is death, Respawning");
                 player.NetworkObject.Spawn();
-                player.ResetAndRespawnPlayer(spawnPosition);
-                player.CreateAndAssignWeapon(weaponId); // Recreate the weapon on respawn
+
+                // ✅ RE-CREATE AND REASSIGN WEAPON ON RESPAWN
+                StartCoroutine(DelayedResetAndRespawn(player, weaponId, spawnPosition));
             }
             else
             {
@@ -241,6 +242,14 @@ public class PlayerSpawnManager : NetworkBehaviour
 
         activePlayers[clientId] = playerScript;
         AssignClientVisuals(clientId, playerScript);
+    }
+
+    private IEnumerator DelayedResetAndRespawn(PlayerAbstract player, int weaponId, Vector3 spawnPos)
+    {
+        yield return null; // Wait 1 frame
+
+        player.ResetAndRespawnPlayer(spawnPos);
+        player.CreateAndAssignWeapon(weaponId);
     }
 
     /// <summary>

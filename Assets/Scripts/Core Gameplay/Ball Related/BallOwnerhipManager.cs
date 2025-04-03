@@ -224,6 +224,12 @@ public class BallOwnershipManager : NetworkBehaviour
         currentBallState.Value = BallState.Idle;
     }
 
+    public void ResetCurrentOwnershipId()
+    {
+        currentBallOwner.Value = NO_OWNER;
+        currentBallState.Value = BallState.Idle;
+    }
+
     #endregion
 
     #region Utility Methods

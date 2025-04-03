@@ -1,4 +1,6 @@
 using System;
+using System.Collections;
+using QFSW.QC;
 using Unity.Netcode;
 using Unity.Netcode.Components;
 using UnityEngine;
@@ -37,9 +39,14 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
     }
     public float PlayerMaxStamina { get; set; }
 
+    [Header("Referenes")]
+    [SerializeField] private SkillCooldownManager skillCooldownManager;
+    public SkillCooldownManager SkillCooldownManager => skillCooldownManager;
 
     [Header("Input Reader")]
     [field: SerializeField] public InputReader InputReader { get; private set; }
+
+    [Space]
 
     [Header("Mesh Renderers")]
     [SerializeField] private SkinnedMeshRenderer[] meshes;
@@ -88,9 +95,7 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
     [Tooltip("Multiplier applied to ball speed when shooting.")]
     [SerializeField] protected float ballSpeedMultiplier = 2f;
     [Tooltip("Cooldown time before the player can use the ball skill again (in seconds).")]
-    [SerializeField] protected float cooldownTime = 10f;
-    [Tooltip("Current cooldown timer for ball skills.")]
-    [SerializeField] protected float skillCooldownTimer = 0f;
+    [SerializeField] protected float playerSkillCooldownTime = 10f;
     [Tooltip("Ignored layers when shooting the ball.")]
     [SerializeField] protected LayerMask IgnoredAimedLayers;
 
@@ -175,11 +180,8 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
             InputReader.DisableInputActions();
 
         }
-        // ToDo: Move this to death function and disconnect function, When Player dies, remove the ball or related objects.
-        if (activeBall != null)
-        {
-            ballOwnershipManager.NetworkObject.TryRemoveParent();
-        }
+
+        ResetBallStateOnDespawn();
 
         DestroyCurrentWeapon();
 
@@ -212,11 +214,6 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
         {
             Debug.Log($"Gameobject {gameObject} {NetworkManager.Singleton.LocalClientId} Health: {Health.Value}, Strength: {Strength.Value}, Speed: {Speed.Value}\n{Stats}");
             Debug.Log($"Transform : {transform.position}    ");
-            // Update the cooldown timer
-            if (skillCooldownTimer > 0)
-            {
-                skillCooldownTimer -= Time.deltaTime;
-            }
         }
     }
 
@@ -271,22 +268,23 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
     {
         Debug.Log("InputManager_OnPlayerSkillUsed triggered.");
 
-        if (!IsOwner) return; // Ensure only the owner triggers the skill, for double check
+        if (!IsOwner || !IsPlayerAllowedToMoveOrAction()) return;
 
-        if (!IsPlayerAllowedToMoveOrAction()) return;
-
-        if (skillCooldownTimer <= 0 && activeBall != null)
+        if (activeBall == null)
         {
-            Debug.Log("Requesting server to perform ball skill.");
-            PerformBallSkillServerRpc(); // ✅ Call the RPC instead of direct method
+            Debug.LogWarning("Ball skill failed: No active ball.");
+            return;
+        }
+
+        if (skillCooldownManager.TryUsePlayerSkill())
+        {
+            PerformBallSkillServerRpc();
         }
         else
         {
-            Debug.LogWarning("Skill is on cooldown or no ball available.");
+            Debug.LogWarning("Ball skill is on cooldown.");
         }
     }
-
-
 
     private void InputManager_OnWeaponSkillUsed()
     {
@@ -382,19 +380,26 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
     #region Reusable Methods
 
     [ServerRpc]
-    private void PerformBallSkillServerRpc(ServerRpcParams rpcParams = default)
+    private void PerformBallSkillServerRpc()
     {
-        if (skillCooldownTimer > 0 || activeBall == null)
+        if (activeBall == null)
         {
-            return; // Prevent skill usage if cooldown is active or no ball is available
+            Debug.LogWarning("[Server] Cannot use ball skill - no ball attached.");
+            return;
         }
 
-        bool canUseSkill = PerformBallSkill(); // Execute skill logic on the server
-
-        if(canUseSkill)
+        if (!skillCooldownManager.TryUsePlayerSkill())
         {
-            // Set the cooldown if player can use it's skill
-            skillCooldownTimer = cooldownTime;
+            Debug.LogWarning("[Server] Ball skill is on cooldown.");
+            return;
+        }
+
+        bool canUseSkill = PerformBallSkill(); // your abstracted server-side logic
+
+        if (canUseSkill)
+        {
+            // Optional: trigger client effects immediately or via logic inside PerformBallSkill()
+            //PerformBallSkillEffectsClientRpc(OwnerClientId, skillCooldownManager.GetRemainingCooldown(SkillType.BallSkill));
         }
     }
 
@@ -403,12 +408,6 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
     {
         // ✅ Play the skill effects for all clients
         PlaySkillEffects();
-
-        // ✅ Only the player who activated the skill updates their UI
-        if (NetworkManager.Singleton.LocalClientId == playerClientId)
-        {
-            OnSkillCooldownChanged?.Invoke(SkillType.BallSkill, cooldown);
-        }
     }
 
     protected abstract bool PerformBallSkill();
@@ -418,26 +417,20 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
 
     protected void PerformPlayerWeaponSkill()
     {
-        if (!IsOwner) return; 
+        if (!IsOwner) return;
 
         Debug.Log($"[Owner] Player {gameObject.name} is attempting to use WeaponSkill.");
 
         if (weapon is ISpecialWeaponSkill specialWeaponSkill)
         {
-            if (specialWeaponSkill.CanExecuteSkill())
+            if (skillCooldownManager.TryUseWeaponSkill())
             {
                 specialWeaponSkill.ExecuteSkill();
-
-                OnSkillCooldownChanged?.Invoke(SkillType.WeaponSkill, specialWeaponSkill.GetCooldownTime());
             }
             else
             {
-                Debug.Log("[Owner] Skill is on cooldown.");
+                Debug.Log("[Owner] Weapon skill is on cooldown.");
             }
-        }
-        else
-        {
-            Debug.LogError("[Owner] It is not a SpecialWeaponSkill component!");
         }
     }
 
@@ -578,12 +571,7 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
         IsPlayerDeath = true;
         OnDeath?.Invoke();
 
-        // Detach ball if holding
-        if (activeBall != null)
-        {
-            ballOwnershipManager?.NetworkObject?.TryRemoveParent();
-        }
-
+        ResetBallStateOnDespawn();
 
 
         // To show UI
@@ -634,14 +622,17 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
         // 🔴 Otherwise go into respawn queue
         PlayerSpawnManager.Instance.QueueRespawn(OwnerClientId, playerRespawnDelay);
 
-        // ❌ Do NOT destroy the object
-        NetworkObject.Despawn(false);
 
         // 🔄 Disable full player functionality
         SetPlayerSimulationState(false);
 
         // 🔄 Notify client to disable controls
         NotifyOwnerOfDeathClientRpc(OwnerClientId, playerRespawnDelay);
+
+        Debug.Log("[Server] Player is dead due to death.");
+
+        // ❌ Do NOT destroy the object
+        NetworkObject.Despawn(false);
     }
 
     /// <summary>
@@ -650,16 +641,15 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
     [ClientRpc]
     private void NotifyOwnerOfDeathClientRpc(ulong clientId, float respawnDelay)
     {
-        if (NetworkManager.Singleton.LocalClientId != clientId) return;
+        if (NetworkManager.Singleton.LocalClientId != clientId)
+        {
+            Debug.Log($"Server]: client id {clientId} is not Local client id {NetworkManager.Singleton.LocalClientId}");
+            return;
+        }
 
         SetPlayerSimulationState(false);
 
         CanShoot = false;
-
-        if(playerUIManager == null)
-        {
-            Debug.LogError($"Player UI Manager is null");
-        }
 
         playerUIManager?.StartRespawnCountdown(respawnDelay); // ✅ Show panel + timer
 
@@ -713,21 +703,106 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
     {
         if (!IsServer) return;
 
-        var netTransform = GetComponent<NetworkTransform>();
+        Debug.Log($"[Server] TeleportToSpawn() called for {OwnerClientId} to {newPosition}");
+
+        // 👇 Client does the visual/transform teleport
+        TeleportClientRpc(newPosition);
+
+        // 👇 Server handles stat resets
+        ResetStatsForNextRound(false);
+
+        Debug.Log($"[Server] Reset stats and requested client to teleport {name} to {newPosition}");
+    }
+
+    [ClientRpc]
+    private void TeleportClientRpc(Vector3 newPosition)
+    {
+        Debug.Log($"[ClientRpc] TeleportClientRpc called on client {NetworkManager.Singleton.LocalClientId}, IsOwner: {IsOwner}");
+
+        if (!IsOwner)
+        {
+            Debug.Log($"[Client] Skipping teleport. This client does not own this player.");
+            return;
+        }
+
+        StartCoroutine(DelayedTeleport(newPosition));
+    }
+    
+    private IEnumerator DelayedTeleport(Vector3 newPosition)
+    {
+        Rigidbody rb = GetComponent<Rigidbody>();
+        if (rb != null)
+        {
+            rb.isKinematic = true;
+            rb.interpolation = RigidbodyInterpolation.None;
+        }
+
+        yield return null;
+
+        var netTransform = GetComponent<OwnerNetworkTransform>();
         if (netTransform != null)
         {
-            Vector3 currentScale = transform.localScale;
-            netTransform.Teleport(newPosition, Quaternion.identity, currentScale);
+            netTransform.Teleport(newPosition, Quaternion.identity, transform.localScale);
+            Physics.SyncTransforms(); // ✅ Force Unity to apply changes to physics system
+            Debug.Log($"[Client] Delayed teleport with Physics.SyncTransforms() to {newPosition}");
+        }
+
+        yield return null; // wait another frame
+
+        if (rb != null)
+        {
+            rb.isKinematic = false;
+            rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+            rb.interpolation = RigidbodyInterpolation.Interpolate;
+        }
+    }
+
+    public static void TeleportRandomly(GameObject target, OwnerNetworkTransform netTransform,Rigidbody rb, Vector3 centerPosition)
+    {
+        Vector3 randomOffset = new Vector3(
+            UnityEngine.Random.Range(-7.5f, 7.5f),
+            0,
+            UnityEngine.Random.Range(-7.5f, 7.5f)
+        );
+
+        Vector3 newPosition = centerPosition + randomOffset;
+
+        if (netTransform != null)
+        {
+            if (rb != null)
+            {
+                rb.isKinematic = true;
+                rb.interpolation = RigidbodyInterpolation.None;
+            }
+
+
+            if (netTransform != null)
+            {
+                netTransform.Teleport(newPosition, Quaternion.identity, target.transform.localScale);
+            }
+
+
+            if (rb != null)
+            {
+                rb.isKinematic = false;
+                rb.linearVelocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
+                rb.interpolation = RigidbodyInterpolation.Interpolate;
+            }
+            Debug.Log($"[TeleportUtils] Teleported {target.name} to random position {newPosition}");
         }
         else
         {
-            transform.position = newPosition;
-            transform.rotation = Quaternion.identity;
+            target.transform.position = newPosition; // Fallback (not recommended with NGO)
+            Debug.LogWarning("[TeleportUtils] No OwnerNetworkTransform found. Used fallback transform.position.");
         }
+    }
 
-        ResetStatsForNextRound(false);
-
-        Debug.Log($"{name} teleported to spawn at {newPosition}");
+    [Command]
+    public void Teleport()
+    {
+        TeleportRandomly(gameObject, GetComponent<OwnerNetworkTransform>(), PlayerController.Rigidbody, Vector3.zero);
     }
 
     private void ResetStatsForNextRound(bool isSpawnCall)
@@ -746,30 +821,52 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
         }
         else
         {
-            PlayerStamina = Math.Clamp(PlayerStamina, PlayerStamina + 10, PlayerMaxStamina);
+            PlayerStamina = Math.Clamp(PlayerStamina + 10, PlayerStamina, PlayerMaxStamina);
+        }
+    }
+
+    private void ResetBallStateOnDespawn()
+    {
+        // Detach ball if holding
+        if (activeBall != null)
+        {
+            ballOwnershipManager?.NetworkObject?.TryRemoveParent();
+            ballOwnershipManager?.ResetCurrentOwnershipId();
+            activeBall = null;
         }
     }
 
     private void SetPlayerSimulationState(bool isEnabled)
     {
+        Debug.Log($"[SetPlayerSimulationState] isEnabled = {isEnabled} on object {gameObject.name}");
+
         // 🔹 Server-side logic
         if (IsServer)
         {
-            Rigidbody rb = PlayerController.Rigidbody;
+            Rigidbody rb = PlayerController?.Rigidbody;
             if (rb != null)
             {
-                rb.isKinematic = !isEnabled; // Disable physics when inactive
+                rb.isKinematic = !isEnabled;
+                Debug.Log($"[Server] Rigidbody set to isKinematic = {!isEnabled}");
             }
 
             Collider col = GetComponent<Collider>();
             if (col != null)
             {
                 col.enabled = isEnabled;
+                Debug.Log($"[Server] Collider enabled = {isEnabled}");
             }
 
             if (PlayerController != null)
             {
                 PlayerController.enabled = isEnabled;
+                Debug.Log($"[Server] PlayerController enabled = {isEnabled}");
+            }
+
+            if (!isEnabled)
+            {
+                DestroyCurrentWeapon(); // Only destroy weapon when disabling simulation
+                Debug.Log($"[Server] Destroyed current weapon on death.");
             }
         }
 
@@ -779,9 +876,15 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
             if (InputReader != null)
             {
                 if (isEnabled)
+                {
                     InputReader.EnableInputActions();
+                    Debug.Log("[Client] Input enabled.");
+                }
                 else
+                {
                     InputReader.DisableInputActions();
+                    Debug.Log("[Client] Input disabled.");
+                }
             }
         }
 
@@ -789,15 +892,16 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
         if (animator != null)
         {
             animator.enabled = isEnabled;
+            Debug.Log($"Animator enabled = {isEnabled}");
         }
 
-        foreach(var mesh in meshes)
+        foreach (var mesh in meshes)
         {
             mesh.enabled = isEnabled;
+            Debug.Log($"Mesh {mesh.name} enabled = {isEnabled}");
         }
-
-        DestroyCurrentWeapon();
     }
+
 
     // 🔄 RPC to sync respawn UI updates (called from server)
     [ClientRpc]
@@ -890,6 +994,11 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
         return CurrentGameState;
     }
 
+    public float GetBallSkillCooldownTime()
+    {
+        return playerSkillCooldownTime;
+    }
+
     public bool IsPlayerAllowedToMove()
     {
         return (CurrentGameState == GameState.InGame || CurrentGameState == GameState.WaitingForPlayers || CurrentGameState == GameState.PostGame);
@@ -956,22 +1065,48 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
         Debug.Log($"[Client {NetworkManager.Singleton.LocalClientId}] Found Player: {player.name}, OwnerClientId: {playerNetworkObject.OwnerClientId}");
 
         // Automatically detect correct weapon class (e.g., AuraWeapon, SwordWeapon)
-        weapon = weaponNetworkObject.GetComponent<BaseWeapon>();
+        BaseWeapon weapon = weaponNetworkObject.GetComponent<BaseWeapon>();
         if (weapon == null)
         {
             Debug.LogError($"Weapon does not inherit from BaseWeapon! Check prefab settings.");
             return;
         }
+
+        if(player.playerCamera == null)
+        {
+            Debug.LogWarning("Player Camera is null");
+            if(Camera.main == null)
+            {
+                Debug.LogWarning("Camera Main is also null");
+                
+            }
+        }
+        // 🧠 Initialize Weapon
+        weapon.Initialize(player.weaponHolder, player.playerCamera ?? Camera.main, player.projectileHolder);
+        weapon.SetCurrentPlayer(player);
+        weapon.SetPlayerStats(player.Stats);
+        weapon.transform.position = player.weaponHolder.position;
+        weapon.transform.rotation = player.weaponHolder.rotation;
+
+        // ✅ Set to player's weapon field
+        player.weapon = weapon;
+
+        // ✅ Initialize the skill cooldown manager with the weapon
+        if (player.SkillCooldownManager != null)
+        {
+            player.SkillCooldownManager.Initialize(player, weapon);
+
+            // ✅ Forward cooldown event to Player for UI & other systems
+            player.SkillCooldownManager.OnSkillCooldownChanged += (type, time) =>
+            {
+                player.OnSkillCooldownChanged?.Invoke(type, time);
+            };
+
+            Debug.Log("[SkillCooldownManager] Initialized with weapon inside EquipWeaponClientRpc");
+        }
         else
         {
-            weapon.Initialize(weaponHolder, playerCamera ?? Camera.main, projectileHolder);
-            // Assign stats to weapon dynamically
-            weapon.SetCurrentPlayer(player);
-            weapon.SetPlayerStats(player.Stats);
-            Debug.Log($"Assigned {weapon.GetType().Name} to player {player.name}");
-
-            weapon.transform.position = weaponHolder.transform.position;
-            weapon.transform.rotation = weaponHolder.transform.rotation;
+            Debug.LogError("SkillCooldownManager is not assigned on player!");
         }
     }
 

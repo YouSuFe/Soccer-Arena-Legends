@@ -15,6 +15,13 @@ public class UICountdownTimer : MonoBehaviour
         originalColor = defaultColor;
     }
 
+    private void OnEnable()
+    {
+        Debug.Log($"On Enable from {name} Countdown Timer. Try to Subscribing...");
+
+        TrySubscribeToPrepTimer();
+    }
+
     private void Start()
     {
         TrySubscribeToPrepTimer();
@@ -55,12 +62,10 @@ public class UICountdownTimer : MonoBehaviour
 
     private void TrySubscribeToPrepTimer()
     {
-        Debug.Log($"Subscribe from {name} Countdown Timer. Subscribing...");
-
         if (TimerManager.Instance != null)
         {
             Debug.Log($"Subscribe from {name} Countdown Timer. Subscribtion is happened!");
-
+            TimerManager.Instance.PrepNetworkDuration.OnValueChanged -= HandlePrepValueChanged;
             TimerManager.Instance.PrepNetworkDuration.OnValueChanged += HandlePrepValueChanged;
         }
         else
@@ -72,6 +77,7 @@ public class UICountdownTimer : MonoBehaviour
         if (MultiplayerGameStateManager.Instance != null )
         {
             Debug.Log($"Subscribe from {name} MultiplayerGameStateManager. Subscribtion is happened!");
+            MultiplayerGameStateManager.Instance.OnGameStateChanged -= HandleGameStateChanged;
             MultiplayerGameStateManager.Instance.OnGameStateChanged += HandleGameStateChanged;
 
         }
@@ -88,6 +94,7 @@ public class UICountdownTimer : MonoBehaviour
         {
             startCountdownObject.SetActive(true); // Show countdown
             UpdatePrepUI(TimerManager.Instance.GetPrepDurationValue()); // Force update immediately
+            Debug.LogWarning($"UI Countdown Prep Duration Value is {TimerManager.Instance.GetPrepDurationValue()}");
         }
         else
         {

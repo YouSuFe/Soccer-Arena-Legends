@@ -358,11 +358,12 @@ MonoBehaviour:
     m_InternalValue: 10
   Speed:
     m_InternalValue: 5
+  skillCooldownManager: {fileID: 5212579457433732018, guid: 593a196bee46b451ebe2d83791064087, type: 3}
   <InputReader>k__BackingField: {fileID: 11400000, guid: 71ed99219920443b89ce98868d684423, type: 2}
   meshes:
   - {fileID: 3033828086907824091}
   - {fileID: 7249505127952177388}
-  playerRespawnDelay: 10
+  playerRespawnDelay: 5
   CurrentGameState: 0
   ballSkillTrigger: 1
   ballHolder: {fileID: 6412338735632729908}
@@ -372,8 +373,7 @@ MonoBehaviour:
   weaponHolder: {fileID: 295412851033480730}
   projectileHolder: {fileID: 5164988946839075347}
   ballSpeedMultiplier: 2
-  cooldownTime: 10
-  skillCooldownTimer: 0
+  playerSkillCooldownTime: 10
   IgnoredAimedLayers:
     serializedVersion: 2
     m_Bits: 4736

@@ -389,7 +389,8 @@ public class PlayerMovementState : IState
 
     protected void ResetVelocity()
     {
-        playerRigidbody.linearVelocity = Vector3.zero;
+        if(!playerRigidbody.isKinematic)
+            playerRigidbody.linearVelocity = Vector3.zero;
     }
 
     protected void ResetVerticalVelocity()

@@ -39,7 +39,7 @@ public class EagleShotPlayer : PlayerAbstract
             ballRigidbody.linearVelocity = skillDirection.normalized * newSpeed;
 
             // ✅ Notify all clients, passing the player's ClientId who activated the skill
-            PerformBallSkillEffectsClientRpc(OwnerClientId, cooldownTime);
+            PerformBallSkillEffectsClientRpc(OwnerClientId, playerSkillCooldownTime);
 
             activeBall = null;
 

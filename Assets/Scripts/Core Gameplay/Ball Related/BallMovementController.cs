@@ -21,6 +21,21 @@ public class BallMovementController : NetworkBehaviour
         ballReference = GetComponent<BallReference>();
         ballSO = ballReference.BallSO;
         ballRigidbody = ballReference.BallRigidbody;
+
+        MultiplayerGameStateManager.Instance.OnGameStateChanged += HandleGameStateChanged;
+    }
+
+    private void HandleGameStateChanged(GameState newState)
+    {
+        if(newState == GameState.PreGame)
+        {
+            // ToDo: Currently ball is created on field after scoring, that is why I need to remove parent.
+            // Delete this logic when teleport ball to the safe place when scoring.
+            NetworkObject.TryRemoveParent();
+            BallOwnershipManager.ResetCurrentOwnershipId();
+            ownerPlayer = null;
+            transform.position = new Vector3(0, 1, 0);
+        }
     }
 
     private void FixedUpdate()
@@ -67,8 +82,10 @@ public class BallMovementController : NetworkBehaviour
     /// </summary>
     private void FollowOwner()
     {
-        transform.position = ownerPlayer.BallHolderPosition.position;
-
+        if(ownerPlayer.ActiveBall != null)
+        {
+            transform.position = ownerPlayer.BallHolderPosition.position;
+        }
     }
 
     /// <summary>
