@@ -448,6 +448,23 @@ public abstract class BaseWeapon : NetworkBehaviour, IWeapon, IDamageDealer, ISp
         }
     }
 
+    [ClientRpc]
+    protected void PlayAttackHitSoundClientRpc(bool isHeavy, ulong attackerClientId, Vector3 position)
+    {
+        // Skip the attacker to avoid double-playing (they already hear it locally)
+        if (NetworkManager.Singleton.LocalClientId == attackerClientId) return;
+
+        SoundData soundData = isHeavy ? heavyAttackSoundDataOnHit : regularAttackSoundDataOnHit;
+
+        if (soundData != null)
+        {
+            SoundManager.Instance.CreateSoundBuilder()
+                .WithPosition(position)
+                .WithRandomPitch()
+                .Play(soundData);
+        }
+    }
+
     // Play sound for regular attack without hit
     protected void PlayRegularAttackSound()
     {

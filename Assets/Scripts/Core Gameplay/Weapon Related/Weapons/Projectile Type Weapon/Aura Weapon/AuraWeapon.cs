@@ -26,9 +26,9 @@ public class AuraWeapon : BaseWeapon
 
     #region Initialization Methods
 
-    protected override void Awake()
+    public override void OnNetworkSpawn()
     {
-        base.Awake();
+        base.OnNetworkSpawn();
 
         projectileBehaviour = GetComponent<RotatingProjectile>();
 
@@ -38,8 +38,8 @@ public class AuraWeapon : BaseWeapon
         }
 
         SetShootingBehaviour(projectileBehaviour);
-    }
 
+    }
     // Initialize method to set up the weapon with the appropriate data and parent it to the weapon holder
     public override void Initialize(Transform weaponHolder, Camera playerCamera, Transform projectileHolder)
     {
@@ -51,7 +51,9 @@ public class AuraWeapon : BaseWeapon
 
         this.weaponHolder = weaponHolder;
         this.projectileHolder = projectileHolder;
-        this.playerCamera = playerCamera;
+
+        // Get Camera.main in case of first initializing camera null issue
+        this.playerCamera = playerCamera != null ? playerCamera : Camera.main;
 
         this.auraBladeProjectileSpeed = weaponData.ProjectileSpeed;
 
@@ -65,13 +67,6 @@ public class AuraWeapon : BaseWeapon
         {
             Debug.LogError("No Successfully, initialized aura blade");
         }
-
-        //// Set the weapon's parent to the weapon holder (e.g., player's hand)
-        //this.transform.SetParent(weaponHolder);
-
-        //// Apply position and rotation offsets from WeaponDataSO
-        //this.transform.localPosition = weaponData.PositionOffset;
-        //this.transform.localRotation = Quaternion.Euler(weaponData.RotationOffset);
     }
 
     #endregion
@@ -102,7 +97,7 @@ public class AuraWeapon : BaseWeapon
         }
 
         // Execute the projectile behavior using the defined parameters
-        projectileBehaviour?.Shoot(projectileHolder, playerCamera, auraBladePrefab, auraBladeProjectileSpeed);
+        projectileBehaviour?.Shoot(projectileHolder, playerCamera, auraBladePrefab, auraBladeProjectileSpeed, this);
 
         // ToDo: Make sound for all player with RPC
     }
@@ -139,23 +134,24 @@ public class AuraWeapon : BaseWeapon
             return;
         }
 
-        // Use weapon length and hit radius from WeaponDataSO
-        float weaponLength = weaponData.WeaponLength;  // Get length dynamically
-        float hitRadius = weaponData.HitRadius;        // Get hit radius from WeaponDataSO
+        float weaponLength = weaponData.WeaponLength;
+        float hitRadius = weaponData.HitRadius;
 
         Vector3 rayOrigin = raycastHolder.position;
         Vector3 rayDirection = -raycastHolder.forward;
 
-        // Perform the sphere cast using the configured values from WeaponDataSO
         RaycastHit[] hits = Physics.SphereCastAll(rayOrigin, hitRadius, rayDirection, weaponLength, weaponData.DamageableLayer);
 
         if (hits.Length > 0)
         {
-            // Play the hit sound based on attack type
+            // 🔊 Play local hit sound for attacker
             if (isHeavyAttack)
                 PlayHeavyAttackHitSound();
             else
                 PlayRegularAttackHitSound();
+
+            // 🔊 Tell others to play hit sound
+            PlayAttackHitSoundClientRpc(isHeavyAttack, OwnerClientId, transform.position);
 
             foreach (RaycastHit hit in hits)
             {
@@ -173,7 +169,7 @@ public class AuraWeapon : BaseWeapon
         }
         else
         {
-            // No hit detected, play the no-hit sound based on attack type
+            // 🔊 Play local miss sound for attacker
             if (isHeavyAttack)
                 PlayHeavyAttackSound();
             else
@@ -182,6 +178,7 @@ public class AuraWeapon : BaseWeapon
             Debug.Log("No hit detected.");
         }
     }
+
 
     #endregion
 

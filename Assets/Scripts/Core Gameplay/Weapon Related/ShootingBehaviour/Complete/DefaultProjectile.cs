@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class DefaultProjectile : NetworkBehaviour, IProjectileBehaviour
 {
-    public void Shoot(Transform projectileHolder, Camera playerCamera, GameObject projectilePrefab, float projectileSpeed)
+    public void Shoot(Transform projectileHolder, Camera playerCamera, GameObject projectilePrefab, float projectileSpeed, BaseWeapon ownerWeapon)
     {
         if (!IsServer) return; // Ensure only the server spawns projectiles
 
@@ -23,6 +23,10 @@ public class DefaultProjectile : NetworkBehaviour, IProjectileBehaviour
         {
             Debug.LogError("No NetworkObject found on projectile prefab.");
             return;
+        }
+        if (projectileInstance.TryGetComponent<IProjectileNetworkInitializer>(out var networkedInit))
+        {
+            networkedInit.InitializeNetworkedProjectile(ownerWeapon); // 💡 Correct initialization here
         }
 
         Rigidbody rb = projectileInstance.GetComponent<Rigidbody>();

@@ -1,9 +1,12 @@
+using Unity.Netcode;
 using UnityEngine;
 
-public class AuraBlade : MonoBehaviour, IDestroyable, IDestroyer, IDamageDealer
+public class AuraBlade : NetworkBehaviour, IProjectileNetworkInitializer, IDestroyable, IDestroyer, IDamageDealer
 {
     #region Fields
     public AuraBladeDataSO auraBladeData;
+
+    public ulong WeaponOwnerClientId;
 
     private AuraWeapon auraWeapon; // Reference to the AuraWeapon
 
@@ -16,37 +19,49 @@ public class AuraBlade : MonoBehaviour, IDestroyable, IDestroyer, IDamageDealer
 
     void Start()
     {
+        if (IsServer)
+        {
+            Destroy(gameObject, auraBladeData.lifetime);
+        }
+
         PlayAuraBladeSound();
-        // Destroy the projectile after 'lifetime' seconds
-        Destroy(gameObject, auraBladeData.lifetime);
+    }
+
+    public void InitializeNetworkedProjectile(BaseWeapon weapon)
+    {
+        if (weapon is AuraWeapon aura)
+        {
+            auraWeapon = aura;
+            WeaponOwnerClientId = aura.OwnerClientId;
+        }
     }
 
     public void Initialize(AuraWeapon weapon)
     {
         auraWeapon = weapon;
+        WeaponOwnerClientId = weapon.OwnerClientId;
     }
 
     private void OnCollisionEnter(Collision collision)
     {
-        // Try to get the IDamageable component for dealing damage
-        IDamageable target = collision.gameObject.GetComponent<IDamageable>();
-        if (target != null)
+        if (!IsServer) return; // Server-only logic
+
+        var target = collision.gameObject.GetComponent<IDamageable>();
+        if (target is NetworkBehaviour netTarget)
         {
-            DealDamage(target); // Deal damage to the target
+            DealDamage(target); // 👈 Interface-required method
         }
 
-        // Try to get the IDestroyable component for destruction logic
-        IDestroyable destroyable = collision.gameObject.GetComponent<IDestroyable>();
-
+        var destroyable = collision.gameObject.GetComponent<IDestroyable>();
         if (destroyable != null)
         {
-            Debug.Log($"Collided with destroyable object: {collision.gameObject.name}");
-            TriggerDestroy(destroyable); // Trigger destruction of the other object
-            Destroy(gameObject); // Destroy this object (the projectile) as well
+            TriggerDestroy(destroyable);
         }
-        else
+
+        var destroyer = collision.gameObject.GetComponent<IDestroyer>();
+        if (destroyer != null)
         {
-            Debug.LogWarning($"No IDestroyable found on {collision.gameObject.name}");
+            DestroySelf();
         }
     }
 
@@ -62,12 +77,38 @@ public class AuraBlade : MonoBehaviour, IDestroyable, IDestroyer, IDamageDealer
 
     public void DealDamage(IDamageable target)
     {
-        int damage = CalculateDamage();
-
-        auraWeapon.GetCurrentPlayer().PlayerUIManager.ShowFloatingDamage(Vector3.zero, damage);
-
-        target.TakeDamage(damage, DeathType.Skill);
+        if (target is NetworkBehaviour netTarget)
+        {
+            int damage = CalculateDamage();
+            DealDamageServerRpc(netTarget.NetworkObjectId, damage);
+        }
+        else
+        {
+            Debug.LogError("Target is not a NetworkBehaviour — cannot deal networked damage.");
+        }
     }
+
+    [ServerRpc]
+    private void DealDamageServerRpc(ulong targetNetId, int damage)
+    {
+        if (!NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(targetNetId, out var targetObj)) return;
+
+        var damageable = targetObj.GetComponent<IDamageable>();
+        if (damageable != null)
+        {
+            damageable.TakeDamage(damage, DeathType.Skill, WeaponOwnerClientId);
+            ShowFloatingDamageClientRpc(damage);
+        }
+    }
+
+    [ClientRpc]
+    private void ShowFloatingDamageClientRpc(int damage)
+    {
+        if (NetworkManager.Singleton.LocalClientId != WeaponOwnerClientId) return;
+
+        auraWeapon.GetCurrentPlayer()?.PlayerUIManager?.ShowFloatingDamage(Vector3.zero, damage);
+    }
+
 
     #endregion
 
@@ -78,10 +119,22 @@ public class AuraBlade : MonoBehaviour, IDestroyable, IDestroyer, IDamageDealer
         destroyable.Destroy();
     }
 
+    
     // ToDo: Add particle and sound effects
     public void Destroy()
     {
-        Destroy(gameObject);
+        DestroySelf();
+    }
+
+    private void DestroySelf()
+    {
+        if (IsServer)
+        {
+            if (TryGetComponent<NetworkObject>(out var netObj))
+                netObj.Despawn();
+            else
+                Destroy(gameObject);
+        }
     }
 
     #endregion

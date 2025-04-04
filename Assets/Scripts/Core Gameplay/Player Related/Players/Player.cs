@@ -1032,16 +1032,8 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
             return;
         }
 
-        if(player.playerCamera == null)
-        {
-            Debug.LogWarning("Player Camera is null");
-            if(Camera.main == null)
-            {
-                Debug.LogWarning("Camera Main is also null");
-                
-            }
-        }
         // 🧠 Initialize Weapon
+        // player.playerCamera is null for the first call, So, give Camera.main instead
         weapon.Initialize(player.weaponHolder, player.playerCamera ?? Camera.main, player.projectileHolder);
         weapon.SetCurrentPlayer(player);
         weapon.SetPlayerStats(player.Stats);

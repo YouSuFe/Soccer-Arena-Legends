@@ -205,8 +205,9 @@ public class GameManager : NetworkBehaviour
 
         CursorController.UnlockCursor();
 
-        if (!IsServer) return;
+        if (!IsServer || NetworkManager == null) return;
 
+        // Just in case, it is unnecessary but lets leave it here
         NetworkManager.OnClientConnectedCallback -= HandleClientConnected;
         NetworkManager.OnClientDisconnectCallback -= HandleClientDisconnected;
     }
