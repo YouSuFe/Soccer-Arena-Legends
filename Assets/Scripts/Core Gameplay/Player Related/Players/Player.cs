@@ -275,7 +275,7 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
             return;
         }
 
-        if (skillCooldownManager.TryUsePlayerSkill())
+        if (skillCooldownManager.CanUseSkill(SkillType.BallSkill))
         {
             PerformBallSkillServerRpc();
         }
@@ -626,8 +626,7 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
         // 🔄 Disable full player functionality
         SetPlayerSimulationState(false);
 
-        // 🔄 Notify client to disable controls
-        NotifyOwnerOfDeathClientRpc(OwnerClientId, playerRespawnDelay);
+        NotifyOwnerOfDeathClientRpc(playerRespawnDelay, RpcUtils.SendRpcToOwner(this));
 
         Debug.Log("[Server] Player is dead due to death.");
 
@@ -639,21 +638,15 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
     /// Client-side reaction to death: disables controls and UI
     /// </summary>
     [ClientRpc]
-    private void NotifyOwnerOfDeathClientRpc(ulong clientId, float respawnDelay)
+    private void NotifyOwnerOfDeathClientRpc(float respawnDelay, ClientRpcParams rpcParams = default)
     {
-        if (NetworkManager.Singleton.LocalClientId != clientId)
-        {
-            Debug.Log($"Server]: client id {clientId} is not Local client id {NetworkManager.Singleton.LocalClientId}");
-            return;
-        }
-
         SetPlayerSimulationState(false);
 
         CanShoot = false;
 
         activeBall = null;
-           
-        playerUIManager?.StartRespawnCountdown(respawnDelay); // ✅ Show panel + timer
+
+        playerUIManager?.StartRespawnCountdown(respawnDelay);
 
         Debug.Log("[Client] Player input/UI disabled due to death.");
     }
@@ -675,7 +668,7 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
         playerUIManager?.HideDeathScreen();
 
         // 👇 Tell client to re-enable movement/input/UI
-        NotifyClientOfRespawnClientRpc(OwnerClientId);
+        NotifyClientOfRespawnClientRpc(RpcUtils.SendRpcToOwner(this));
 
         Debug.Log($"{name} has been respawned at {spawnPosition}.");
     }
@@ -684,15 +677,11 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
     /// Called on the owner client after they are respawned.
     /// </summary>
     [ClientRpc]
-    private void NotifyClientOfRespawnClientRpc(ulong clientId)
+    private void NotifyClientOfRespawnClientRpc(ClientRpcParams rpcParams = default)
     {
-        if (NetworkManager.Singleton.LocalClientId != clientId) return;
-
         SetPlayerSimulationState(true);
 
         playerUIManager?.HideDeathScreen();
-
-        // Animator?.SetTrigger("Respawn");
 
         Debug.Log("[Client] Player respawned and input re-enabled.");
     }

@@ -36,6 +36,9 @@ public class BallOwnershipManager : NetworkBehaviour
 
     private ulong lastTouchedPlayerId; // Stores the last player to interact with the ball
 
+    private ulong lastSkillInfluencerId = NO_OWNER; // Stores the last player to interact with player's skill on the ball
+
+
     // Events triggered on ball interactions
     public event Action<PlayerAbstract> OnBallPickedUp;
     public event Action<PlayerAbstract> OnBallShot;
@@ -137,6 +140,9 @@ public class BallOwnershipManager : NetworkBehaviour
         this.NetworkObject.TrySetParent(playerBallOwner.transform, false);
         // Assign ownership and update state
         playerBallOwner.RegisterBall(ballReference);
+
+        ClearSkillInfluence();
+
         currentBallOwner.Value = playerId;
         lastTouchedPlayerId = playerId;
         currentBallState.Value = BallState.PickedUp;
@@ -187,6 +193,8 @@ public class BallOwnershipManager : NetworkBehaviour
         playerShooter.UpdateShootStateClientRpc(clientId);
 
         // Reset ownership and update state
+        ClearSkillInfluence();
+
         currentBallOwner.Value = NO_OWNER;
         lastTouchedPlayerId = clientId;
         currentBallState.Value = BallState.InAir;
@@ -221,13 +229,25 @@ public class BallOwnershipManager : NetworkBehaviour
     {
         currentBallOwner.Value = NO_OWNER;
         lastTouchedPlayerId = NO_OWNER;
+        lastSkillInfluencerId = NO_OWNER;
         currentBallState.Value = BallState.Idle;
     }
 
     public void ResetCurrentOwnershipId()
     {
+        ClearSkillInfluence();
         currentBallOwner.Value = NO_OWNER;
         currentBallState.Value = BallState.Idle;
+    }
+
+    public void RegisterSkillInfluence(ulong clientId)
+    {
+        lastSkillInfluencerId = clientId;
+    }
+
+    public void ClearSkillInfluence()
+    {
+        lastSkillInfluencerId = NO_OWNER;
     }
 
     #endregion
@@ -286,6 +306,11 @@ public class BallOwnershipManager : NetworkBehaviour
     public PlayerAbstract GetLastTouchedPlayer()
     {
         return GetPlayerById(lastTouchedPlayerId);
+    }
+
+    public ulong GetLastSkillInfluencerId()
+    {
+        return lastSkillInfluencerId;
     }
 
     public BallState GetCurrentBallState()

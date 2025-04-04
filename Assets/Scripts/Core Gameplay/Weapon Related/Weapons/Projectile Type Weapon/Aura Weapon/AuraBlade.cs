@@ -44,26 +44,33 @@ public class AuraBlade : NetworkBehaviour, IProjectileNetworkInitializer, IDestr
 
     private void OnCollisionEnter(Collision collision)
     {
-        if (!IsServer) return; // Server-only logic
+        if (!IsServer) return;
 
-        var target = collision.gameObject.GetComponent<IDamageable>();
-        if (target is NetworkBehaviour netTarget)
+        // Damageable logic
+        if (collision.gameObject.TryGetComponent<IDamageable>(out var target) && target is NetworkBehaviour netTarget)
         {
-            DealDamage(target); // 👈 Interface-required method
+            DealDamage(target);
         }
 
-        var destroyable = collision.gameObject.GetComponent<IDestroyable>();
-        if (destroyable != null)
+        // Destroyable logic
+        if (collision.gameObject.TryGetComponent<IDestroyable>(out var destroyable))
         {
             TriggerDestroy(destroyable);
         }
 
-        var destroyer = collision.gameObject.GetComponent<IDestroyer>();
-        if (destroyer != null)
+        // Self-destruction trigger
+        if (collision.gameObject.TryGetComponent<IDestroyer>(out var destroyer))
         {
             DestroySelf();
         }
+
+        // Ball interaction tracking
+        if (collision.gameObject.TryGetComponent<BallOwnershipManager>(out var ballManager))
+        {
+            ballManager.RegisterSkillInfluence(WeaponOwnerClientId);
+        }
     }
+
 
     #region Damage Logic
     public int CalculateDamage()
@@ -96,23 +103,24 @@ public class AuraBlade : NetworkBehaviour, IProjectileNetworkInitializer, IDestr
         var damageable = targetObj.GetComponent<IDamageable>();
         if (damageable != null)
         {
-            // 🔥 Get attacker + target team data
+            // ✅ Team check
             if (!TeamUtils.AreOpponents(WeaponOwnerClientId, targetNetId))
             {
                 Debug.Log("[AuraBlade] Skipping damage: target is same team.");
                 return;
             }
 
+            // ✅ Apply damage
             damageable.TakeDamage(damage, DeathType.Skill, WeaponOwnerClientId);
-            ShowFloatingDamageClientRpc(damage);
+
+            // ✅ Send floating damage UI only to the attacker
+            ShowFloatingDamageClientRpc(damage, RpcUtils.ToClient(WeaponOwnerClientId));
         }
     }
 
     [ClientRpc]
-    private void ShowFloatingDamageClientRpc(int damage)
+    private void ShowFloatingDamageClientRpc(int damage, ClientRpcParams rpcParams = default)
     {
-        if (NetworkManager.Singleton.LocalClientId != WeaponOwnerClientId) return;
-
         auraWeapon.GetCurrentPlayer()?.PlayerUIManager?.ShowFloatingDamage(Vector3.zero, damage);
     }
 

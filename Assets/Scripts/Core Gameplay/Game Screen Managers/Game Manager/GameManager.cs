@@ -17,6 +17,12 @@ public class GameManager : NetworkBehaviour
     public NetworkVariable<int> BlueTeamScore = new();
     public NetworkVariable<int> RedTeamScore = new();
 
+    private Dictionary<Team, int> accidentalGoals = new()
+    {
+        { Team.Blue, 0 },
+        { Team.Red, 0 }
+    };
+
     private void Awake()
     {
         if (Instance != null)
@@ -151,6 +157,20 @@ public class GameManager : NetworkBehaviour
         else if (team == 1) RedTeamScore.Value++;
 
         // Set the state post game for the game
+        MultiplayerGameStateManager.Instance.SetGameState(GameState.PostGame);
+    }
+
+    public void AddTeamScoreWithoutCredit(Team scoringTeam)
+    {
+        accidentalGoals[scoringTeam]++;
+
+        if (scoringTeam == Team.Blue)
+            BlueTeamScore.Value++;
+        else if (scoringTeam == Team.Red)
+            RedTeamScore.Value++;
+
+        Debug.Log($"[GameManager] Accidental goal — Team {scoringTeam} score incremented. Total Accidental: {accidentalGoals[scoringTeam]}");
+
         MultiplayerGameStateManager.Instance.SetGameState(GameState.PostGame);
     }
 

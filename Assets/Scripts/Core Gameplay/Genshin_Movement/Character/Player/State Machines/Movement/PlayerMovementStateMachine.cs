@@ -21,7 +21,6 @@ public class PlayerMovementStateMachine : StateMachine
 {
     public PlayerController PlayerController { get; }
     public PlayerStateReusableData ReusableData { get; }
-    //protected PlayerBaseStats playerBaseStats;
 
     public bool IsServer { get; }
     public bool IsOwner { get; }

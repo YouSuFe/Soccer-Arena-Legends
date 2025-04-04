@@ -23,6 +23,25 @@ public class EagleShotPlayer : PlayerAbstract
 
         if (Physics.Raycast(ray, out hit))
         {
+            if (hit.collider.TryGetComponent<GoalZoneController>(out var goalZone))
+            {
+                Team playerTeam = (Team)PlayerSpawnManager.Instance.GetUserData(OwnerClientId).teamIndex;
+
+                if (goalZone.goalTeam == playerTeam)
+                {
+                    Debug.Log($"[Skill] Cannot use skill toward own goal — reset cooldown.");
+
+                    // ❌ Skill not performed — reset cooldown
+                    SkillCooldownManager.ResetPlayerSkillCooldownServer();
+
+                    // Optional: Notify player
+                    NotifyCooldownResetClientRpc(RpcUtils.ToClient(OwnerClientId));
+
+                    return false;
+                }
+            }
+
+
             Debug.Log($"[Server] There is a valid target to activate skill on Player {name} on Client {OwnerClientId}");
             // Apply multiplied speed to the ball's Rigidbody
             Rigidbody ballRigidbody = activeBall.GetComponent<Rigidbody>();
@@ -38,12 +57,14 @@ public class EagleShotPlayer : PlayerAbstract
             // Apply the new velocity with the same direction as before
             ballRigidbody.linearVelocity = skillDirection.normalized * newSpeed;
 
+            ballOwnershipManager.RegisterSkillInfluence(OwnerClientId);
+
             // ✅ Notify all clients, passing the player's ClientId who activated the skill
             PerformBallSkillEffectsClientRpc(OwnerClientId, playerSkillCooldownTime);
 
             activeBall = null;
 
-            NotifyPlayerActiveBallBecameNullClientRpc(OwnerClientId);
+            NotifyPlayerActiveBallBecameNullClientRpc(RpcUtils.SendRpcToOwner(this));
 
             return true;
         }
@@ -55,15 +76,18 @@ public class EagleShotPlayer : PlayerAbstract
     }
 
     [ClientRpc]
-    private void NotifyPlayerActiveBallBecameNullClientRpc(ulong playerClientId)
+    private void NotifyPlayerActiveBallBecameNullClientRpc(ClientRpcParams clientRpcParams = default)
     {
         // ✅ Only the player who activated the skill updates their UI
-        if (NetworkManager.Singleton.LocalClientId == playerClientId)
-        {
-            Debug.Log($"[Client] Active ball became null on Player {name} on Client {OwnerClientId}");
-            activeBall = null;
-        }
+        Debug.Log($"[Client] Active ball became null on Player {name} on Client {OwnerClientId}");
+        activeBall = null;
 
+    }
+
+    [ClientRpc]
+    private void NotifyCooldownResetClientRpc(ClientRpcParams clientRpcParams = default)
+    {
+        //PlayerUIManager?.ShowMessage("You can't use that skill toward your own goal!", Color.red);
     }
 
     protected override void PerformHeavyAttack()
@@ -103,7 +127,8 @@ public class EagleShotPlayer : PlayerAbstract
             Destroy(currentParticleInstance, 2f);
         }
 
-        PlaySoundWithParent(eagleShotPlayerBallSkillSoundData, activeBall.transform.position, activeBall.transform);
+        //ToDo: Activate it when add sound into game manager
+        //PlaySoundWithParent(eagleShotPlayerBallSkillSoundData, activeBall.transform.position, activeBall.transform);
     }
 
 }

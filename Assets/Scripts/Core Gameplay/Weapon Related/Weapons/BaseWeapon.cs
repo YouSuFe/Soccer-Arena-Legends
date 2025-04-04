@@ -227,15 +227,7 @@ public abstract class BaseWeapon : NetworkBehaviour, IWeapon, IDamageDealer, ISp
             }
 
             // ✅ Efficient: only notify attacker to show floating damage
-            var rpcParams = new ClientRpcParams
-            {
-                Send = new ClientRpcSendParams
-                {
-                    TargetClientIds = new[] { OwnerClientId }
-                }
-            };
-
-            ShowFloatingDamageClientRpc(damage, rpcParams);
+            ShowFloatingDamageClientRpc(damage, RpcUtils.SendRpcToOwner(this));
         }
     }
 

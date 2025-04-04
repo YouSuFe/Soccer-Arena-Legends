@@ -71,4 +71,21 @@ public class SkillCooldownManager : NetworkBehaviour
             ? playerSkillCooldown.Value
             : weaponSkillCooldown.Value;
     }
+
+    public bool CanUseSkill(SkillType type)
+    {
+        return type == SkillType.BallSkill ? !(playerSkillCooldown.Value > 0) : !(weaponSkillCooldown.Value > 0);
+    }
+
+    public void ResetPlayerSkillCooldownServer()
+    {
+        playerSkillCooldown.Value = 0f;
+        OnSkillCooldownChanged?.Invoke(SkillType.BallSkill, 0f); // Inform listeners/UI
+    }
+
+    public void ResetWeaponSkillCooldownServer()
+    {
+        playerSkillCooldown.Value = 0f;
+        OnSkillCooldownChanged?.Invoke(SkillType.WeaponSkill, 0f); // Inform listeners/UI
+    }
 }
