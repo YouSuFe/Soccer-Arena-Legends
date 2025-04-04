@@ -143,7 +143,6 @@ public class PlayerMovementState : IState
 
     void ReadMovementInput()
     {
-        Debug.Log($"PlayerController : Movement Inputs : {inputReader.GetPlayerMovement()}");
         stateMachine.ReusableData.MovementInput = inputReader.GetPlayerMovement();
     }
 

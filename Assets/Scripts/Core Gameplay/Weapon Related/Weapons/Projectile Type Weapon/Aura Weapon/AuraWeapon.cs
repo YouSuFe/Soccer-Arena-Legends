@@ -55,18 +55,13 @@ public class AuraWeapon : BaseWeapon
         // Get Camera.main in case of first initializing camera null issue
         this.playerCamera = playerCamera != null ? playerCamera : Camera.main;
 
+        if (this.playerCamera != null)
+            Debug.Log("Successfully, initialized player Camera");
+
         this.auraBladeProjectileSpeed = weaponData.ProjectileSpeed;
 
-        auraBladePrefab.GetComponent<AuraBlade>().Initialize(this);
+        Debug.Log($"AuraWeapon initialized. Projectile prefab: {(auraBladePrefab != null ? "Assigned" : "Missing")}");
 
-        if (auraBladePrefab != null)
-        {
-            Debug.Log("Successfully, initialized aura blade");
-        }
-        else
-        {
-            Debug.LogError("No Successfully, initialized aura blade");
-        }
     }
 
     #endregion
@@ -104,7 +99,7 @@ public class AuraWeapon : BaseWeapon
 
     protected override void PlaySkillEffects()
     {
-        PlayProjectileSound();
+        //PlayProjectileSound();
     }
 
     protected override void RegularAttackBehaviour()

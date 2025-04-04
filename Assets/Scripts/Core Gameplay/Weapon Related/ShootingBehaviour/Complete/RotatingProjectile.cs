@@ -5,6 +5,7 @@ public class RotatingProjectile : NetworkBehaviour, IProjectileBehaviour
 {
     public void Shoot(Transform projectileHolder, Camera playerCamera, GameObject projectilePrefab, float projectileSpeed, BaseWeapon ownerWeapon)
     {
+        Debug.Log($"Is server: {IsServer} IsClient {IsClient} IsOwner {IsOwner}");
         if (!IsServer) return; // Ensure only the server spawns projectiles
 
         TargetingSystem targetingSystem = new TargetingSystem();
@@ -17,6 +18,7 @@ public class RotatingProjectile : NetworkBehaviour, IProjectileBehaviour
         NetworkObject networkObject = projectileInstance.GetComponent<NetworkObject>();
         if (networkObject != null)
         {
+            Debug.LogError("Spawning the Projectile for "+ ownerWeapon.name);
             networkObject.Spawn(); // Syncs the projectile across all clients
         }
         else
@@ -27,7 +29,14 @@ public class RotatingProjectile : NetworkBehaviour, IProjectileBehaviour
 
         if (projectileInstance.TryGetComponent<IProjectileNetworkInitializer>(out var networkedInit))
         {
+            Debug.LogWarning("InitializeNetworkedProjectile the Projectile for " + ownerWeapon.name);
+
             networkedInit.InitializeNetworkedProjectile(ownerWeapon); // 💡 Correct initialization here
+        }
+        else
+        {
+            Debug.LogWarning("InitializeNetworkedProjectile the Projectile for not happenning." + ownerWeapon.name);
+
         }
 
         Rigidbody rb = projectileInstance.GetComponent<Rigidbody>();

@@ -194,6 +194,7 @@ public abstract class BaseWeapon : NetworkBehaviour, IWeapon, IDamageDealer, ISp
     }
 
     #region Networked Dealing Damage Logic
+
     [ServerRpc]
     private void DealDamageServerRpc(ulong targetNetworkId, int damage, Vector3 attackerPosition, bool isPositionBased)
     {
@@ -206,8 +207,16 @@ public abstract class BaseWeapon : NetworkBehaviour, IWeapon, IDamageDealer, ISp
 
         if (target != null)
         {
+            // ❌ Block friendly fire (same team)
+            if (!TeamUtils.AreOpponents(OwnerClientId, targetNetworkId))
+            {
+                Debug.Log($"{name} Skipping damage: target is same team.");
+                return;
+            }
+
             Debug.Log($"[Server] Applying {damage} damage to Target-{targetNetworkId}");
 
+            // ✅ Apply damage based on interface type
             if (isPositionBased && target is IPositionBasedDamageable positionBasedDamageable)
             {
                 positionBasedDamageable.TakeDamage(damage, attackerPosition, DeathType.Knife, OwnerClientId);
@@ -216,11 +225,33 @@ public abstract class BaseWeapon : NetworkBehaviour, IWeapon, IDamageDealer, ISp
             {
                 target.TakeDamage(damage, DeathType.Knife, OwnerClientId);
             }
+
+            // ✅ Efficient: only notify attacker to show floating damage
+            var rpcParams = new ClientRpcParams
+            {
+                Send = new ClientRpcSendParams
+                {
+                    TargetClientIds = new[] { OwnerClientId }
+                }
+            };
+
+            ShowFloatingDamageClientRpc(damage, rpcParams);
         }
     }
 
+    [ClientRpc]
+    private void ShowFloatingDamageClientRpc(int damage, ClientRpcParams rpcParams = default)
+    {
+        if (player?.PlayerUIManager != null)
+        {
+            player.PlayerUIManager.ShowFloatingDamage(Vector3.zero, damage);
+        }
+        else
+        {
+            Debug.LogError("PlayerUIManager is missing!");
+        }
+    }
 
-    // Deal damage to a target implementing IDamageable or IPositionBasedDamageable
     public void DealDamage(IDamageable target)
     {
         int damage = CalculateDamage();
@@ -233,18 +264,7 @@ public abstract class BaseWeapon : NetworkBehaviour, IWeapon, IDamageDealer, ISp
 
             Debug.Log($"[Client-{OwnerClientId}] Dealing normal damage to Target-{networkTarget.NetworkObjectId}");
 
-            // 🔥 Show immediate local UI feedback (no RPC needed)
-            PlayerUIManager playerUIManager = player?.PlayerUIManager;
-            if (playerUIManager != null)
-            {
-                playerUIManager.ShowFloatingDamage(Vector3.zero, damage);
-            }
-            else
-            {
-                Debug.LogError("PlayerUIManager is missing!");
-            }
-
-            // 🔄 Send damage request to the server
+            // 🔄 Server will handle validation and feedback
             DealDamageServerRpc(networkTarget.NetworkObjectId, damage, attackerPosition, isPositionBased);
         }
         else
@@ -253,10 +273,9 @@ public abstract class BaseWeapon : NetworkBehaviour, IWeapon, IDamageDealer, ISp
         }
     }
 
-    // Deal heavy damage using a multiplier
     public void DealHeavyDamage(IDamageable target)
     {
-        int damage = CalculateDamage() * heavyDamageMultiplier; // Heavy damage multiplier
+        int damage = CalculateDamage() * heavyDamageMultiplier;
         Vector3 weaponPositionY = new Vector3(0f, transform.position.y, 0f);
         Vector3 attackerPosition = transform.root.position + weaponPositionY;
 
@@ -266,18 +285,6 @@ public abstract class BaseWeapon : NetworkBehaviour, IWeapon, IDamageDealer, ISp
 
             Debug.Log($"[Client-{OwnerClientId}] Dealing heavy damage to Target-{networkTarget.NetworkObjectId}");
 
-            // 🔥 Show immediate local UI feedback (no RPC needed)
-            PlayerUIManager playerUIManager = player?.PlayerUIManager;
-            if (playerUIManager != null)
-            {
-                playerUIManager.ShowFloatingDamage(Vector3.zero, damage);
-            }
-            else
-            {
-                Debug.LogError("PlayerUIManager is missing!");
-            }
-
-            // 🔄 Send heavy damage request to the server
             DealDamageServerRpc(networkTarget.NetworkObjectId, damage, attackerPosition, isPositionBased);
         }
         else

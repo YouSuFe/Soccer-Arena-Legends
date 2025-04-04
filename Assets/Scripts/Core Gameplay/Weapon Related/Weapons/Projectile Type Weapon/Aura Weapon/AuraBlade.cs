@@ -6,7 +6,7 @@ public class AuraBlade : NetworkBehaviour, IProjectileNetworkInitializer, IDestr
     #region Fields
     public AuraBladeDataSO auraBladeData;
 
-    public ulong WeaponOwnerClientId;
+    public ulong WeaponOwnerClientId { get; private set; } = ulong.MaxValue;
 
     private AuraWeapon auraWeapon; // Reference to the AuraWeapon
 
@@ -96,6 +96,13 @@ public class AuraBlade : NetworkBehaviour, IProjectileNetworkInitializer, IDestr
         var damageable = targetObj.GetComponent<IDamageable>();
         if (damageable != null)
         {
+            // 🔥 Get attacker + target team data
+            if (!TeamUtils.AreOpponents(WeaponOwnerClientId, targetNetId))
+            {
+                Debug.Log("[AuraBlade] Skipping damage: target is same team.");
+                return;
+            }
+
             damageable.TakeDamage(damage, DeathType.Skill, WeaponOwnerClientId);
             ShowFloatingDamageClientRpc(damage);
         }

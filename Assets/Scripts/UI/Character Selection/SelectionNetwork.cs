@@ -122,7 +122,6 @@ public class SelectionNetwork : NetworkBehaviour
             Destroy(gameObject);
             return;
         }
-        Debug.LogError("Here is this, can all clients see this mf.");
         Instance = this;
 
         // Initialize NetworkLists for players' selection and status
