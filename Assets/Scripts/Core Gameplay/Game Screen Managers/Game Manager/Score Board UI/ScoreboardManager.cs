@@ -79,5 +79,19 @@ public class ScoreboardManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Refreshes the scoreboard UI only if it is currently visible.
+    /// This is used for stat updates (like accidental goals) that are not part of PlayerStatSync,
+    /// so changes can still be reflected in real-time without needing the user to close and reopen the scoreboard.
+    /// </summary>
+    public void RefreshIfVisible()
+    {
+        if (matchScoreboardUI != null && matchScoreboardUI.gameObject.activeSelf)
+        {
+            matchScoreboardUI.Refresh();
+        }
+    }
+
+
     #endregion
 }

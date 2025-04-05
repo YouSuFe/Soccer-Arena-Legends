@@ -7,10 +7,15 @@ public class ScoreboardUI : MonoBehaviour
 {
     [Header("UI References")]
     [SerializeField] private GameObject playerRowPrefab;
+    [Space]
     [SerializeField] private Transform redTeamContainer;
     [SerializeField] private Transform blueTeamContainer;
+    [Space]
     [SerializeField] private TMP_Text redTeamScoreText;
     [SerializeField] private TMP_Text blueTeamScoreText;
+    [Space]
+    [SerializeField] private TMP_Text redTeamAccidentalText;
+    [SerializeField] private TMP_Text blueTeamAccidentalText;
 
     private void Start()
     {
@@ -67,6 +72,10 @@ public class ScoreboardUI : MonoBehaviour
         // Update team scores from GameManager’s NetworkVariables.
         redTeamScoreText.text = $"{GameManager.Instance.RedTeamScore.Value}";
         blueTeamScoreText.text = $"{GameManager.Instance.BlueTeamScore.Value}";
+
+        // Update accidental scores from GameManager’s NetworkVariables.
+        redTeamAccidentalText.text = $"Own G: {GameManager.Instance.GetAccidentalGoalCount(Team.Red)}";
+        blueTeamAccidentalText.text = $"Own G: {GameManager.Instance.GetAccidentalGoalCount(Team.Blue)}";
     }
 
     // ToDo : Calculate really how much score we are making.

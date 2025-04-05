@@ -171,6 +171,14 @@ public class GameManager : NetworkBehaviour
 
         Debug.Log($"[GameManager] Accidental goal — Team {scoringTeam} score incremented. Total Accidental: {accidentalGoals[scoringTeam]}");
 
+        /// <summary>
+        /// Prevents forced opening during gameplay while ensuring UI reflects accidental goal updates in real-time.
+        /// </summary>
+        if (ScoreboardManager.Instance != null)
+        {
+            ScoreboardManager.Instance.RefreshIfVisible();
+        }
+
         MultiplayerGameStateManager.Instance.SetGameState(GameState.PostGame);
     }
 
@@ -217,6 +225,11 @@ public class GameManager : NetworkBehaviour
         }
         persistentStats.Clear();
         clientToUserMap.Clear();
+    }
+
+    public int GetAccidentalGoalCount(Team team)
+    {
+        return accidentalGoals.TryGetValue(team, out int count) ? count : 0;
     }
 
     public override void OnDestroy()
