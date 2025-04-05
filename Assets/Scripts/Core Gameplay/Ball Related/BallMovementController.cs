@@ -125,83 +125,103 @@ public class BallMovementController : NetworkBehaviour
 
     private void OnCollisionEnter(Collision collision)
     {
-        // ✅ Server-only logic: Damage + physics must only run on the server for authority
+        // ✅ All ball physics & damage should happen server-side
         if (!IsServer) return;
 
-        Debug.Log("Something collided with the ball: " + collision.gameObject.name);
+        // ✅ Bail early if this collision shouldn't be processed
+        if (!CanProcessCollision(collision)) return;
 
-        // ❌ Don't process if the ball is picked up
-        if (BallOwnershipManager.GetCurrentBallState() == BallState.PickedUp) return;
-
-        // 🔄 Avoid dealing repeated damage within cooldown window
-        if (Time.time - lastDamageTime < damageCooldown) return;
-
-        // ✅ Check if collided object is damageable (i.e., likely a player)
+        // ✅ Check for a valid target (something we can damage)
         IDamageable damageable = collision.collider.GetComponent<IDamageable>();
         if (damageable == null) return;
 
-        // Get current ball speed
         float speed = ballRigidbody.linearVelocity.magnitude;
-
-        // 🧯 Prevent accidental collisions while ball is slowly rolling
         if (speed < ballSO.BallData.MaxPickupSpeed) return;
 
-        // 🔍 Get IDs
         ulong targetClientId = GetClientIdFromDamageable(damageable);
         if (targetClientId == ulong.MaxValue) return;
 
-        ulong skillInfluencerId = BallOwnershipManager.GetLastSkillInfluencerId();
-        ulong lastTouchedId = BallOwnershipManager.GetCurrentBallOwnerId(); // fallback if skill influencer not available
+        // ❌ Skip if we're hitting a teammate (either from skill or regular throw)
+        if (IsFriendlyFire(targetClientId)) return;
 
-        // 🛡️ Team protection: Avoid damaging teammates
-        if (skillInfluencerId != ulong.MaxValue)
-        {
-            if (!TeamUtils.AreOpponents(skillInfluencerId, targetClientId))
-            {
-                Debug.Log("[Ball] No damage — same team as skill influencer.");
-                return;
-            }
-        }
-        else if (lastTouchedId != ulong.MaxValue)
-        {
-            if (!TeamUtils.AreOpponents(lastTouchedId, targetClientId))
-            {
-                Debug.Log("[Ball] No damage — same team as last toucher.");
-                return;
-            }
-        }
+        // ✅ Do the damage & feedback
+        ApplyBallDamage(damageable, targetClientId, speed);
 
-        // 💥 Apply damage
-        int damage = ballSO.BallData.CalculateTotalBallDamage(speed);
-        damageable.TakeDamage(damage, DeathType.Ball, lastTouchedId);
+        // ✅ Knock back the target (scaled if friendly)
+        ApplyKnockback(collision, targetClientId, speed);
 
-        Debug.Log($"[Ball][Server] Hit {collision.collider.name} at speed {speed}, damage: {damage}");
-
-        // ✅ Try knockback if rigidbody exists
-        Rigidbody targetRb = collision.rigidbody;
-        if (targetRb != null && !targetRb.isKinematic)
-        {
-            // 🎯 Compute direction from ball to player
-            Vector3 knockbackDir = (collision.collider.transform.position - transform.position).normalized;
-
-            // 🧪 Reduced knockback if hit was to teammate
-            float forceMultiplier = 1f;
-            if (skillInfluencerId != ulong.MaxValue && !TeamUtils.AreOpponents(skillInfluencerId, targetClientId))
-                forceMultiplier = 0.3f;
-            else if (!TeamUtils.AreOpponents(lastTouchedId, targetClientId))
-                forceMultiplier = 0.3f;
-
-            // 🧨 Compute final knockback force
-            float knockbackForce = speed * ballSO.BallData.KnockbackForceMultiplier * forceMultiplier;
-
-            // 🚀 Apply the impulse
-            targetRb.AddForce(knockbackDir * knockbackForce, ForceMode.Impulse);
-        }
-
-        lastDamageTime = Time.time; // ✅ Update cooldown
+        // 🕒 Reset damage cooldown
+        lastDamageTime = Time.time;
     }
 
 
+    private bool CanProcessCollision(Collision collision)
+    {
+        if (BallOwnershipManager.GetCurrentBallState() == BallState.PickedUp)
+            return false;
+
+        if (Time.time - lastDamageTime < damageCooldown)
+            return false;
+
+        return true;
+    }
+
+    private bool IsFriendlyFire(ulong targetClientId)
+    {
+        ulong skillInfluencerId = BallOwnershipManager.GetLastSkillInfluencerId();
+        ulong lastTouchedId = BallOwnershipManager.GetCurrentBallOwnerId();
+
+        if (skillInfluencerId != ulong.MaxValue &&
+            !TeamUtils.AreOpponents(skillInfluencerId, targetClientId))
+        {
+            Debug.Log("[Ball] No damage — same team as skill influencer.");
+            return true;
+        }
+
+        if (lastTouchedId != ulong.MaxValue &&
+            !TeamUtils.AreOpponents(lastTouchedId, targetClientId))
+        {
+            Debug.Log("[Ball] No damage — same team as last toucher.");
+            return true;
+        }
+
+        return false;
+    }
+
+    private void ApplyBallDamage(IDamageable damageable, ulong targetClientId, float speed)
+    {
+        int damage = ballSO.BallData.CalculateTotalBallDamage(speed);
+        ulong attackerId = BallOwnershipManager.GetLastSkillInfluencerId();
+        if (attackerId == ulong.MaxValue)
+            attackerId = BallOwnershipManager.GetCurrentBallOwnerId();
+
+        damageable.TakeDamage(damage, DeathType.Ball, attackerId);
+
+        Debug.Log($"[Ball][Server] Hit {damageable} at speed {speed}, dealt {damage} damage");
+    }
+
+    private void ApplyKnockback(Collision collision, ulong targetClientId, float speed)
+    {
+        Rigidbody targetRb = collision.rigidbody;
+        if (targetRb == null || targetRb.isKinematic) return;
+
+        Vector3 direction = (collision.collider.transform.position - transform.position).normalized;
+
+        float forceMultiplier = 1f;
+        ulong skillInfluencerId = BallOwnershipManager.GetLastSkillInfluencerId();
+        ulong lastTouchedId = BallOwnershipManager.GetCurrentBallOwnerId();
+
+        if ((skillInfluencerId != ulong.MaxValue &&
+             !TeamUtils.AreOpponents(skillInfluencerId, targetClientId)) ||
+            (lastTouchedId != ulong.MaxValue &&
+             !TeamUtils.AreOpponents(lastTouchedId, targetClientId)))
+        {
+            forceMultiplier = 0.3f; // 🧯 Reduce knockback to teammates
+        }
+
+        float knockbackForce = speed * ballSO.BallData.KnockbackForceMultiplier * forceMultiplier;
+        targetRb.AddForce(direction * knockbackForce, ForceMode.Impulse);
+    }
 
     #endregion
 
