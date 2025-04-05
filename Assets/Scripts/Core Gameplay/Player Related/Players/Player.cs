@@ -116,7 +116,7 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
     public BallReference ActiveBall { get { return activeBall; } }
 
     private DeathType lastDeathType;
-    private ulong lastKillerClientId;
+    private ulong lastKillerClientId = ulong.MaxValue;
 
     protected BallOwnershipManager ballOwnershipManager; // Reference to the instance-based BallOwnershipManager
 
@@ -592,6 +592,18 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
 
         KillFeedManager.Instance?.ReportKill(killerName, victimName, lastDeathType, killerTeamIndex);
 
+
+        // Score Board logic
+        //  Register death for this player
+        GameManager.Instance.AddDeath(OwnerClientId);
+
+        // ✅ Register kill if the killer is valid and not self
+        if (lastKillerClientId != ulong.MaxValue && lastKillerClientId != OwnerClientId)
+        {
+            GameManager.Instance.AddKill(lastKillerClientId);
+            // ✅ Clear killer reference after processing
+            lastKillerClientId = ulong.MaxValue;
+        }
 
 
 

@@ -49,6 +49,7 @@ public class GoalZoneController : NetworkBehaviour
             if (playerTeam == goalTeam)
             {
                 Debug.Log($"[GoalZone] Player hit own goal — no score.");
+                return; // Do not allow ball reset logic work if player shoots own goal
             }
             else
             {
@@ -66,6 +67,14 @@ public class GoalZoneController : NetworkBehaviour
         if (goalScored)
         {
             GameManager.Instance.AddGoal(scoringPlayerId);
+
+            ulong assistId = ballManager.GetAssistCandidate();
+
+            if (assistId != ulong.MaxValue && assistId != scoringPlayerId)
+            {
+                Debug.Log($"[GoalZone] Assist credited to {assistId} for goal by {scoringPlayerId}");
+                GameManager.Instance.AddAssist(assistId);
+            }
         }
 
         if (ballResetPosition != null)

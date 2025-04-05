@@ -34,9 +34,11 @@ public class BallOwnershipManager : NetworkBehaviour
     // Tracks the player currently holding the ball
     private NetworkVariable<ulong> currentBallOwner = new NetworkVariable<ulong>(NO_OWNER);
 
-    private ulong lastTouchedPlayerId; // Stores the last player to interact with the ball
+    private ulong lastTouchedPlayerId = NO_OWNER; // Stores the last player to interact with the ball
 
     private ulong lastSkillInfluencerId = NO_OWNER; // Stores the last player to interact with player's skill on the ball
+
+    private ulong lastAssistTouchPlayerId = NO_OWNER;
 
 
     // Events triggered on ball interactions
@@ -143,6 +145,15 @@ public class BallOwnershipManager : NetworkBehaviour
 
         ClearSkillInfluence();
 
+        // ✅ Assist logic
+        if (lastTouchedPlayerId != NO_OWNER && lastTouchedPlayerId != playerId)
+        {
+            var currentTeam = PlayerSpawnManager.Instance.GetUserData(playerId).teamIndex;
+            var previousTeam = PlayerSpawnManager.Instance.GetUserData(lastTouchedPlayerId).teamIndex;
+            if (currentTeam == previousTeam)
+                SetAssistCandidate(lastTouchedPlayerId);
+        }
+
         currentBallOwner.Value = playerId;
         lastTouchedPlayerId = playerId;
         currentBallState.Value = BallState.PickedUp;
@@ -230,6 +241,7 @@ public class BallOwnershipManager : NetworkBehaviour
         currentBallOwner.Value = NO_OWNER;
         lastTouchedPlayerId = NO_OWNER;
         lastSkillInfluencerId = NO_OWNER;
+        lastAssistTouchPlayerId = NO_OWNER;
         currentBallState.Value = BallState.Idle;
     }
 
@@ -240,6 +252,7 @@ public class BallOwnershipManager : NetworkBehaviour
         currentBallState.Value = BallState.Idle;
     }
 
+
     public void RegisterSkillInfluence(ulong clientId)
     {
         lastSkillInfluencerId = clientId;
@@ -248,6 +261,18 @@ public class BallOwnershipManager : NetworkBehaviour
     public void ClearSkillInfluence()
     {
         lastSkillInfluencerId = NO_OWNER;
+    }
+
+
+    public void SetAssistCandidate(ulong clientId)
+    {
+        if (clientId != NO_OWNER)
+            lastAssistTouchPlayerId = clientId;
+    }
+
+    public void ClearAssistCandidate()
+    {
+        lastAssistTouchPlayerId = NO_OWNER;
     }
 
     #endregion
@@ -311,6 +336,11 @@ public class BallOwnershipManager : NetworkBehaviour
     public ulong GetLastSkillInfluencerId()
     {
         return lastSkillInfluencerId;
+    }
+
+    public ulong GetAssistCandidate()
+    {
+        return lastAssistTouchPlayerId;
     }
 
     public BallState GetCurrentBallState()

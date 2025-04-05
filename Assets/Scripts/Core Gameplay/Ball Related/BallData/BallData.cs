@@ -11,6 +11,7 @@ public class BallData
     [field: SerializeField] public float BallSpeed { get; private set; } = 10f;     // Default speed
     [field: SerializeField] public float MaxPickupSpeed { get; private set; } = 5f; // Max speed for pickup
     [field: SerializeField] public int BallDamage { get; private set; } = 5;
+    [field: SerializeField] public float KnockbackForceMultiplier { get; private set; } = 2f;
 
     public int CalculateTotalBallDamage(float ballSpeed)
     {
