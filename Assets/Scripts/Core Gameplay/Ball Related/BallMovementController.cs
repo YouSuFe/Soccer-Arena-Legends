@@ -185,6 +185,12 @@ public class BallMovementController : NetworkBehaviour
             return true;
         }
 
+        if (targetClientId == skillInfluencerId || targetClientId == lastTouchedId)
+        {
+            Debug.Log("[Ball] No damage — self-hit.");
+            return true;
+        }
+
         return false;
     }
 

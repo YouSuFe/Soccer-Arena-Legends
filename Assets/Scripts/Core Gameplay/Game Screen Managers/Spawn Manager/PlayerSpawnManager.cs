@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Unity.Cinemachine;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 // Call this when clients are connected.
 public class PlayerSpawnManager : NetworkBehaviour
@@ -74,19 +75,27 @@ public class PlayerSpawnManager : NetworkBehaviour
 
     #endregion
 
+    //void Update()
+    //{
+    //    if (!IsServer) return;
+
+    //    foreach (var kvp in clientUserData)
+    //    {
+    //        UserData data = kvp.Value;
+
+    //        Debug.Log($"ClientID: {data.clientId}, Team: {data.teamIndex}, Character: {data.characterId}, Weapon: {data.weaponId}");
+    //    }
+    //}
+
     #region Network Initialization
 
     public override void OnNetworkSpawn()
     {
+        Debug.Log($"[OnNetworkSpawn] IsServer: {IsServer}, IsHost: {IsHost}");
+
         if (IsServer)
         {
-            SpawnBall();
-
-            NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
-            NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnected;
-
             networkServer = HostSingleton.Instance.GameManager.NetworkServer;
-
             if (networkServer == null)
             {
                 Debug.LogError("Network Server could not be found!");
@@ -94,17 +103,25 @@ public class PlayerSpawnManager : NetworkBehaviour
             }
 
             spawnPointManager = new SpawnPointManager(blueTeamSpawnPoints, redTeamSpawnPoints);
+
+            SpawnBall();
+
+            NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
+            NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnected;
+
+            NetworkManager.Singleton.SceneManager.OnLoadComplete += OnSceneLoaded;
+
         }
 
-        if (IsHost)
-        {
-            UserData userData = networkServer.GetUserDataByClientId(NetworkManager.Singleton.LocalClientId);
+        //if (IsHost)
+        //{
+        //    UserData userData = networkServer.GetUserDataByClientId(NetworkManager.Singleton.LocalClientId);
 
-            // Store Host's user data in the dictionary
-            clientUserData[NetworkManager.Singleton.LocalClientId] = userData;
+        //    // Store Host's user data in the dictionary
+        //    clientUserData[NetworkManager.Singleton.LocalClientId] = userData;
 
-            SpawnPlayer(NetworkManager.Singleton.LocalClientId, userData.characterId, userData.weaponId, userData.teamIndex, false, false);
-        }
+        //    SpawnPlayer(NetworkManager.Singleton.LocalClientId, userData.characterId, userData.weaponId, userData.teamIndex, false, false);
+        //}
     }
 
     #endregion
@@ -113,41 +130,61 @@ public class PlayerSpawnManager : NetworkBehaviour
 
     private void OnClientConnected(ulong clientId)
     {
-        // ToDo: Check if current player disconnects, and reconnects, their data lost or not. If lost, then try to use this logic.
-        // Do same thing for Sync Score Board Stats.
-        //UserData userData;
+        Debug.Log($"[OnClientConnected] clientId: {clientId}");
 
-        //if (disconnectedUserData.TryGetValue(clientId, out var restoredData))
-        //{
-        //    Debug.Log($"Restoring disconnected player's UserData for client {clientId}");
-        //    userData = restoredData;
-        //    disconnectedUserData.Remove(clientId);
-        //}
-        //else
-        //{
-        //    userData = networkServer.GetUserDataByClientId(clientId); // Normal case
-        //}
+        UserData userData;
 
-        //if (userData == null)
-        //{
-        //    Debug.LogError($"[OnClientConnected] No UserData found for client {clientId}");
-        //    return;
-        //}
-        UserData userData = networkServer.GetUserDataByClientId(clientId);
+        // Try restore from disconnectedUserData
+        if (disconnectedUserData.TryGetValue(clientId, out var restoredData))
+        {
+            Debug.Log($"Restoring disconnected player's UserData for client {clientId}");
+            userData = restoredData;
+            disconnectedUserData.Remove(clientId);
+        }
+        else
+        {
+            userData = networkServer.GetUserDataByClientId(clientId); // Normal
+        }
 
-        if(userData == null)
+        if (userData == null)
         {
             Debug.LogError($"[OnClientConnected] No UserData found for client {clientId}");
             return;
         }
 
-        int numPlayer = NetworkManager.Singleton.ConnectedClients.Count;
-        Debug.Log($"[Server] Number of Players Connected is : {numPlayer}");
-
-        // Store user data in the dictionary
         clientUserData[clientId] = userData;
 
-        SpawnPlayer(clientId, userData.characterId, userData.weaponId, userData.teamIndex, false , false);
+        Debug.Log($"[OnClientConnected] Stored userData for client {clientId}, will spawn on scene load.");
+    }
+
+    private void OnSceneLoaded(ulong clientId, string sceneName, LoadSceneMode mode)
+    {
+        if (sceneName != "Game") return;
+
+        Debug.Log($"[OnSceneLoaded] {sceneName} loaded by client {clientId}");
+
+        if (!clientUserData.TryGetValue(clientId, out var userData))
+        {
+            userData = networkServer.GetUserDataByClientId(clientId);
+            if (userData == null)
+            {
+                Debug.LogError($"[OnSceneLoaded] No UserData found for client {clientId}");
+                return;
+            }
+
+            clientUserData[clientId] = userData; // Fallback safety
+        }
+
+        // ✅ Now it's safe to spawn
+        StartCoroutine(DelayedPlayerSpawn(clientId, userData.characterId, userData.weaponId, userData.teamIndex, delayInSeconds: 1.25f));
+    }
+
+    private IEnumerator DelayedPlayerSpawn(ulong clientId, int characterId, int weaponId, int teamIndex, float delayInSeconds)
+    {
+        yield return new WaitForSeconds(delayInSeconds);
+
+        Debug.Log($"[DelayedPlayerSpawn] Spawning client {clientId} after {delayInSeconds} seconds...");
+        SpawnPlayer(clientId, characterId, weaponId, teamIndex, false, false);
     }
 
     private void OnClientDisconnected(ulong clientId)
@@ -161,13 +198,11 @@ public class PlayerSpawnManager : NetworkBehaviour
         activePlayers.Remove(clientId);
 
         // ToDo: Check if current player disconnects, and reconnects, their data lost or not. If lost, then try to use this logic.
-        //Debug.Log($"[Server] Player {clientId} disconnected.");
-
-        //if (clientUserData.TryGetValue(clientId, out var userData))
-        //{
-        //    disconnectedUserData[clientId] = userData; // Backup for reconnection
-        //    clientUserData.Remove(clientId);           // Optional: only if not needed in main list
-        //}
+        if (clientUserData.TryGetValue(clientId, out var userData))
+        {
+            disconnectedUserData[clientId] = userData; // Backup for reconnection
+            clientUserData.Remove(clientId);           // Optional: only if not needed in main list
+        }
     }
 
 
@@ -193,11 +228,18 @@ public class PlayerSpawnManager : NetworkBehaviour
     {
         if (!IsServer) return;
 
-        if (!CharacterDatabase.IsValidCharacterId(characterId) || !WeaponDatabase.IsValidWeaponId(weaponId))
+        if (!CharacterDatabase.IsValidCharacterId(characterId))
         {
-            Debug.LogError($"Invalid characterId ({characterId}) or weaponId ({weaponId}) for client {clientId}");
+            Debug.LogError($"Invalid characterId ({characterId}) for client {clientId}");
             return;
         }
+
+        if (!WeaponDatabase.IsValidWeaponId(weaponId))
+        {
+            Debug.LogError($"Invalid weaponId ({weaponId}) for client {clientId}");
+            return;
+        }
+
 
         Vector3 spawnPosition = isBulkSpawn
             ? spawnPointManager.GetUniqueSpawnPoint(teamIndex)
@@ -717,8 +759,11 @@ public class PlayerSpawnManager : NetworkBehaviour
     public override void OnDestroy()
     {
         base.OnDestroy();
+        if (NetworkManager == null) return;
         NetworkManager.Singleton.OnClientConnectedCallback -= OnClientConnected;
         NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnected;
+        NetworkManager.Singleton.SceneManager.OnLoadComplete -= OnSceneLoaded;
+
     }
     #endregion
 }

@@ -1,6 +1,8 @@
+using System.Collections;
 using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class GameManager : NetworkBehaviour
 {
@@ -42,34 +44,10 @@ public class GameManager : NetworkBehaviour
         if (!IsServer) return;
         Debug.Log("[Server:] Game Manager is initialized on On Network Spawn");
 
-        if(IsHost)
-        {
-            UserData userData = HostSingleton.Instance.GameManager.NetworkServer.GetUserDataByClientId(NetworkManager.Singleton.LocalClientId);
-            if (userData == null)
-            {
-                Debug.LogError($"[GameManager] No UserData found for client {NetworkManager.Singleton.LocalClientId}");
-                return;
-            }
-
-            string authId = userData.userAuthId;
-
-            // First time? Create server-owned stat object
-            if (!persistentStats.ContainsKey(authId))
-            {
-                GameObject statObj = Instantiate(playerStatePrefab);
-                NetworkObject netObj = statObj.GetComponent<NetworkObject>();
-                netObj.Spawn(); // server-owned
-
-                var statSync = statObj.GetComponent<PlayerStatSync>();
-                statSync.Initialize(userData.userName);
-                persistentStats[authId] = statSync;
-            }
-
-            // Map current session to persistent identity
-            clientToUserMap[NetworkManager.Singleton.LocalClientId] = authId;
-        }
         NetworkManager.OnClientConnectedCallback += HandleClientConnected;
         NetworkManager.OnClientDisconnectCallback += HandleClientDisconnected;
+
+        NetworkManager.SceneManager.OnLoadComplete += HandleSceneLoaded;
     }
 
     private void Start()
@@ -85,40 +63,81 @@ public class GameManager : NetworkBehaviour
         NetworkManager.OnClientConnectedCallback -= HandleClientConnected;
         NetworkManager.OnClientDisconnectCallback -= HandleClientDisconnected;
 
+        NetworkManager.SceneManager.OnLoadComplete -= HandleSceneLoaded;
+
+
+    }
+
+    private void HandleSceneLoaded(ulong clientId, string sceneName, LoadSceneMode mode)
+    {
+        if (sceneName != "Game") return;
+
+        StartCoroutine(DelayedStatObjectSetup(clientId));
     }
 
     private void HandleClientConnected(ulong clientId)
     {
-        UserData userData = HostSingleton.Instance.GameManager.NetworkServer.GetUserDataByClientId(clientId);
+        StartCoroutine(DelayedStatObjectSetup(clientId));
+    }
 
+    private IEnumerator DelayedStatObjectSetup(ulong clientId)
+    {
+        yield return null;
+
+        var userData = HostSingleton.Instance.GameManager.NetworkServer.GetUserDataByClientId(clientId);
         if (userData == null)
         {
             Debug.LogError($"[GameManager] No UserData found for client {clientId}");
-            return;
+            yield break;
         }
 
         string authId = userData.userAuthId;
 
-        // First time? Create server-owned stat object
         if (!persistentStats.ContainsKey(authId))
         {
             GameObject statObj = Instantiate(playerStatePrefab);
-            NetworkObject netObj = statObj.GetComponent<NetworkObject>();
-            netObj.Spawn(); // server-owned
+            var netObj = statObj.GetComponent<NetworkObject>();
+            netObj.Spawn();
 
             var statSync = statObj.GetComponent<PlayerStatSync>();
             statSync.Initialize(userData.userName);
             persistentStats[authId] = statSync;
         }
 
-        // Map current session to persistent identity
         clientToUserMap[clientId] = authId;
+
+        Debug.Log($"[GameManager] Created stat sync object for client {clientId} ({userData.userName})");
     }
+
+
 
     private void HandleClientDisconnected(ulong clientId)
     {
-        clientToUserMap.Remove(clientId);
-        // Do NOT despawn stat object → keep it alive for reconnect
+        if (clientToUserMap.TryGetValue(clientId, out var authId))
+        {
+            clientToUserMap.Remove(clientId);
+
+            // Optional: remove stats after timeout
+            StartCoroutine(RemovePlayerStatsAfterTimeout(authId, 30f)); // 30 seconds for example
+        }
+    }
+
+    private IEnumerator RemovePlayerStatsAfterTimeout(string authId, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+
+        // Check if player reconnected
+        if (persistentStats.ContainsKey(authId) &&
+            !clientToUserMap.ContainsValue(authId)) // still disconnected
+        {
+            var statSync = persistentStats[authId];
+            if (statSync != null && statSync.NetworkObject != null)
+                statSync.NetworkObject.Despawn();
+
+            persistentStats.Remove(authId);
+
+            Debug.Log($"[GameManager] Cleaned up stats for {authId}");
+        }
     }
 
     public PlayerStatSync GetPlayerStats(ulong clientId)
@@ -177,6 +196,10 @@ public class GameManager : NetworkBehaviour
         if (ScoreboardManager.Instance != null)
         {
             ScoreboardManager.Instance.RefreshIfVisible();
+        }
+        else
+        {
+            Debug.LogError("[Game Manager] Scoreboard Manager is null");
         }
 
         MultiplayerGameStateManager.Instance.SetGameState(GameState.PostGame);
@@ -243,5 +266,7 @@ public class GameManager : NetworkBehaviour
         // Just in case, it is unnecessary but lets leave it here
         NetworkManager.OnClientConnectedCallback -= HandleClientConnected;
         NetworkManager.OnClientDisconnectCallback -= HandleClientDisconnected;
+        NetworkManager.SceneManager.OnLoadComplete -= HandleSceneLoaded;
+
     }
 }
