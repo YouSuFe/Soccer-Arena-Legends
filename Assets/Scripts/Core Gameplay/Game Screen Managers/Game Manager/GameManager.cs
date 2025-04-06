@@ -100,7 +100,12 @@ public class GameManager : NetworkBehaviour
             netObj.Spawn();
 
             var statSync = statObj.GetComponent<PlayerStatSync>();
-            statSync.Initialize(userData.userName);
+            statSync.Initialize(
+                userData.userName,
+                clientId,
+                userData.teamIndex,
+                userData.characterId
+            );
             persistentStats[authId] = statSync;
         }
 
@@ -160,6 +165,10 @@ public class GameManager : NetworkBehaviour
         }
         return result;
     }
+
+
+
+
 
     // Called when a goal is scored
     public void AddGoal(ulong clientId)

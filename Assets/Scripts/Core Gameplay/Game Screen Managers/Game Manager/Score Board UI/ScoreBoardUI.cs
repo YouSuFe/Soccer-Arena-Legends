@@ -30,50 +30,42 @@ public class ScoreboardUI : MonoBehaviour
     {
         ClearContainers();
 
-        // Get all stats from GameManager (bound by clientId)
-        Dictionary<ulong, PlayerStatSync> allStats = GameManager.Instance.GetAllBoundStats();
+        // ✅ Get stat objects from ScoreboardManager’s tracked list
+        List<PlayerStatSync> allStats = ScoreboardManager.Instance.GetAllClientStats();
         ulong localId = NetworkManager.Singleton.LocalClientId;
 
-        foreach (var kvp in allStats)
+        foreach (var stat in allStats)
         {
-            ulong clientId = kvp.Key;
-            PlayerStatSync stats = kvp.Value;
+            if (!stat.IsSpawned) continue;
 
-            // Retrieve the corresponding UserData from the PlayerSpawnManager
-            UserData userData = PlayerSpawnManager.Instance.GetUserData(clientId);
-            if (userData == null)
-                continue;
+            ulong clientId = stat.BoundClientId.Value;
+            int teamIndex = stat.TeamIndex.Value;
+            int characterId = stat.CharacterId.Value;
 
-            // Determine which container to place the row based on team index.
-            // (Assuming teamIndex 0 = Blue and 1 = Red)
-            Transform parent = (userData.teamIndex == 0) ? blueTeamContainer : redTeamContainer;
+            Transform parent = (teamIndex == 0) ? blueTeamContainer : redTeamContainer;
 
             GameObject rowObj = Instantiate(playerRowPrefab, parent);
             PlayerStatRow row = rowObj.GetComponent<PlayerStatRow>();
 
-
             bool isLocalPlayer = (clientId == localId);
-            int totalScore = CalculateTotalScore(stats);
+            int totalScore = CalculateTotalScore(stat);
 
-            // Pass the characterId from userData into SetData (to look up the icon)
             row.SetData(
-                stats.PlayerName.Value.ToString(),
-                stats.Goals.Value,
-                stats.Kills.Value,
-                stats.Deaths.Value,
-                stats.Assists.Value,
-                stats.Saves.Value,
+                stat.PlayerName.Value.ToString(),
+                stat.Goals.Value,
+                stat.Kills.Value,
+                stat.Deaths.Value,
+                stat.Assists.Value,
+                stat.Saves.Value,
                 isLocalPlayer,
-                userData.characterId,
+                characterId,
                 totalScore
             );
         }
 
-        // Update team scores from GameManager’s NetworkVariables.
         redTeamScoreText.text = $"{GameManager.Instance.RedTeamScore.Value}";
         blueTeamScoreText.text = $"{GameManager.Instance.BlueTeamScore.Value}";
 
-        // Update accidental scores from GameManager’s NetworkVariables.
         redTeamAccidentalText.text = $"Own G: {GameManager.Instance.GetAccidentalGoalCount(Team.Red)}";
         blueTeamAccidentalText.text = $"Own G: {GameManager.Instance.GetAccidentalGoalCount(Team.Blue)}";
     }

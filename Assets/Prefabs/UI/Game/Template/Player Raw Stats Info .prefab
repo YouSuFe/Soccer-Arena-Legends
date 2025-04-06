@@ -851,7 +851,7 @@ MonoBehaviour:
   assistsText: {fileID: 7396061419268700910}
   savesText: {fileID: 4043478130870155951}
   killsText: {fileID: 2759885297524873382}
-  deathsText: {fileID: 1413579404469393574}
+  deathsText: {fileID: 7264624929689062265}
   totalScoreText: {fileID: 1413579404469393574}
   backgroundImage: {fileID: 2793915831958306629}
   characterIconImage: {fileID: 2243185349556483543}

@@ -1,10 +1,13 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 
 public class ScoreboardManager : MonoBehaviour
 {
     #region Singleton
 
     public static ScoreboardManager Instance { get; private set; }
+
+    private readonly List<PlayerStatSync> clientStatList = new();
 
     private void Awake()
     {
@@ -92,6 +95,25 @@ public class ScoreboardManager : MonoBehaviour
         }
     }
 
+    public void RegisterClientStat(PlayerStatSync stat)
+    {
+        if (!clientStatList.Contains(stat))
+        {
+            clientStatList.Add(stat);
+        }
+    }
 
+    public void UnregisterClientStat(PlayerStatSync stat)
+    {
+        if (clientStatList.Contains(stat))
+        {
+            clientStatList.Remove(stat);
+        }
+    }
+
+    public List<PlayerStatSync> GetAllClientStats()
+    {
+        return clientStatList;
+    }
     #endregion
 }
