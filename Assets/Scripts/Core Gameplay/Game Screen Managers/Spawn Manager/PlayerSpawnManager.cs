@@ -241,9 +241,11 @@ public class PlayerSpawnManager : NetworkBehaviour
         }
 
 
-        Vector3 spawnPosition = isBulkSpawn
+        Transform spawnTransform = isBulkSpawn
             ? spawnPointManager.GetUniqueSpawnPoint(teamIndex)
             : spawnPointManager.GetSingleSpawnPoint(teamIndex);
+        Vector3 spawnPosition = spawnTransform.position;
+        Quaternion spawnRotation = spawnTransform.rotation;
 
         // 🆕: Check if player already exists
         if (activePlayers.TryGetValue(clientId, out var player))
@@ -251,15 +253,15 @@ public class PlayerSpawnManager : NetworkBehaviour
             if (player.IsPlayerDeath)
             {
                 Debug.Log("Player Spawn Manager : Player is death, Respawning");
-                player.NetworkObject.Spawn();
+                player.NetworkObject.SpawnWithOwnership(clientId);
 
                 // ✅ RE-CREATE AND REASSIGN WEAPON ON RESPAWN
-                StartCoroutine(DelayedResetAndRespawn(player, weaponId, spawnPosition));
+                StartCoroutine(DelayedResetAndRespawn(player, weaponId, spawnPosition, spawnRotation));
             }
             else
             {
                 Debug.Log("Player Spawn Manager : Player is not death, Teleporting...");
-                player.TeleportToSpawn(spawnPosition);
+                player.TeleportToSpawn(spawnPosition, spawnRotation);
             }
 
             AssignClientVisuals(clientId, player);
@@ -286,11 +288,11 @@ public class PlayerSpawnManager : NetworkBehaviour
         AssignClientVisuals(clientId, playerScript);
     }
 
-    private IEnumerator DelayedResetAndRespawn(PlayerAbstract player, int weaponId, Vector3 spawnPos)
+    private IEnumerator DelayedResetAndRespawn(PlayerAbstract player, int weaponId, Vector3 spawnPos, Quaternion spawnRot)
     {
         yield return null; // Wait 1 frame
 
-        player.ResetAndRespawnPlayer(spawnPos);
+        player.ResetAndRespawnPlayer(spawnPos, spawnRot);
         player.CreateAndAssignWeapon(weaponId);
     }
 

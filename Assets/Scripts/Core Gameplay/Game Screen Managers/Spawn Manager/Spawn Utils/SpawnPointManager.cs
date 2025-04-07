@@ -30,16 +30,16 @@ public class SpawnPointManager
     /// <summary>
     /// Gets a **random spawn point for a single player** (used for new connections).
     /// </summary>
-    public Vector3 GetSingleSpawnPoint(int teamIndex)
+    public Transform GetSingleSpawnPoint(int teamIndex)
     {
         Transform[] spawnPoints = teamIndex == 0 ? allBlueTeamSpawns : allRedTeamSpawns;
-        return spawnPoints[Random.Range(0, spawnPoints.Length)].position;
+        return spawnPoints[Random.Range(0, spawnPoints.Length)];
     }
 
     /// <summary>
     /// Gets a **unique spawn point for bulk player spawning** (prevents overlap).
     /// </summary>
-    public Vector3 GetUniqueSpawnPoint(int teamIndex)
+    public Transform GetUniqueSpawnPoint(int teamIndex)
     {
         List<Transform> availableSpawns = teamIndex == 0 ? availableBlueTeamSpawns : availableRedTeamSpawns;
 
@@ -54,6 +54,6 @@ public class SpawnPointManager
         Transform spawnPoint = availableSpawns[randomIndex];
         availableSpawns.RemoveAt(randomIndex); // Mark it as used.
 
-        return spawnPoint.position;
+        return spawnPoint;
     }
 }

@@ -167,6 +167,7 @@ public class PlayerUIManager : MonoBehaviour
 
     public void StartRespawnCountdown(float duration)
     {
+        Debug.Log("Player UI Manager, Starting to the Death UI");
         liveRespawnTime = duration;
 
         if (deathPanelCanvasGroup != null)

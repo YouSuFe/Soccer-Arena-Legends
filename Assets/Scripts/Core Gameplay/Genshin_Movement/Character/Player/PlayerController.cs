@@ -61,11 +61,15 @@ public class PlayerController : NetworkBehaviour
     {
         base.OnNetworkSpawn();
 
+        Debug.Log("Player Controller On Network Spawn");
         // Assign references needed by ALL players
         Player = GetComponent<PlayerAbstract>();
         Rigidbody = GetComponent<Rigidbody>();
-        Animator = GetComponentInChildren<Animator>();
-
+        if (Animator == null || Animator.Equals(null))
+        {
+            Debug.LogWarning("Animator is destroyed or missing. Attempting to reassign...");
+            Animator = GetComponentInChildren<Animator>();
+        }
         // Synchronize state changes across the network
         currentState.OnValueChanged += OnStateChanged;
 

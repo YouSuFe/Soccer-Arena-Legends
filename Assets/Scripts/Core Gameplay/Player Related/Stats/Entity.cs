@@ -44,7 +44,6 @@ public abstract class Entity : NetworkBehaviour
 
         if (IsServer) // Server listens for stat updates but doesn't overwrite client stats
         {
-            Debug.Log($"[Server] Player {OwnerClientId} Spawned.");
             Health.Value = Stats.GetCurrentStat(StatType.Health);
             Strength.Value = Stats.GetCurrentStat(StatType.Strength);
             Speed.Value = Stats.GetCurrentStat(StatType.Speed);

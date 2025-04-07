@@ -165,12 +165,9 @@ public class BallHolderController : MonoBehaviour
             smoothTime
         );
 
-        Debug.Log($"[BallHolderController] Smoothed Target World Pos: {smoothedWorldPosition}");
         // Convert back to local position
         ballHolder.localPosition = player.InverseTransformPoint(smoothedWorldPosition);
 
-        // Log the result
-        Debug.Log($"[BallHolderController] New BallHolder localPosition: {ballHolder.localPosition}, world: {ballHolder.position}");
     }
 
     // Calculate the player's velocity based on movement

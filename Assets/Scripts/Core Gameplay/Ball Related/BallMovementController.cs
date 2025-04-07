@@ -94,9 +94,6 @@ public class BallMovementController : NetworkBehaviour
             Vector3 localPos = ownerPlayer.transform.InverseTransformPoint(worldPos);
 
             transform.localPosition = localPos;
-
-            Debug.Log($"[BallMovementController] Set Ball localPosition = {localPos}, worldPos = {worldPos}, parent = {transform.parent?.name}");
-
         }
         else
         {

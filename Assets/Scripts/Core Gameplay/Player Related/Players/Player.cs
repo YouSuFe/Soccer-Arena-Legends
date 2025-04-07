@@ -666,11 +666,11 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
     /// <summary>
     /// Resets the player's server state and prepares it for a respawn.
     /// </summary>
-    public void ResetAndRespawnPlayer(Vector3 spawnPosition)
+    public void ResetAndRespawnPlayer(Vector3 spawnPosition, Quaternion newRotation)
     {
         if (!IsServer) return;
 
-        TeleportToSpawn(spawnPosition);
+        TeleportToSpawn(spawnPosition, newRotation);
 
         IsPlayerDeath = false;
 
@@ -702,14 +702,14 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
     /// Teleports player to a spawn point without resetting stats.  
     /// Used when player is alive but should be moved (e.g., start of round).
     /// </summary>
-    public void TeleportToSpawn(Vector3 newPosition)
+    public void TeleportToSpawn(Vector3 newPosition, Quaternion newRotation)
     {
         if (!IsServer) return;
 
         Debug.Log($"[Server] TeleportToSpawn() called for {OwnerClientId} to {newPosition}");
 
         // 👇 Client does the visual/transform teleport
-        TeleportClientRpc(newPosition);
+        TeleportClientRpc(newPosition, newRotation);
 
         // 👇 Server handles stat resets
         ResetStatsForNextRound(false);
@@ -718,7 +718,7 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
     }
 
     [ClientRpc]
-    private void TeleportClientRpc(Vector3 newPosition)
+    private void TeleportClientRpc(Vector3 newPosition, Quaternion newRotation)
     {
         Debug.Log($"[ClientRpc] TeleportClientRpc called on client {NetworkManager.Singleton.LocalClientId}, IsOwner: {IsOwner}");
 
@@ -728,10 +728,10 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
             return;
         }
 
-        StartCoroutine(DelayedTeleport(newPosition));
+        StartCoroutine(DelayedTeleport(newPosition, newRotation));
     }
-    
-    private IEnumerator DelayedTeleport(Vector3 newPosition)
+
+    private IEnumerator DelayedTeleport(Vector3 newPosition, Quaternion newRotation)
     {
         Rigidbody rb = GetComponent<Rigidbody>();
         if (rb != null)
@@ -745,12 +745,11 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
         var netTransform = GetComponent<OwnerNetworkTransform>();
         if (netTransform != null)
         {
-            netTransform.Teleport(newPosition, Quaternion.identity, transform.localScale);
-            Physics.SyncTransforms(); // ✅ Force Unity to apply changes to physics system
-            Debug.Log($"[Client] Delayed teleport with Physics.SyncTransforms() to {newPosition}");
+            netTransform.Teleport(newPosition, newRotation, transform.localScale);
+            Physics.SyncTransforms();
         }
 
-        yield return null; // wait another frame
+        yield return null;
 
         if (rb != null)
         {
@@ -760,6 +759,7 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
             rb.interpolation = RigidbodyInterpolation.Interpolate;
         }
     }
+
 
     private void ResetStatsForNextRound(bool isSpawnCall)
     {

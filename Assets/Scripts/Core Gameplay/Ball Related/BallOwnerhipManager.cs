@@ -343,8 +343,6 @@ public class BallOwnershipManager : NetworkBehaviour
         return lastSkillInfluencerId;
     }
 
-
-
     public ulong GetAssistCandidate()
     {
         return lastAssistTouchPlayerId;
