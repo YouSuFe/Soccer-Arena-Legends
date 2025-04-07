@@ -7,7 +7,7 @@ public class TeamScoreUIController : MonoBehaviour
     [Header("UI References")]
     [SerializeField] private TMP_Text redTeamMainScoreText;
     [SerializeField] private TMP_Text blueTeamMainScoreText;
-
+    [Space]
     [SerializeField] private TMP_Text redTeamScoreboardText;
     [SerializeField] private TMP_Text blueTeamScoreboardText;
 

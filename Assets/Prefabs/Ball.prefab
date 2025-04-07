@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 2315714321398460355}
   - component: {fileID: 1013389890763402008}
   - component: {fileID: 6737810047264126468}
-  - component: {fileID: 897394595660668893}
+  - component: {fileID: -3447090972353124164}
   - component: {fileID: 1433893937943547960}
   - component: {fileID: 1375941103122032208}
   - component: {fileID: 5865642170212978211}
@@ -169,7 +169,7 @@ MonoBehaviour:
   AutoObjectParentSync: 1
   SyncOwnerTransformWhenParented: 1
   AllowOwnerToParent: 0
---- !u!114 &897394595660668893
+--- !u!114 &-3447090972353124164
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -178,11 +178,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 2089097753458326465}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e96cb6065543e43c4a752faaa1468eb1, type: 3}
+  m_Script: {fileID: 11500000, guid: a16217a8c01f44d368ed2159d7ca683d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
-  NetworkTransformExpanded: 0
+  NetworkTransformExpanded: 1
   AuthorityMode: 0
   TickSyncChildren: 0
   UseUnreliableDeltas: 0

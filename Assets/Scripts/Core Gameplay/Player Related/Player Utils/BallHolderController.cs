@@ -52,13 +52,11 @@ public class BallHolderController : MonoBehaviour
 
     private void Update()
     {
-        if (!playerComponent.IsOwner) return;
-        if (isBallPickedUp)
-        {
-            CalculatePlayerVelocity();
+        if (!isBallPickedUp) return;
 
-            AdjustBallHolderPosition();
-        }
+        // Everyone should update smoothing even if not owner (clients need to see correct position)
+        CalculatePlayerVelocity();
+        AdjustBallHolderPosition();
     }
     #endregion
 
@@ -167,8 +165,12 @@ public class BallHolderController : MonoBehaviour
             smoothTime
         );
 
+        Debug.Log($"[BallHolderController] Smoothed Target World Pos: {smoothedWorldPosition}");
         // Convert back to local position
         ballHolder.localPosition = player.InverseTransformPoint(smoothedWorldPosition);
+
+        // Log the result
+        Debug.Log($"[BallHolderController] New BallHolder localPosition: {ballHolder.localPosition}, world: {ballHolder.position}");
     }
 
     // Calculate the player's velocity based on movement

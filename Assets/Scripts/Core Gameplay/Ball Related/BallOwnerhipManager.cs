@@ -325,6 +325,11 @@ public class BallOwnershipManager : NetworkBehaviour
         return currentBallOwner.Value;
     }
 
+    public ulong GetLastTouchedPlayerId()
+    {
+        return lastTouchedPlayerId;
+    }
+
     /// <summary>
     /// Retrieves the last player who touched the ball.
     /// </summary>
@@ -337,6 +342,8 @@ public class BallOwnershipManager : NetworkBehaviour
     {
         return lastSkillInfluencerId;
     }
+
+
 
     public ulong GetAssistCandidate()
     {

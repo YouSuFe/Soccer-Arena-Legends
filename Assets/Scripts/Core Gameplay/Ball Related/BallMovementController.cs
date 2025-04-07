@@ -90,7 +90,18 @@ public class BallMovementController : NetworkBehaviour
     {
         if(ownerPlayer.ActiveBall != null)
         {
-            transform.position = ownerPlayer.BallHolderPosition.position;
+            Vector3 worldPos = ownerPlayer.BallHolderPosition.position;
+            Vector3 localPos = ownerPlayer.transform.InverseTransformPoint(worldPos);
+
+            transform.localPosition = localPos;
+
+            Debug.Log($"[BallMovementController] Set Ball localPosition = {localPos}, worldPos = {worldPos}, parent = {transform.parent?.name}");
+
+        }
+        else
+        {
+
+            Debug.LogWarning($"[BallMovementController] Player Active Ball is null");
         }
     }
 
@@ -199,7 +210,7 @@ public class BallMovementController : NetworkBehaviour
         int damage = ballSO.BallData.CalculateTotalBallDamage(speed);
         ulong attackerId = BallOwnershipManager.GetLastSkillInfluencerId();
         if (attackerId == ulong.MaxValue)
-            attackerId = BallOwnershipManager.GetCurrentBallOwnerId();
+            attackerId = BallOwnershipManager.GetLastTouchedPlayerId();
 
         damageable.TakeDamage(damage, DeathType.Ball, attackerId);
 
@@ -215,7 +226,7 @@ public class BallMovementController : NetworkBehaviour
 
         float forceMultiplier = 1f;
         ulong skillInfluencerId = BallOwnershipManager.GetLastSkillInfluencerId();
-        ulong lastTouchedId = BallOwnershipManager.GetCurrentBallOwnerId();
+        ulong lastTouchedId = BallOwnershipManager.GetLastTouchedPlayerId();
 
         if ((skillInfluencerId != ulong.MaxValue &&
              !TeamUtils.AreOpponents(skillInfluencerId, targetClientId)) ||
@@ -227,6 +238,10 @@ public class BallMovementController : NetworkBehaviour
 
         float knockbackForce = speed * ballSO.BallData.KnockbackForceMultiplier * forceMultiplier;
         targetRb.AddForce(direction * knockbackForce, ForceMode.Impulse);
+
+        Debug.Log($"[Ball][Server] Hit {targetClientId} at speed {speed}, knockback {knockbackForce} force");
+
+
     }
 
     #endregion

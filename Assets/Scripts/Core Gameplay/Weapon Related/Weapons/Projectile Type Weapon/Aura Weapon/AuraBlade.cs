@@ -103,8 +103,11 @@ public class AuraBlade : NetworkBehaviour, IProjectileNetworkInitializer, IDestr
         var damageable = targetObj.GetComponent<IDamageable>();
         if (damageable != null)
         {
+            // ✅ Get target ClientId from the NetworkObject
+            ulong targetClientId = targetObj.OwnerClientId;
+
             // ✅ Team check
-            if (!TeamUtils.AreOpponents(WeaponOwnerClientId, targetNetId))
+            if (!TeamUtils.AreOpponents(WeaponOwnerClientId, targetClientId))
             {
                 Debug.Log("[AuraBlade] Skipping damage: target is same team.");
                 return;

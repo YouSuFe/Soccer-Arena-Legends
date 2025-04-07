@@ -932,21 +932,18 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
     #region Main Methods
     public void RegisterBall(BallReference ball)
     {
-        if (!IsOwner) return;
-
         activeBall = ball;
 
         BallAttachmentStatus = BallAttachmentStatus.Attached;
 
-        if (ballOwnershipManager == null)
-        {
-            Debug.LogError("Ballownership is null ");
-        }
-
         Debug.LogWarning($"Inside a player {name} we are calling Take Ball invoke");
         OnTakeBall?.Invoke();
 
-        CanShoot = true;
+        // Only owner should be allowed to shoot
+        if (IsOwner)
+        {
+            CanShoot = true;
+        }
     }
 
     public GameState GetPlayerCurrentGameState()
