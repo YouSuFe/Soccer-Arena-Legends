@@ -22,14 +22,15 @@ public class SkillCooldownManager : NetworkBehaviour
 
         playerSkillBaseCooldown = player.GetBallSkillCooldownTime();
         weaponSkillBaseCooldown = weapon.GetCooldownTime();
+
+        Debug.Log($"[SkillCooldownManager][{OwnerClientId}] Initialized: PlayerCooldown={playerSkillBaseCooldown}, WeaponCooldown={weaponSkillBaseCooldown}");
+
     }
 
     public override void OnNetworkSpawn()
     {
         if (!IsServer) return;
 
-        playerSkillCooldown.Value = 0f;
-        weaponSkillCooldown.Value = 0f;
     }
 
     private void Update()
@@ -37,31 +38,44 @@ public class SkillCooldownManager : NetworkBehaviour
         if (!IsServer) return;
 
         if (playerSkillCooldown.Value > 0f)
+        {
             playerSkillCooldown.Value -= Time.deltaTime;
+            Debug.Log($"[SkillCooldownManager][Server] Decreasing PlayerSkillCooldown for {OwnerClientId} => {playerSkillCooldown.Value:F2}");
+        }
 
         if (weaponSkillCooldown.Value > 0f)
+        {
             weaponSkillCooldown.Value -= Time.deltaTime;
+            Debug.Log($"[SkillCooldownManager][Server] Decreasing WeaponSkillCooldown for {OwnerClientId} => {weaponSkillCooldown.Value:F2}");
+        }
     }
-
     public bool TryUsePlayerSkill()
     {
+        Debug.Log($"[SkillCooldownManager][{OwnerClientId}] TryUsePlayerSkill called. Current Cooldown: {playerSkillCooldown.Value}");
+
         if (playerSkillCooldown.Value <= 0f)
         {
             playerSkillCooldown.Value = playerSkillBaseCooldown;
+            Debug.Log($"[SkillCooldownManager][{OwnerClientId}] PlayerSkill USED. Cooldown set to {playerSkillBaseCooldown}");
             OnSkillCooldownChanged?.Invoke(SkillType.BallSkill, playerSkillBaseCooldown);
             return true;
         }
+
         return false;
     }
 
     public bool TryUseWeaponSkill()
     {
+        Debug.Log($"[SkillCooldownManager][{OwnerClientId}] TryUseWeaponSkill called. Current Cooldown: {weaponSkillCooldown.Value}");
+
         if (weaponSkillCooldown.Value <= 0f)
         {
             weaponSkillCooldown.Value = weaponSkillBaseCooldown;
+            Debug.Log($"[SkillCooldownManager][{OwnerClientId}] WeaponSkill USED. Cooldown set to {weaponSkillBaseCooldown}");
             OnSkillCooldownChanged?.Invoke(SkillType.WeaponSkill, weaponSkillBaseCooldown);
             return true;
         }
+
         return false;
     }
 

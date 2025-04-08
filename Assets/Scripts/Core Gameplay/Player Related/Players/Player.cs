@@ -59,8 +59,8 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
     [SerializeField] private GameState CurrentGameState = GameState.WaitingForPlayers;
 
     [Header("Player HUD")]
-    private PlayerUIManager playerUIManager;
-    public PlayerUIManager PlayerUIManager => playerUIManager;
+    private PlayerUIController playerUIController;
+    public PlayerUIController PlayerUIController => playerUIController;
 
     [Header("Ball Skill Settings")]
     [Tooltip("Determines when the ball skill will trigger.")]
@@ -139,12 +139,6 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
     protected override void Awake()
     {
         base.Awake();
-        playerUIManager = GetComponentInChildren<PlayerUIManager>();
-
-        if (playerUIManager == null)
-        {
-            Debug.LogWarning("Player UI Manager is null");
-        }
     }
 
     public override void OnNetworkSpawn()
@@ -195,9 +189,6 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
         _playerStamina = PlayerMaxStamina;
 
         animator = GetComponentInChildren<Animator>();
-
-        // Initialize the Player UI Manager
-        playerUIManager.Initialize(this, Stats, Stats.Mediator);
 
         if (playerCamera == null)
         {
@@ -658,7 +649,7 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
 
         activeBall = null;
 
-        playerUIManager?.StartRespawnCountdown(respawnDelay);
+        playerUIController?.StartRespawnCountdown(respawnDelay);
 
         Debug.Log("[Client] Player input/UI disabled due to death. Owner : " + OwnerClientId);
     }
@@ -677,7 +668,7 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
         // 🔄 Re-enable the player fully
         SetPlayerSimulationState(true);
 
-        playerUIManager?.HideDeathScreen();
+        playerUIController?.HideDeathScreen();
 
         // 👇 Tell client to re-enable movement/input/UI
         NotifyClientOfRespawnClientRpc(RpcUtils.SendRpcToOwner(this));
@@ -693,7 +684,7 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
     {
         SetPlayerSimulationState(true);
 
-        playerUIManager?.HideDeathScreen();
+        playerUIController?.HideDeathScreen();
 
         Debug.Log("[Client] Player respawned and input re-enabled.");
     }
@@ -868,7 +859,7 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
     public void UpdateRespawnTimerClientRpc(float newTime)
     {
         if (!IsOwner) return;
-        playerUIManager?.StartRespawnCountdown(newTime);
+        playerUIController?.StartRespawnCountdown(newTime);
     }
 
     #endregion
@@ -973,6 +964,11 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
             // Optionally, trigger an update to the Stats class if needed
             Debug.Log($"Point allocated to {statType}. Current Stats: {Stats}");
         }
+    }
+
+    public void SetPlayerUIManager(PlayerUIController uiManager)
+    {
+        playerUIController = uiManager;
     }
 
     public void CreateAndAssignWeapon(int weaponId)

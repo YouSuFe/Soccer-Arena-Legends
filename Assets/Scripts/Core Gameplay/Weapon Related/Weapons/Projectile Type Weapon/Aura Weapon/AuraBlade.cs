@@ -124,7 +124,7 @@ public class AuraBlade : NetworkBehaviour, IProjectileNetworkInitializer, IDestr
     [ClientRpc]
     private void ShowFloatingDamageClientRpc(int damage, ClientRpcParams rpcParams = default)
     {
-        auraWeapon.GetCurrentPlayer()?.PlayerUIManager?.ShowFloatingDamage(Vector3.zero, damage);
+        auraWeapon.GetCurrentPlayer()?.PlayerUIController?.ShowFloatingDamage(Vector3.zero, damage);
     }
 
 

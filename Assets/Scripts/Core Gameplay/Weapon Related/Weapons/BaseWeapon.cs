@@ -234,9 +234,9 @@ public abstract class BaseWeapon : NetworkBehaviour, IWeapon, IDamageDealer, ISp
     [ClientRpc]
     private void ShowFloatingDamageClientRpc(int damage, ClientRpcParams rpcParams = default)
     {
-        if (player?.PlayerUIManager != null)
+        if (player?.PlayerUIController != null)
         {
-            player.PlayerUIManager.ShowFloatingDamage(Vector3.zero, damage);
+            player.PlayerUIController.ShowFloatingDamage(Vector3.zero, damage);
         }
         else
         {

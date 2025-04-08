@@ -341,8 +341,10 @@ public class PlayerSpawnManager : NetworkBehaviour
         ulong playerObjId = playerScript.NetworkObjectId;
         ulong ballObjId = spawnedBall.GetComponent<NetworkObject>().NetworkObjectId;
 
-        AssignCinemachineCameraToClientRpc(clientId, playerObjId, ballObjId);
-        AssignBallManagerToClientRpc(clientId, playerObjId, ballObjId);
+        AssignHUDToClientRpc(playerObjId, RpcUtils.ToClient(clientId));
+        AssignBallManagerToClientRpc(playerObjId, ballObjId, RpcUtils.ToClient(clientId));
+        AssignCinemachineCameraToClientRpc(playerObjId, ballObjId, RpcUtils.ToClient(clientId));
+
     }
 
     #endregion
@@ -635,17 +637,34 @@ public class PlayerSpawnManager : NetworkBehaviour
 
     #endregion
 
+    #region HUD Management
+
+    [ClientRpc]
+    private void AssignHUDToClientRpc(ulong playerObjectId, ClientRpcParams rpcParams = default)
+    {
+        if (!NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(playerObjectId, out NetworkObject netObj))
+        {
+            Debug.LogError("[HUD] Could not find player object for HUD assignment.");
+            return;
+        }
+
+        PlayerAbstract player = netObj.GetComponent<PlayerAbstract>();
+        HUDCanvasManager.Instance.AttachToPlayer(player);
+    }
+
+
+
+    #endregion
+
     #region Ball Management
 
     [ClientRpc]
-    private void AssignBallManagerToClientRpc(ulong clientId, ulong playerObjectId, ulong ballObjectId)
+    private void AssignBallManagerToClientRpc(ulong playerObjectId, ulong ballObjectId, ClientRpcParams rpcParams = default)
     {
-        if (NetworkManager.Singleton.LocalClientId != clientId) return;
-
         if (!NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(playerObjectId, out NetworkObject playerObject) ||
             !NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(ballObjectId, out NetworkObject ballObject))
         {
-            Debug.LogError($"[Client] Failed to assign BallOwnershipManager: Player or Ball object not found for client {clientId}");
+            Debug.LogError("[Client] Failed to assign BallOwnershipManager: Player or Ball object not found.");
             return;
         }
 
@@ -655,13 +674,14 @@ public class PlayerSpawnManager : NetworkBehaviour
         if (playerScript != null && ballManager != null)
         {
             playerScript.SetBallOwnershipManagerAndEvents(ballManager);
-            Debug.Log($"[Client] BallOwnershipManager assigned to player {playerScript.name} on Client {clientId}");
+            Debug.Log($"[Client] BallOwnershipManager assigned to player {playerScript.name}.");
         }
         else
         {
-            Debug.LogError($"[Client] Missing references for BallOwnershipManager assignment on client {clientId}");
+            Debug.LogError("[Client] Missing references for BallOwnershipManager assignment.");
         }
     }
+
 
     private void SpawnBall()
     {
@@ -682,10 +702,8 @@ public class PlayerSpawnManager : NetworkBehaviour
     #region Camera Assigment on Spawn
 
     [ClientRpc]
-    private void AssignCinemachineCameraToClientRpc(ulong clientId, ulong playerObjectId, ulong ballObjectId)
+    private void AssignCinemachineCameraToClientRpc(ulong playerObjectId, ulong ballObjectId, ClientRpcParams rpcParams = default)
     {
-        if (NetworkManager.Singleton.LocalClientId != clientId) return;
-
         if (fpsCamera == null)
         {
             Debug.LogError("FPS Camera is not assigned in Player Spawn Manager.");
@@ -701,7 +719,7 @@ public class PlayerSpawnManager : NetworkBehaviour
         if (!NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(playerObjectId, out NetworkObject playerObject) ||
             !NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(ballObjectId, out NetworkObject ballObject))
         {
-            Debug.LogError($"[Client] Failed to assign BallOwnershipManager: Player or Ball object not found for client {clientId}");
+            Debug.LogError("[Client] Failed to find player or ball object.");
             return;
         }
 
@@ -730,7 +748,6 @@ public class PlayerSpawnManager : NetworkBehaviour
         CameraSwitchHandler cameraSwitchHandler = playerInstance.GetComponentInChildren<CameraSwitchHandler>();
         if (cameraSwitchHandler != null)
         {
-            Debug.Log("Assigning Camera Switcher's camera properties.");
             cameraSwitchHandler.fpsCamera = fpsCamera;
             cameraSwitchHandler.lookAtCamera = lookAtCamera;
             cameraSwitchHandler.SetCameraMode(cameraSwitchHandler.currentCameraMode);

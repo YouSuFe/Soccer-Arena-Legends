@@ -6,7 +6,7 @@ using UnityEngine.UI;
 /// <summary>
 /// Manages the Player's UI, including health, stats, cooldowns, and floating damage text.
 /// </summary>
-public class PlayerUIManager : MonoBehaviour
+public class PlayerUIController : MonoBehaviour
 {
     #region Fields
 
@@ -217,6 +217,15 @@ public class PlayerUIManager : MonoBehaviour
     #endregion
 
     #region Clean Up
+
+    public void Cleanup()
+    {
+        presenter?.Cleanup();
+        modelManager?.Cleanup();
+
+        presenter = null;
+        modelManager = null;
+    }
 
     /// <summary>
     /// Cleans up resources when the player object is destroyed.

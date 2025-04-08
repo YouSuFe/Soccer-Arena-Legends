@@ -7,7 +7,7 @@ public class PlayerHUDPresenter
     #region Fields
 
     private PlayerModelManager modelManager; // Reference to the Model Manager
-    private PlayerUIManager uiManager; // Reference to the UI Manager
+    private PlayerUIController uiManager; // Reference to the UI Manager
 
     #endregion
 
@@ -18,7 +18,7 @@ public class PlayerHUDPresenter
     /// </summary>
     /// <param name="modelManager">The PlayerModelManager providing model events.</param>
     /// <param name="uiManager">The PlayerUIManager that updates the UI.</param>
-    public PlayerHUDPresenter(PlayerModelManager modelManager, PlayerUIManager uiManager)
+    public PlayerHUDPresenter(PlayerModelManager modelManager, PlayerUIController uiManager)
     {
         this.modelManager = modelManager;
         this.uiManager = uiManager;
