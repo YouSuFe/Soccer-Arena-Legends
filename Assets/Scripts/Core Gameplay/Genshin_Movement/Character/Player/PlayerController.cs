@@ -69,6 +69,11 @@ public class PlayerController : NetworkBehaviour
         {
             Debug.LogWarning("Animator is destroyed or missing. Attempting to reassign...");
             Animator = GetComponentInChildren<Animator>();
+            if (Animator == null || Animator.Equals(null))
+            {
+                Debug.LogError("Animator is still destroyed or missing. What the hell...");
+
+            }
         }
         // Synchronize state changes across the network
         currentState.OnValueChanged += OnStateChanged;

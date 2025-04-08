@@ -640,7 +640,7 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
 
         NotifyOwnerOfDeathClientRpc(playerRespawnDelay, RpcUtils.SendRpcToOwner(this));
 
-        Debug.Log("[Server] Player is dead due to death.");
+        Debug.Log("[Server] Player is dead due to death. Owner Client : " + OwnerClientId);
 
         // ❌ Do NOT destroy the object
         NetworkObject.Despawn(false);
@@ -660,7 +660,7 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
 
         playerUIManager?.StartRespawnCountdown(respawnDelay);
 
-        Debug.Log("[Client] Player input/UI disabled due to death.");
+        Debug.Log("[Client] Player input/UI disabled due to death. Owner : " + OwnerClientId);
     }
 
     /// <summary>

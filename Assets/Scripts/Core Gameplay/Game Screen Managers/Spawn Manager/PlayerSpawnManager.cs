@@ -253,7 +253,7 @@ public class PlayerSpawnManager : NetworkBehaviour
             if (player.IsPlayerDeath)
             {
                 Debug.Log("Player Spawn Manager : Player is death, Respawning");
-                player.NetworkObject.SpawnWithOwnership(clientId);
+                player.NetworkObject.SpawnAsPlayerObject(clientId);
 
                 // ✅ RE-CREATE AND REASSIGN WEAPON ON RESPAWN
                 StartCoroutine(DelayedResetAndRespawn(player, weaponId, spawnPosition, spawnRotation));
@@ -277,7 +277,7 @@ public class PlayerSpawnManager : NetworkBehaviour
             return;
         }
 
-        NetworkObject newPlayer = Instantiate(characterPrefab, spawnPosition, Quaternion.identity);
+        NetworkObject newPlayer = Instantiate(characterPrefab, spawnPosition, spawnRotation);
         newPlayer.SpawnAsPlayerObject(clientId);
 
         var playerScript = newPlayer.GetComponent<PlayerAbstract>();

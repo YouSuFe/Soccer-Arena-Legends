@@ -18,7 +18,7 @@ public class RotatingProjectile : NetworkBehaviour, IProjectileBehaviour
         NetworkObject networkObject = projectileInstance.GetComponent<NetworkObject>();
         if (networkObject != null)
         {
-            Debug.LogError("Spawning the Projectile for "+ ownerWeapon.name);
+            Debug.Log("Spawning the Projectile for "+ ownerWeapon.name);
             networkObject.Spawn(); // Syncs the projectile across all clients
         }
         else
@@ -29,7 +29,7 @@ public class RotatingProjectile : NetworkBehaviour, IProjectileBehaviour
 
         if (projectileInstance.TryGetComponent<IProjectileNetworkInitializer>(out var networkedInit))
         {
-            Debug.LogWarning("InitializeNetworkedProjectile the Projectile for " + ownerWeapon.name);
+            Debug.Log("InitializeNetworkedProjectile the Projectile for " + ownerWeapon.name);
 
             networkedInit.InitializeNetworkedProjectile(ownerWeapon); // 💡 Correct initialization here
         }

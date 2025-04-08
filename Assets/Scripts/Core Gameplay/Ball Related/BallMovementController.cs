@@ -97,8 +97,8 @@ public class BallMovementController : NetworkBehaviour
         }
         else
         {
-
             Debug.LogWarning($"[BallMovementController] Player Active Ball is null");
+            ownerPlayer = null;
         }
     }
 
