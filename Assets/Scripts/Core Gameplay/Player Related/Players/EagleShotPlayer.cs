@@ -12,7 +12,35 @@ public class EagleShotPlayer : PlayerAbstract
 
     protected override bool PerformBallSkill()
     {
-        if (BallAttachmentStatus != BallAttachmentStatus.WhenShot) return false;
+        if (BallAttachmentStatus != BallAttachmentStatus.WhenShot)
+        {
+            Debug.LogError("[BallSkill] Attachment is not whenshot" + BallAttachmentStatus);
+            return false;
+        }
+
+        if (playerCamera == null)
+        {
+            Debug.LogError("[BallSkill] Player camera is null. Cannot get shot direction.");
+            return false;
+        }
+
+        if (activeBall == null)
+        {
+            Debug.LogError("[BallSkill] Active ball is null. Cannot get shot direction.");
+            return false;
+        }
+
+        if (activeBall.transform == null)
+        {
+            Debug.LogError("[BallSkill] Active ball has no transform. Cannot get shot direction.");
+            return false;
+        }
+
+        if (activeBall.gameObject == null)
+        {
+            Debug.LogError("[BallSkill] Active ball's GameObject is null. Cannot get shot direction.");
+            return false;
+        }
 
         // Calculate the direction using the existing method
         Vector3 skillDirection = TargetingSystem.GetShotDirection(playerCamera, activeBall.transform.position, activeBall.gameObject.layer);
@@ -30,12 +58,6 @@ public class EagleShotPlayer : PlayerAbstract
                 if (goalZone.goalTeam == playerTeam)
                 {
                     Debug.Log($"[Skill] Cannot use skill toward own goal — reset cooldown.");
-
-                    // ❌ Skill not performed — reset cooldown
-                    SkillCooldownManager.ResetPlayerSkillCooldownServer();
-
-                    // Optional: Notify player
-                    NotifyCooldownResetClientRpc(RpcUtils.ToClient(OwnerClientId));
 
                     return false;
                 }
@@ -82,12 +104,6 @@ public class EagleShotPlayer : PlayerAbstract
         Debug.Log($"[Client] Active ball became null on Player {name} on Client {OwnerClientId}");
         activeBall = null;
 
-    }
-
-    [ClientRpc]
-    private void NotifyCooldownResetClientRpc(ClientRpcParams clientRpcParams = default)
-    {
-        //PlayerUIManager?.ShowMessage("You can't use that skill toward your own goal!", Color.red);
     }
 
     protected override void PerformHeavyAttack()

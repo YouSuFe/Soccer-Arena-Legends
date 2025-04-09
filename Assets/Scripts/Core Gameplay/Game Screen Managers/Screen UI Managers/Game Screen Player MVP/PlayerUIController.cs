@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using TMPro;
 using Unity.Netcode;
@@ -428,6 +429,29 @@ public class PlayerUIController : MonoBehaviour
         Destroy(damageTextInstance);
     }
 
+    #endregion
+
+    #region Force UI Update JIC
+    public void ForceCooldownComplete(SkillType skillType)
+    {
+        Debug.Log("Player UI Controller : inside the Force Cooldown Complete");
+        switch (skillType)
+        {
+            case SkillType.BallSkill:
+                if (ballSkillCoroutine != null) StopCoroutine(ballSkillCoroutine);
+                ballSkillCooldownText.text = "";
+                ballSkillCooldownFiller.fillAmount = 1f;
+                ballSkillReadyIndicator.gameObject.SetActive(true);
+                break;
+
+            case SkillType.WeaponSkill:
+                if (weaponSkillCoroutine != null) StopCoroutine(weaponSkillCoroutine);
+                weaponSkillCooldownText.text = "";
+                weaponSkillCooldownFiller.fillAmount = 1f;
+                weaponSkillReadyIndicator.gameObject.SetActive(true);
+                break;
+        }
+    }
     #endregion
 
     public void Show()

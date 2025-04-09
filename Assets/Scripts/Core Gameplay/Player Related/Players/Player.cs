@@ -39,10 +39,6 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
     }
     public float PlayerMaxStamina { get; set; }
 
-    [Header("Referenes")]
-    [SerializeField] private SkillCooldownManager skillCooldownManager;
-    public SkillCooldownManager SkillCooldownManager => skillCooldownManager;
-
     [Header("Input Reader")]
     [field: SerializeField] public InputReader InputReader { get; private set; }
 
@@ -58,27 +54,25 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
     //[SerializeField] private GameStateEventChannel gameStateEventChannel;
     [SerializeField] private GameState CurrentGameState = GameState.WaitingForPlayers;
 
-    [Header("Player HUD")]
-    private PlayerUIController playerUIController;
-    public PlayerUIController PlayerUIController => playerUIController;
+
+
 
     [Header("Ball Skill Settings")]
     [Tooltip("Determines when the ball skill will trigger.")]
     [SerializeField] private BallAttachmentStatus ballSkillTrigger = BallAttachmentStatus.Attached;
     public BallAttachmentStatus BallAttachmentStatus { get { return ballSkillTrigger; } set { ballSkillTrigger = value; } }
 
-    [Header("Weapon Settings")]
-    [Tooltip("Base melee weapons for the player.")]
-    protected BaseWeapon weapon = default;
+
 
     [Header("Ball Holder Settings")]
     [Tooltip("Transform that defines the position where the ball is held by the player.")]
     [SerializeField] protected Transform ballHolder;
     public Transform BallHolderPosition { get { return ballHolder; } }
 
+
+
     [Header("Player Camera Settings")]
     [Tooltip("Reference to the player's camera.")]
-    [SerializeField] protected Camera playerCamera;
     [SerializeField] protected GameObject eyeTrackingPoint;
     public GameObject EyeTrackingPoint => eyeTrackingPoint;
 
@@ -90,6 +84,9 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
 
     [SerializeField] protected Transform projectileHolder;    // Reference to the projectile holder in the Player (can be null)
 
+
+    [Header("Weapon Settings")]
+    protected BaseWeapon weapon = default;
 
     [Header("Ball Interaction Settings")]
     [Tooltip("Multiplier applied to ball speed when shooting.")]
@@ -111,6 +108,10 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
     public event Action<SkillType, float> OnSkillCooldownChanged;
     public event Action<float, float> OnStaminaChanged; // Notify listeners when stamina changes
 
+    [Header("Player HUD")]
+    private PlayerUIController playerUIController;
+    public PlayerUIController PlayerUIController => playerUIController;
+
     // The ball that can player interact with
     protected BallReference activeBall;
     public BallReference ActiveBall { get { return activeBall; } }
@@ -122,6 +123,8 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
 
     protected Animator animator;
     public Animator Animator => animator;
+
+    protected Camera playerCamera;
 
     protected Rigidbody ballRigidbody;
 
@@ -150,9 +153,16 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
 
         SubscribeEvents();
 
-        if(IsServer)
+        if (playerCamera == null)
+        {
+            Debug.Log("Assigning the camera from Spawn");
+            playerCamera = Camera.main; // Finds the camera tagged as MainCamera
+        }
+
+        if (IsServer)
         {
             IsPlayerDeath = false;
+            CentralCooldownTracker.Instance.RegisterPlayer(OwnerClientId);
         }
 
         if (IsOwner)
@@ -172,7 +182,11 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
         if(IsOwner)
         {
             InputReader.DisableInputActions();
+        }
 
+        if(IsServer)
+        {
+            CentralCooldownTracker.Instance.UnregisterPlayer(OwnerClientId);
         }
 
         ResetBallStateOnDespawn();
@@ -183,6 +197,11 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
 
     protected virtual void Start()
     {
+        if (playerCamera == null)
+        {
+            Debug.Log("Assigning the camera from Start");
+            playerCamera = Camera.main; // Finds the camera tagged as MainCamera
+        }
         if (!IsOwner) return;
 
         PlayerMaxStamina = playerBaseStats.GetStamina();
@@ -190,10 +209,6 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
 
         animator = GetComponentInChildren<Animator>();
 
-        if (playerCamera == null)
-        {
-            playerCamera = Camera.main; // Finds the camera tagged as MainCamera
-        }
 
     }
 
@@ -204,6 +219,7 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
         if (IsOwner)
         {
             //Debug.Log($"Gameobject {gameObject} {NetworkManager.Singleton.LocalClientId} Health: {Health.Value}, Strength: {Strength.Value}, Speed: {Speed.Value}\n{Stats}");
+            Debug.Log($"[Owner] Status from this client {NetworkManager.LocalClientId} {BallAttachmentStatus}");
         }
     }
 
@@ -228,7 +244,10 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
         }
     }
 
-
+    public void TriggerCooldownChanged(SkillType type, float remaining)
+    {
+        OnSkillCooldownChanged?.Invoke(type, remaining);
+    }
 
     private void UnSubscribeEvents()
     {
@@ -266,14 +285,8 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
             return;
         }
 
-        if (skillCooldownManager.CanUseSkill(SkillType.BallSkill))
-        {
-            PerformBallSkillServerRpc();
-        }
-        else
-        {
-            Debug.LogWarning("Ball skill is on cooldown.");
-        }
+        // Don't check cooldown on client — server will do it safely
+        PerformBallSkillServerRpc();
     }
 
     private void InputManager_OnWeaponSkillUsed()
@@ -282,7 +295,8 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
         if (!IsPlayerAllowedToMoveOrAction()) return;
 
         Debug.Log("Player Weapon Skill is Called from " + name);
-        PerformPlayerWeaponSkill();
+
+        PerformWeaponSkillServerRpc();
     }
 
     private void InputManager_OnRegularAttack()
@@ -361,7 +375,7 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
     {
         if (shooter == this)
         {
-            Debug.LogWarning($"{this.name} shot the ball and can now use their skill.");
+            UpdateShootState();
         }
     }
 
@@ -372,13 +386,15 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
     [ServerRpc]
     private void PerformBallSkillServerRpc()
     {
+        Debug.LogWarning("[Server] Inside PerformBallSkillServerRpc.");
+
         if (activeBall == null)
         {
             Debug.LogWarning("[Server] Cannot use ball skill - no ball attached.");
             return;
         }
 
-        if (!skillCooldownManager.TryUsePlayerSkill())
+        if (!CentralCooldownTracker.Instance.TryUseSkill(OwnerClientId, SkillType.BallSkill, GetBallSkillCooldownTime()))
         {
             Debug.LogWarning("[Server] Ball skill is on cooldown.");
             return;
@@ -388,8 +404,15 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
 
         if (canUseSkill)
         {
+            Debug.LogWarning("[Server] Can Use Skill : ." + canUseSkill);
             // Optional: trigger client effects immediately or via logic inside PerformBallSkill()
-            //PerformBallSkillEffectsClientRpc(OwnerClientId, skillCooldownManager.GetRemainingCooldown(SkillType.BallSkill));
+            //PerformBallSkillEffectsClientRpc(OwnerClientId, GetBallSkillCooldownTime());
+        }
+        else
+        {
+            Debug.LogWarning("[Server] Can Use Skill : ." + canUseSkill);
+            // Reset cooldown so UI syncs too
+            CentralCooldownTracker.Instance.ResetCooldownForPlayer(OwnerClientId, SkillType.BallSkill);
         }
     }
 
@@ -405,22 +428,18 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
     protected abstract void PerformRegularAttack();
     protected abstract void PerformHeavyAttack();
 
-    protected void PerformPlayerWeaponSkill()
+    [ServerRpc]
+    private void PerformWeaponSkillServerRpc()
     {
-        if (!IsOwner) return;
-
-        Debug.Log($"[Owner] Player {gameObject.name} is attempting to use WeaponSkill.");
-
         if (weapon is ISpecialWeaponSkill specialWeaponSkill)
         {
-            if (skillCooldownManager.TryUseWeaponSkill())
+            if (!CentralCooldownTracker.Instance.TryUseSkill(OwnerClientId, SkillType.WeaponSkill, weapon.GetCooldownTime()))
             {
-                specialWeaponSkill.ExecuteSkill();
+                Debug.LogWarning("[Server] Weapon skill is on cooldown.");
+                return;
             }
-            else
-            {
-                Debug.Log("[Owner] Weapon skill is on cooldown.");
-            }
+
+            specialWeaponSkill.ExecuteSkill(); // ✅ Server-side logic
         }
     }
 
@@ -524,14 +543,11 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
     /// However, if I change implementation to only server validates player's shoot states, then I need to add server side change as well.
     /// Currently it only updates on client side with this RPC.
     /// </summary>
-    [ClientRpc]
-    public void UpdateShootStateClientRpc(ulong shooterClientId)
+    public void UpdateShootState()
     {
-        if (NetworkManager.Singleton.LocalClientId == shooterClientId) // ✅ Correctly checks if this client is the shooter
-        {
-            BallAttachmentStatus = BallAttachmentStatus.WhenShot;
-            CanShoot = false;
-        }
+        BallAttachmentStatus = BallAttachmentStatus.WhenShot;
+        Debug.Log($"[Client] Making Shoot from this client {NetworkManager.LocalClientId} {BallAttachmentStatus}");
+        CanShoot = false;
     }
 
     public bool CheckIfCurrentlyHasBall()
@@ -926,6 +942,7 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
         activeBall = ball;
 
         BallAttachmentStatus = BallAttachmentStatus.Attached;
+        Debug.Log($"[Client] Making Register Ball from this client {NetworkManager.Singleton.LocalClientId}{BallAttachmentStatus}");
 
         Debug.LogWarning($"Inside a player {name} we are calling Take Ball invoke");
         OnTakeBall?.Invoke();
@@ -955,6 +972,19 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
     public bool IsPlayerAllowedToMoveOrAction()
     {
         return (CurrentGameState == GameState.InGame || CurrentGameState == GameState.WaitingForPlayers);
+    }
+
+    /// <summary>
+    /// Called by server to forcefully notify the client that their cooldown is complete.
+    /// Used as a safety mechanism in case UI desyncs.
+    /// </summary>
+    public void ForceLocalCooldownToReady(SkillType type)
+    {
+        // Notify through event (MVP chain)
+        OnSkillCooldownChanged?.Invoke(type, 0f);
+
+        // Force UI directly as a failsafe
+        playerUIController?.ForceCooldownComplete(type);
     }
 
     public void DistributeStatPoint(StatType statType)
@@ -1035,24 +1065,6 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
 
         // ✅ Set to player's weapon field
         player.weapon = weapon;
-
-        // ✅ Initialize the skill cooldown manager with the weapon
-        if (player.SkillCooldownManager != null)
-        {
-            player.SkillCooldownManager.Initialize(player, weapon);
-
-            // ✅ Forward cooldown event to Player for UI & other systems
-            player.SkillCooldownManager.OnSkillCooldownChanged += (type, time) =>
-            {
-                player.OnSkillCooldownChanged?.Invoke(type, time);
-            };
-
-            Debug.Log("[SkillCooldownManager] Initialized with weapon inside EquipWeaponClientRpc");
-        }
-        else
-        {
-            Debug.LogError("SkillCooldownManager is not assigned on player!");
-        }
     }
 
     public void DestroyCurrentWeapon()

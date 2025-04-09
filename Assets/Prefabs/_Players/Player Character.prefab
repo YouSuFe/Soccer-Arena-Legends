@@ -1731,7 +1731,6 @@ GameObject:
   - component: {fileID: -3155702653236817483}
   - component: {fileID: 2669957641426452014}
   - component: {fileID: 1711991082496151951}
-  - component: {fileID: 1135682790521621186}
   m_Layer: 9
   m_Name: Player Character
   m_TagString: Player
@@ -1991,19 +1990,6 @@ MonoBehaviour:
   smoothTime: 0.2
   maxOffset: 0.5
   velocityInfluence: 0.3
---- !u!114 &1135682790521621186
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5917657169526711097}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ad4c7df6770be4a05a64e56a84042990, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  ShowTopMostFoldoutHeaderGroup: 1
 --- !u!1 &5978675112703999085
 GameObject:
   m_ObjectHideFlags: 0

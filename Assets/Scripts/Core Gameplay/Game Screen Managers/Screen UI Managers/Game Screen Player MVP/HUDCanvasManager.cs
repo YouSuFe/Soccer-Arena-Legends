@@ -8,6 +8,7 @@ public class HUDCanvasManager : MonoBehaviour
     public static HUDCanvasManager Instance { get; private set; }
 
     [SerializeField] private PlayerUIController playerUIController;
+    public PlayerUIController PlayerUIController => playerUIController;
 
     private void Awake()
     {

@@ -200,8 +200,12 @@ public class BallOwnershipManager : NetworkBehaviour
         }
 
         this.NetworkObject.TryRemoveParent();
+
         // 🔹 Update the player's shoot status
-        playerShooter.UpdateShootStateClientRpc(clientId);
+        playerShooter.BallAttachmentStatus = BallAttachmentStatus.WhenShot;
+
+        // ToDo: Every client will be get this event, no need to actually beacuse we only change shooter status.
+        NotifyPlayerShotBallClientRpc(clientId);
 
         // Reset ownership and update state
         ClearSkillInfluence();
@@ -219,7 +223,6 @@ public class BallOwnershipManager : NetworkBehaviour
         ballMovementController.ApplyThrowForce(direction, force);
 
         Debug.Log($"Server: Player {playerShooter.name} shot the ball.");
-        NotifyPlayerShotBallClientRpc(clientId);
     }
 
     /// <summary>

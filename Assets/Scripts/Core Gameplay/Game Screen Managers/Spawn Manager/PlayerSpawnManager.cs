@@ -771,6 +771,14 @@ public class PlayerSpawnManager : NetworkBehaviour
         Debug.LogWarning($"[Server] could not found {clientId} inside Dictionary.");
         return null;
     }
+
+    public PlayerAbstract GetPlayerByClientId(ulong clientId)
+    {
+        if (activePlayers.TryGetValue(clientId, out var player))
+            return player;
+
+        return null;
+    }
     #endregion
 
     #region Clean Up
