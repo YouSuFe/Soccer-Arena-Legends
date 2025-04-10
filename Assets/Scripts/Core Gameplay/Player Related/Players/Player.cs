@@ -520,7 +520,6 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
             Vector3 shootDirection = TargetingSystem.GetShotDirection(playerCamera, activeBall.transform.position, IgnoredAimedLayers);
 
             Debug.DrawRay(activeBall.transform.position, shootDirection * 10f, Color.red, 2f);
-            Debug.Log($"Shoot Magnitude: {shootDirection}");
 
             OnLoseBall?.Invoke();
 
