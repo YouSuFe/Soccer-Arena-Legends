@@ -93,10 +93,3 @@ public class CameraSwitchHandler : MonoBehaviour
 }
 
 
-public enum CameraMode
-{
-    FirstPerson,
-    ThirdPerson,
-    //FreeCamera,
-    // Add more camera modes as needed
-}
