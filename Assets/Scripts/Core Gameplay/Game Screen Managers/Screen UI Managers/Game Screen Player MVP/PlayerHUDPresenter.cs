@@ -1,3 +1,4 @@
+using UnityEngine;
 /// <summary>
 /// The Presenter in the MVP architecture that bridges the PlayerModelManager (Model) and PlayerUIManager (View).
 /// Listens to model events and updates the UI accordingly.

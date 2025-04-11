@@ -3,56 +3,38 @@ using UnityEngine;
 
 public class RotatingProjectile : NetworkBehaviour, IProjectileBehaviour
 {
-    public void Shoot(Transform projectileHolder, Transform aimTransform, GameObject projectilePrefab, float projectileSpeed, BaseWeapon ownerWeapon)
+    public void Shoot(Vector3 shootPosition, Vector3 direction, GameObject projectilePrefab, float projectileSpeed, BaseWeapon ownerWeapon)
     {
-        Debug.Log($"Is server: {IsServer} IsClient {IsClient} IsOwner {IsOwner}");
         if (!IsServer) return; // Ensure only the server spawns projectiles
 
-        TargetingSystem targetingSystem = new TargetingSystem();
-        Vector3 shootDirection = targetingSystem.GetShotDirection(aimTransform, projectileHolder.position);
-        Debug.Log("Shoot direction: " + shootDirection);
-
-        GameObject projectileInstance = Instantiate(projectilePrefab, projectileHolder.position, Quaternion.identity);
-        projectileInstance.transform.forward = shootDirection;
-
-        NetworkObject networkObject = projectileInstance.GetComponent<NetworkObject>();
-        if (networkObject != null)
+        GameObject projectileInstance = Instantiate(projectilePrefab, shootPosition, Quaternion.LookRotation(direction));
+        if (projectileInstance.TryGetComponent<NetworkObject>(out var networkObject))
         {
-            Debug.Log("Spawning the Projectile for "+ ownerWeapon.name);
-            networkObject.Spawn(); // Syncs the projectile across all clients
+            Debug.Log("Spawning the Projectile for " + ownerWeapon.name);
+            networkObject.Spawn();
         }
         else
         {
-            Debug.LogError("No NetworkObject found on projectile prefab.");
+            Debug.LogError(" No NetworkObject on projectile prefab.");
             return;
         }
 
         if (projectileInstance.TryGetComponent<IProjectileNetworkInitializer>(out var networkedInit))
         {
-            Debug.Log("InitializeNetworkedProjectile the Projectile for " + ownerWeapon.name);
+            networkedInit.InitializeNetworkedProjectile(ownerWeapon);
+        }
 
-            networkedInit.InitializeNetworkedProjectile(ownerWeapon); // 💡 Correct initialization here
+        if (projectileInstance.TryGetComponent<Rigidbody>(out var rb))
+        {
+            rb.AddForce(direction.normalized * projectileSpeed, ForceMode.VelocityChange);
+            Debug.Log("➡Projectile velocity set to: " + rb.linearVelocity);
         }
         else
         {
-            Debug.LogWarning("InitializeNetworkedProjectile the Projectile for not happenning." + ownerWeapon.name);
-
+            Debug.LogError("No Rigidbody on projectile prefab.");
         }
 
-        Rigidbody rb = projectileInstance.GetComponent<Rigidbody>();
-        if (rb != null)
-        {
-            rb.AddForce(shootDirection * projectileSpeed, ForceMode.VelocityChange);
-            Debug.Log("Projectile velocity set to: " + rb.linearVelocity);
-        }
-        else
-        {
-            Debug.LogError("No Rigidbody found on projectile prefab.");
-        }
-
-        // Optionally add rotation or other effects
-        RotatingProjectileOverTime rotatingProjectile = projectileInstance.GetComponent<RotatingProjectileOverTime>();
-        if (rotatingProjectile == null)
+        if (projectileInstance.GetComponent<RotatingProjectileOverTime>() == null)
         {
             projectileInstance.AddComponent<RotatingProjectileOverTime>();
         }

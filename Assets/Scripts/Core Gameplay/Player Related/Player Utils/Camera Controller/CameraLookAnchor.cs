@@ -27,4 +27,21 @@ public class CameraLookAnchor : MonoBehaviour
         // Match position in world space
         transform.position = targetCamera.position;
     }
+
+    private void OnDrawGizmos()
+    {
+        Gizmos.color = Color.red;
+
+        Vector3 start = transform.position;
+        Vector3 dir = transform.forward * 2f;
+
+        Gizmos.DrawRay(start, dir);
+
+#if UNITY_EDITOR
+        UnityEditor.Handles.color = Color.red;
+        UnityEditor.Handles.ArrowHandleCap(0, start, Quaternion.LookRotation(dir), 1f, EventType.Repaint);
+        UnityEditor.Handles.Label(start + dir, "Camera Aim");
+#endif
+    }
+
 }

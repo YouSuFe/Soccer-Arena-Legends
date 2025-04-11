@@ -338,6 +338,8 @@ public class PlayerSpawnManager : NetworkBehaviour
 
     private void AssignClientVisuals(ulong clientId, PlayerAbstract playerScript)
     {
+
+        Debug.Log("Player Spawn Manager : Inisde the Assigning visuals");
         ulong playerObjId = playerScript.NetworkObjectId;
         ulong ballObjId = spawnedBall.GetComponent<NetworkObject>().NetworkObjectId;
 

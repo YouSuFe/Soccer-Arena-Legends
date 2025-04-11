@@ -292,11 +292,9 @@ public abstract class BaseWeapon : NetworkBehaviour, IWeapon, IDamageDealer, ISp
     #region Special Skill Interface Method
 
 
-    public void ExecuteSkill()
+    public void ExecuteSkill(Vector3 rayOrigin, Vector3 direction)
     {
-        if (!IsOwner) return; // Ensure only the local player calls this
-
-        ExecuteSkillServerRpc();
+        ExecuteSkillServerRpc(rayOrigin, direction);
     }
 
     public float GetCooldownTime()
@@ -304,14 +302,14 @@ public abstract class BaseWeapon : NetworkBehaviour, IWeapon, IDamageDealer, ISp
         return GetSkillCooldownTime();
     }
     // Special Skill Implementation Method
-    protected abstract void ExecuteSpecialSkill();
+    protected abstract void ExecuteSpecialSkill(Vector3 rayOrigin, Vector3 direction);
     // Sound and Visual Effects Abstract Method
     protected abstract void PlaySkillEffects();
 
-    [ServerRpc]
-    private void ExecuteSkillServerRpc()
+    [ServerRpc(RequireOwnership = false)]
+    private void ExecuteSkillServerRpc(Vector3 rayOrigin, Vector3 direction)
     {
-        ExecuteSpecialSkill(); // Server executes the skill logic
+        ExecuteSpecialSkill(rayOrigin, direction); //  New overload with ray
 
         // Notify clients to play skill effects
         NotifySkillEffectsClientRpc();

@@ -10,7 +10,7 @@ public class EagleShotPlayer : PlayerAbstract
     public GameObject activeParticleVFX;
     private GameObject currentParticleInstance; // New field to store instantiated particle reference
 
-    protected override bool PerformBallSkill()
+    protected override bool PerformBallSkill(Vector3 rayOrigin, Vector3 direction)
     {
         if (BallAttachmentStatus != BallAttachmentStatus.WhenShot)
         {
@@ -18,31 +18,15 @@ public class EagleShotPlayer : PlayerAbstract
             return false;
         }
 
-        if (activeBall == null)
+        if (activeBall == null || activeBall.transform == null || activeBall.gameObject == null)
         {
-            Debug.LogError("[BallSkill] Active ball is null. Cannot get shot direction.");
+            Debug.LogError("[BallSkill] Active ball or its components are null.");
             return false;
         }
 
-        if (activeBall.transform == null)
-        {
-            Debug.LogError("[BallSkill] Active ball has no transform. Cannot get shot direction.");
-            return false;
-        }
-
-        if (activeBall.gameObject == null)
-        {
-            Debug.LogError("[BallSkill] Active ball's GameObject is null. Cannot get shot direction.");
-            return false;
-        }
-
-        // Calculate the direction using the existing method
-        Vector3 skillDirection = TargetingSystem.GetShotDirection(CameraLookAnchor, activeBall.transform.position, activeBall.gameObject.layer);
-
-        // Check if the direction has a valid target by doing a raycast from the CameraLookAnchor forward
+        // Do raycast to validate hit (optional, can be skipped if trust client input)
         RaycastHit hit;
-        Ray ray = new Ray(CameraLookAnchor.position, CameraLookAnchor.forward);
-
+        Ray ray = new Ray(rayOrigin, direction);
         if (Physics.Raycast(ray, out hit))
         {
             if (hit.collider.TryGetComponent<GoalZoneController>(out var goalZone))
@@ -71,7 +55,7 @@ public class EagleShotPlayer : PlayerAbstract
             Debug.Log("[Server] New ball speed after applying multiplier: " + newSpeed);
 
             // Apply the new velocity with the same direction as before
-            ballRigidbody.linearVelocity = skillDirection.normalized * newSpeed;
+            ballRigidbody.linearVelocity = direction.normalized * newSpeed;
 
             ballOwnershipManager.RegisterSkillInfluence(OwnerClientId);
 

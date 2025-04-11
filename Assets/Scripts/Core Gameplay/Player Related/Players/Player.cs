@@ -153,12 +153,9 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
 
         PlayerController = GetComponent<PlayerController>();
 
-        SubscribeEvents();
+        animator = GetComponentInChildren<Animator>();
 
-        if (playerCamera == null)
-        {
-            Debug.Log("Assigning the camera from Spawn");
-        }
+        SubscribeEvents();
 
         if (IsServer)
         {
@@ -168,6 +165,7 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
 
         if (IsOwner)
         {
+
             playerCamera = Camera.main; // Finds the camera tagged as MainCamera
 
             InputReader.EnableInputActions();
@@ -200,19 +198,10 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
 
     protected virtual void Start()
     {
-        if (playerCamera == null)
-        {
-            Debug.Log("Assigning the camera from Start");
-            playerCamera = Camera.main; // Finds the camera tagged as MainCamera
-        }
         if (!IsOwner) return;
 
         PlayerMaxStamina = playerBaseStats.GetStamina();
         _playerStamina = PlayerMaxStamina;
-
-        animator = GetComponentInChildren<Animator>();
-
-
     }
 
     public override void Update()
@@ -221,9 +210,7 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
 
         if (IsOwner)
         {
-            //Debug.Log($"Gameobject {gameObject} {NetworkManager.Singleton.LocalClientId} Health: {Health.Value}, Strength: {Strength.Value}, Speed: {Speed.Value}\n{Stats}");
-            //Debug.Log($"[Owner] Status from this client {NetworkManager.LocalClientId} {BallAttachmentStatus}");
-            Debug.Log($"[Owner] Status from this client {NetworkManager.LocalClientId} {playerCamera.transform.position} {playerCamera.transform.rotation.eulerAngles}");
+            Debug.Log($"Gameobject {gameObject} {NetworkManager.Singleton.LocalClientId} Health: {Health.Value}, Strength: {Strength.Value}, Speed: {Speed.Value}\n{Stats}");
         }
     }
 
@@ -289,8 +276,10 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
             return;
         }
 
+        Vector3 direction = TargetingSystem.GetShotDirection(CameraLookAnchor, activeBall.transform.position, activeBall.gameObject.layer);
+
         // Don't check cooldown on client — server will do it safely
-        PerformBallSkillServerRpc();
+        PerformBallSkillServerRpc(CameraLookAnchor.position, direction);
     }
 
     private void InputManager_OnWeaponSkillUsed()
@@ -298,9 +287,11 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
 
         if (!IsPlayerAllowedToMoveOrAction()) return;
 
-        Debug.Log("Player Weapon Skill is Called from " + name);
+        Debug.Log("Player Weapon Skill is Called from "+ OwnerClientId);
 
-        PerformWeaponSkillServerRpc();
+        Vector3 shootDirection = TargetingSystem.GetShotDirection(CameraLookAnchor, projectileHolder.position, IgnoredAimedLayers);
+
+        PerformWeaponSkillServerRpc(CameraLookAnchor.position, shootDirection);
     }
 
     private void InputManager_OnRegularAttack()
@@ -388,7 +379,7 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
     #region Reusable Methods
 
     [ServerRpc]
-    private void PerformBallSkillServerRpc()
+    private void PerformBallSkillServerRpc(Vector3 rayOrigin, Vector3 direction)
     {
         Debug.LogWarning("[Server] Inside PerformBallSkillServerRpc.");
 
@@ -404,7 +395,7 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
             return;
         }
 
-        bool canUseSkill = PerformBallSkill(); // your abstracted server-side logic
+        bool canUseSkill = PerformBallSkill(rayOrigin, direction); // your abstracted server-side logic
 
         if (canUseSkill)
         {
@@ -427,13 +418,13 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
         PlaySkillEffects();
     }
 
-    protected abstract bool PerformBallSkill();
+    protected abstract bool PerformBallSkill(Vector3 rayOrigin, Vector3 direction);
     protected abstract void PlaySkillEffects();
     protected abstract void PerformRegularAttack();
     protected abstract void PerformHeavyAttack();
 
     [ServerRpc]
-    private void PerformWeaponSkillServerRpc()
+    private void PerformWeaponSkillServerRpc(Vector3 rayOrigin, Vector3 direction)
     {
         if (weapon is ISpecialWeaponSkill specialWeaponSkill)
         {
@@ -443,7 +434,7 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
                 return;
             }
 
-            specialWeaponSkill.ExecuteSkill(); // ✅ Server-side logic
+            specialWeaponSkill.ExecuteSkill(rayOrigin, direction); // ✅ Server-side logic
         }
     }
 
@@ -668,6 +659,9 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
 
         activeBall = null;
 
+        // To ensure health become 0 when player is dead
+        playerUIController?.ForceHealthToZero();
+        // Start UI countdown for respawn
         playerUIController?.StartRespawnCountdown(respawnDelay);
 
         Debug.Log("[Client] Player input/UI disabled due to death. Owner : " + OwnerClientId);
@@ -904,6 +898,8 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
         // Log the remaining health
         Debug.Log($"Enemy took {amount} damage. Remaining Health: {Health.Value}");
 
+        NotifyHealthChangedClientRpc(Health.Value, RpcUtils.SendRpcToOwner(this));
+
         // Check if health is zero or less
         if (Health.Value <= 0)
         {
@@ -911,6 +907,13 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
             lastDeathType = type;
             Die(); // Trigger death if health is zero or below
         }
+    }
+
+    [ClientRpc]
+    private void NotifyHealthChangedClientRpc(int value, ClientRpcParams clientRpcParams)
+    {
+        Stats.SetStat(StatType.Health, value);
+
     }
 
     // It is for IDamageable damage dealers
@@ -926,6 +929,8 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
 
         // Log the remaining health
         Debug.Log($"{name} took {amount} damage. Remaining Health: {Health.Value}");
+
+        NotifyHealthChangedClientRpc(Health.Value, RpcUtils.SendRpcToOwner(this));
 
         // Check if health is zero or less
         if (Health.Value <= 0)

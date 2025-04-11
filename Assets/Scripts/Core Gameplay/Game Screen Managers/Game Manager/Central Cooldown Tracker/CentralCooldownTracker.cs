@@ -111,7 +111,7 @@ public class CentralCooldownTracker : NetworkBehaviour
             ulong clientId = kvp.Key;
             var data = kvp.Value;
 
-            Debug.Log($"[Cooldown] Client {clientId} - BallSkill: {data.PlayerSkillRemaining:0.00}s, WeaponSkill: {data.WeaponSkillRemaining:0.00}s");
+            //Debug.Log($"[Cooldown] Client {clientId} - BallSkill: {data.PlayerSkillRemaining:0.00}s, WeaponSkill: {data.WeaponSkillRemaining:0.00}s");
 
             kvp.Value.Tick(dt, clientId, (id, type) =>
             {

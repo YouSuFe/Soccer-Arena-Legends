@@ -452,6 +452,13 @@ public class PlayerUIController : MonoBehaviour
                 break;
         }
     }
+
+    public void ForceHealthToZero()
+    {
+        healthyHealthText.gameObject.SetActive(false);
+        dangerHealthText.gameObject.SetActive(true);
+        dangerHealthText.text = "0";
+    }
     #endregion
 
     public void Show()

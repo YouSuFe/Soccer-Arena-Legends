@@ -69,32 +69,18 @@ public class AuraWeapon : BaseWeapon
     #region Weapon Skills and Attacks
 
     // Method to execute the Aura Weapon's special skill
-    protected override void ExecuteSpecialSkill()
+    protected override void ExecuteSpecialSkill(Vector3 rayOrigin, Vector3 direction)
     {
-        Debug.Log("Executing Aura Skill!");
+        Debug.Log("Executing Aura Skill with direction!");
 
-        if (auraBladePrefab == null)
+        if (auraBladePrefab == null || projectileHolder == null)
         {
-            Debug.LogError("auraBladePrefab is not assigned!");
+            Debug.LogError("Missing prefab or holder");
             return;
         }
 
-        if (projectileHolder == null)
-        {
-            Debug.LogError("projectileHolder is not assigned!");
-            return;
-        }
-
-        if (anchorAimTransform == null)
-        {
-            Debug.LogError("playerCamera is not assigned!");
-            return;
-        }
-
-        // Execute the projectile behavior using the defined parameters
-        projectileBehaviour?.Shoot(projectileHolder, anchorAimTransform, auraBladePrefab, auraBladeProjectileSpeed, this);
-
-        // ToDo: Make sound for all player with RPC
+        // Shoot with already calculated direction
+        projectileBehaviour?.Shoot(projectileHolder.position, direction, auraBladePrefab, auraBladeProjectileSpeed, this);
     }
 
     protected override void PlaySkillEffects()

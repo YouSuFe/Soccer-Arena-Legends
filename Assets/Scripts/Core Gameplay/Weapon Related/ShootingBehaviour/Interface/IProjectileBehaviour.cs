@@ -2,5 +2,5 @@ using UnityEngine;
 
 public interface IProjectileBehaviour
 {
-    void Shoot(Transform projectileHolder, Transform aimTransform, GameObject projectilePrefab, float projectileSpeed, BaseWeapon ownerWeapon);
+    void Shoot(Vector3 shootPosition, Vector3 shootDirection, GameObject projectilePrefab, float projectileSpeed, BaseWeapon ownerWeapon);
 }

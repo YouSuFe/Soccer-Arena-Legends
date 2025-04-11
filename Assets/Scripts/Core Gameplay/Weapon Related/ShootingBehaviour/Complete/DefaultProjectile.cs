@@ -3,41 +3,20 @@ using UnityEngine;
 
 public class DefaultProjectile : NetworkBehaviour, IProjectileBehaviour
 {
-    public void Shoot(Transform projectileHolder, Transform aimTransform, GameObject projectilePrefab, float projectileSpeed, BaseWeapon ownerWeapon)
+    public void Shoot(Vector3 shootPosition, Vector3 shootDirection, GameObject projectilePrefab, float projectileSpeed, BaseWeapon ownerWeapon)
     {
-        if (!IsServer) return; // Ensure only the server spawns projectiles
+        if (!IsServer) return;
 
-        TargetingSystem targetingSystem = new TargetingSystem();
-        Vector3 shootDirection = targetingSystem.GetShotDirection(aimTransform, projectileHolder.position);
-        Debug.Log("Shoot direction: " + shootDirection);
+        GameObject projectileInstance = Instantiate(projectilePrefab, shootPosition, Quaternion.LookRotation(shootDirection));
 
-        GameObject projectileInstance = Instantiate(projectilePrefab, projectileHolder.position, Quaternion.identity);
-        projectileInstance.transform.forward = shootDirection;
+        if (projectileInstance.TryGetComponent<NetworkObject>(out var networkObject))
+            networkObject.Spawn();
 
-        NetworkObject networkObject = projectileInstance.GetComponent<NetworkObject>();
-        if (networkObject != null)
-        {
-            networkObject.Spawn(); // Syncs the projectile across all clients
-        }
-        else
-        {
-            Debug.LogError("No NetworkObject found on projectile prefab.");
-            return;
-        }
         if (projectileInstance.TryGetComponent<IProjectileNetworkInitializer>(out var networkedInit))
-        {
-            networkedInit.InitializeNetworkedProjectile(ownerWeapon); // 💡 Correct initialization here
-        }
+            networkedInit.InitializeNetworkedProjectile(ownerWeapon);
 
-        Rigidbody rb = projectileInstance.GetComponent<Rigidbody>();
-        if (rb != null)
-        {
-            rb.AddForce(shootDirection * projectileSpeed, ForceMode.VelocityChange);
-            Debug.Log("Projectile velocity set to: " + rb.linearVelocity);
-        }
-        else
-        {
-            Debug.LogError("No Rigidbody found on projectile prefab.");
-        }
+        if (projectileInstance.TryGetComponent<Rigidbody>(out var rb))
+            rb.AddForce(shootDirection.normalized * projectileSpeed, ForceMode.VelocityChange);
     }
+
 }
