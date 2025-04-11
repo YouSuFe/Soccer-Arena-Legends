@@ -358,7 +358,6 @@ MonoBehaviour:
     m_InternalValue: 10
   Speed:
     m_InternalValue: 5
-  skillCooldownManager: {fileID: 5212579457433732018}
   <InputReader>k__BackingField: {fileID: 11400000, guid: 71ed99219920443b89ce98868d684423, type: 2}
   meshes:
   - {fileID: 3033828086907824091}
@@ -367,7 +366,7 @@ MonoBehaviour:
   CurrentGameState: 0
   ballSkillTrigger: 1
   ballHolder: {fileID: 6412338735632729908}
-  playerCamera: {fileID: 0}
+  cameraLookAnchor: {fileID: 7166201263154821984}
   eyeTrackingPoint: {fileID: 8129910762021557086}
   followTrackingPoint: {fileID: 3685500938189884427}
   weaponHolder: {fileID: 295412851033480730}
@@ -416,20 +415,14 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 16244226739123043, guid: 5fc84ac41f77e4aa0bc2a97c9f9c29b9, type: 3}
   m_PrefabInstance: {fileID: 5157760792766368112}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &5212579457433732018 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 1135682790521621186, guid: 5fc84ac41f77e4aa0bc2a97c9f9c29b9, type: 3}
-  m_PrefabInstance: {fileID: 5157760792766368112}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1552529979938974281}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ad4c7df6770be4a05a64e56a84042990, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!4 &6412338735632729908 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2263401886513827396, guid: 5fc84ac41f77e4aa0bc2a97c9f9c29b9, type: 3}
+  m_PrefabInstance: {fileID: 5157760792766368112}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &7166201263154821984 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2659228286576144912, guid: 5fc84ac41f77e4aa0bc2a97c9f9c29b9, type: 3}
   m_PrefabInstance: {fileID: 5157760792766368112}
   m_PrefabAsset: {fileID: 0}
 --- !u!137 &7249505127952177388 stripped

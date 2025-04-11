@@ -17,7 +17,7 @@ public class AuraWeapon : BaseWeapon
     private Transform projectileHolder;
 
     [Tooltip("Reference to the player's camera.")]
-    private Camera playerCamera;
+    private Transform anchorAimTransform;
 
     [Tooltip("The speed of the Aura Blade projectile.")]
     private float auraBladeProjectileSpeed;
@@ -41,7 +41,7 @@ public class AuraWeapon : BaseWeapon
 
     }
     // Initialize method to set up the weapon with the appropriate data and parent it to the weapon holder
-    public override void Initialize(Transform weaponHolder, Camera playerCamera, Transform projectileHolder)
+    public override void Initialize(Transform weaponHolder, Transform aimTransform, Transform projectileHolder)
     {
         // Assign necessary references
         if(weaponData.ProjectilePrefab != null)
@@ -53,9 +53,9 @@ public class AuraWeapon : BaseWeapon
         this.projectileHolder = projectileHolder;
 
         // Get Camera.main in case of first initializing camera null issue
-        this.playerCamera = playerCamera != null ? playerCamera : Camera.main;
+        this.anchorAimTransform = aimTransform;
 
-        if (this.playerCamera != null)
+        if (this.anchorAimTransform != null)
             Debug.Log("Successfully, initialized player Camera");
 
         this.auraBladeProjectileSpeed = weaponData.ProjectileSpeed;
@@ -85,14 +85,14 @@ public class AuraWeapon : BaseWeapon
             return;
         }
 
-        if (playerCamera == null)
+        if (anchorAimTransform == null)
         {
             Debug.LogError("playerCamera is not assigned!");
             return;
         }
 
         // Execute the projectile behavior using the defined parameters
-        projectileBehaviour?.Shoot(projectileHolder, playerCamera, auraBladePrefab, auraBladeProjectileSpeed, this);
+        projectileBehaviour?.Shoot(projectileHolder, anchorAimTransform, auraBladePrefab, auraBladeProjectileSpeed, this);
 
         // ToDo: Make sound for all player with RPC
     }

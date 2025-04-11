@@ -18,12 +18,6 @@ public class EagleShotPlayer : PlayerAbstract
             return false;
         }
 
-        if (playerCamera == null)
-        {
-            Debug.LogError("[BallSkill] Player camera is null. Cannot get shot direction.");
-            return false;
-        }
-
         if (activeBall == null)
         {
             Debug.LogError("[BallSkill] Active ball is null. Cannot get shot direction.");
@@ -43,11 +37,11 @@ public class EagleShotPlayer : PlayerAbstract
         }
 
         // Calculate the direction using the existing method
-        Vector3 skillDirection = TargetingSystem.GetShotDirection(playerCamera, activeBall.transform.position, activeBall.gameObject.layer);
+        Vector3 skillDirection = TargetingSystem.GetShotDirection(CameraLookAnchor, activeBall.transform.position, activeBall.gameObject.layer);
 
-        // Check if the direction has a valid target by doing a raycast from the camera forward
+        // Check if the direction has a valid target by doing a raycast from the CameraLookAnchor forward
         RaycastHit hit;
-        Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
+        Ray ray = new Ray(CameraLookAnchor.position, CameraLookAnchor.forward);
 
         if (Physics.Raycast(ray, out hit))
         {
@@ -118,7 +112,7 @@ public class EagleShotPlayer : PlayerAbstract
 
     protected override void PlaySkillEffects()
     {
-        Vector3 skillDirection = TargetingSystem.GetShotDirection(playerCamera, activeBall.transform.position, activeBall.gameObject.layer);
+        Vector3 skillDirection = TargetingSystem.GetShotDirection(CameraLookAnchor, activeBall.transform.position, activeBall.gameObject.layer);
 
         if (currentParticleInstance != null)
         {

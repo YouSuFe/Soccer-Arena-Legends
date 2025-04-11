@@ -128,7 +128,7 @@ public abstract class BaseWeapon : NetworkBehaviour, IWeapon, IDamageDealer, ISp
 
     #region Abstract Methods
 
-    public abstract void Initialize(Transform weaponHolder, Camera playerCamera, Transform projectileHolder = null);
+    public abstract void Initialize(Transform weaponHolder, Transform aimTransform, Transform projectileHolder = null);
     protected abstract void HeavyAttackBehaviour();
     protected abstract void RegularAttackBehaviour();
 

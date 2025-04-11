@@ -3,13 +3,13 @@ using UnityEngine;
 
 public class RotatingProjectile : NetworkBehaviour, IProjectileBehaviour
 {
-    public void Shoot(Transform projectileHolder, Camera playerCamera, GameObject projectilePrefab, float projectileSpeed, BaseWeapon ownerWeapon)
+    public void Shoot(Transform projectileHolder, Transform aimTransform, GameObject projectilePrefab, float projectileSpeed, BaseWeapon ownerWeapon)
     {
         Debug.Log($"Is server: {IsServer} IsClient {IsClient} IsOwner {IsOwner}");
         if (!IsServer) return; // Ensure only the server spawns projectiles
 
         TargetingSystem targetingSystem = new TargetingSystem();
-        Vector3 shootDirection = targetingSystem.GetShotDirection(playerCamera, projectileHolder.position);
+        Vector3 shootDirection = targetingSystem.GetShotDirection(aimTransform, projectileHolder.position);
         Debug.Log("Shoot direction: " + shootDirection);
 
         GameObject projectileInstance = Instantiate(projectilePrefab, projectileHolder.position, Quaternion.identity);

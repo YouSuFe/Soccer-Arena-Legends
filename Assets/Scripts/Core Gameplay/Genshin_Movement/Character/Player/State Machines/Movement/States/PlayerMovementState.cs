@@ -31,7 +31,7 @@ public class PlayerMovementState : IState
 
         InitializeData();
 
-        cameraSwitchHandler.OnSwitchFromFirstPerson += CameraSwitchHandler_OnSwitchFromFirstPerson;
+        cameraSwitchHandler.OnCameraSwitch += CameraSwitchHandler_OnSwitchFromFirstPerson;
 
     }
 
@@ -71,7 +71,7 @@ public class PlayerMovementState : IState
     public virtual void Exit()
     {
         RemoveInputActionsCallBacks();
-        cameraSwitchHandler.OnSwitchFromFirstPerson -= CameraSwitchHandler_OnSwitchFromFirstPerson;
+        cameraSwitchHandler.OnCameraSwitch -= CameraSwitchHandler_OnSwitchFromFirstPerson;
 
     }
 

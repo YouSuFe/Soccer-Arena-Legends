@@ -70,9 +70,11 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
     public Transform BallHolderPosition { get { return ballHolder; } }
 
 
-
     [Header("Player Camera Settings")]
     [Tooltip("Reference to the player's camera.")]
+    [SerializeField] protected Transform cameraLookAnchor;
+    public Transform CameraLookAnchor => cameraLookAnchor;
+
     [SerializeField] protected GameObject eyeTrackingPoint;
     public GameObject EyeTrackingPoint => eyeTrackingPoint;
 
@@ -156,7 +158,6 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
         if (playerCamera == null)
         {
             Debug.Log("Assigning the camera from Spawn");
-            playerCamera = Camera.main; // Finds the camera tagged as MainCamera
         }
 
         if (IsServer)
@@ -167,6 +168,8 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
 
         if (IsOwner)
         {
+            playerCamera = Camera.main; // Finds the camera tagged as MainCamera
+
             InputReader.EnableInputActions();
 
             CanShoot = false;
@@ -219,7 +222,8 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
         if (IsOwner)
         {
             //Debug.Log($"Gameobject {gameObject} {NetworkManager.Singleton.LocalClientId} Health: {Health.Value}, Strength: {Strength.Value}, Speed: {Speed.Value}\n{Stats}");
-            Debug.Log($"[Owner] Status from this client {NetworkManager.LocalClientId} {BallAttachmentStatus}");
+            //Debug.Log($"[Owner] Status from this client {NetworkManager.LocalClientId} {BallAttachmentStatus}");
+            Debug.Log($"[Owner] Status from this client {NetworkManager.LocalClientId} {playerCamera.transform.position} {playerCamera.transform.rotation.eulerAngles}");
         }
     }
 
@@ -517,7 +521,7 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
             }
 
             // 🔹 Get shoot direction and force
-            Vector3 shootDirection = TargetingSystem.GetShotDirection(playerCamera, activeBall.transform.position, IgnoredAimedLayers);
+            Vector3 shootDirection = TargetingSystem.GetShotDirection(CameraLookAnchor, activeBall.transform.position, IgnoredAimedLayers);
 
             Debug.DrawRay(activeBall.transform.position, shootDirection * 10f, Color.red, 2f);
 
@@ -1055,8 +1059,7 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
         }
 
         // 🧠 Initialize Weapon
-        // player.playerCamera is null for the first call, So, give Camera.main instead
-        weapon.Initialize(player.weaponHolder, player.playerCamera ?? Camera.main, player.projectileHolder);
+        weapon.Initialize(player.weaponHolder, player.CameraLookAnchor, player.projectileHolder);
         weapon.SetCurrentPlayer(player);
         weapon.SetPlayerStats(player.Stats);
         weapon.transform.position = player.weaponHolder.position;

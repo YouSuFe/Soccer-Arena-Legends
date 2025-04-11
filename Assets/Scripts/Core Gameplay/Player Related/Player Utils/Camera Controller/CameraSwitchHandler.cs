@@ -2,9 +2,15 @@ using UnityEngine;
 using System;
 using Unity.Cinemachine;
 
+public enum CameraMode
+{
+    FirstPerson,
+    ThirdPerson
+}
+
 public class CameraSwitchHandler : MonoBehaviour
 {
-    public event Action OnSwitchFromFirstPerson;
+    public event Action OnCameraSwitch;
 
     [SerializeField] private InputReader InputReader;
 
@@ -12,10 +18,14 @@ public class CameraSwitchHandler : MonoBehaviour
     public CinemachineCamera fpsCamera;
     public CinemachineCamera lookAtCamera;
 
-    [Header("Camera Mode")]
-    public CameraMode currentCameraMode = CameraMode.FirstPerson; // Start in FPS mode
+    [Header("References")]
+    public Transform playerRootTransform; // Assign player object (used for FPS rotation sync)
+    public CameraLookAnchor cameraLookAnchor; // Assign the child that stores camera-like rotation
 
-    private bool isOwnerControlled = false; // Controls if this instance should handle input to avoid other players intervain
+    [Header("Camera Mode")]
+    public CameraMode currentCameraMode = CameraMode.FirstPerson;
+
+    private bool isOwnerControlled = false;
 
     public void SetOwnerControlled(bool isControlled)
     {
@@ -26,6 +36,7 @@ public class CameraSwitchHandler : MonoBehaviour
     {
         Debug.Log("SetCameraMode is Calling");
         SetCameraMode(currentCameraMode);
+        cameraLookAnchor?.SetTargetCamera(GetCurrentActiveCameraTransform());
     }
 
     private void OnEnable()
@@ -56,23 +67,42 @@ public class CameraSwitchHandler : MonoBehaviour
         {
             case CameraMode.FirstPerson:
                 lookAtCamera.Priority = 5;
+                lookAtCamera.gameObject.SetActive(false);
+
+                // Align FPS camera with the player's current rotation
+                if (playerRootTransform != null)
+                {
+                    fpsCamera.transform.rotation = playerRootTransform.rotation;
+                }
+
                 fpsCamera.Priority = 10;
+                fpsCamera.gameObject.SetActive(true);
+
                 Debug.Log("FPS Camera Active");
                 break;
+
             case CameraMode.ThirdPerson:
                 fpsCamera.Priority = 5;
+                fpsCamera.gameObject.SetActive(false);
+
+                lookAtCamera.gameObject.SetActive(true);
                 lookAtCamera.Priority = 10;
+
                 Debug.Log("Third-Person Camera Active");
                 break;
+
             default:
                 Debug.LogError("Unknown Camera Mode");
                 break;
         }
+
+        // Update the camera look anchor to follow the new active camera
+        cameraLookAnchor?.SetTargetCamera(GetCurrentActiveCameraTransform());
     }
 
     public void CycleCameras()
     {
-        if (!isOwnerControlled) return; // ✅ Only allow owners to change cameras
+        if (!isOwnerControlled) return;
 
         if (fpsCamera == null || lookAtCamera == null)
         {
@@ -81,9 +111,18 @@ public class CameraSwitchHandler : MonoBehaviour
         }
 
         currentCameraMode = (CameraMode)(((int)currentCameraMode + 1) % Enum.GetValues(typeof(CameraMode)).Length);
-
-        OnSwitchFromFirstPerson?.Invoke();
         SetCameraMode(currentCameraMode);
+        OnCameraSwitch?.Invoke();
+    }
+
+    private Transform GetCurrentActiveCameraTransform()
+    {
+        return currentCameraMode switch
+        {
+            CameraMode.FirstPerson => fpsCamera.transform,
+            CameraMode.ThirdPerson => lookAtCamera.transform,
+            _ => null
+        };
     }
 
     public bool IsFPSCameraActive()
@@ -91,5 +130,4 @@ public class CameraSwitchHandler : MonoBehaviour
         return currentCameraMode == CameraMode.FirstPerson;
     }
 }
-
 
