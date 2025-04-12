@@ -124,7 +124,6 @@ public class LobbyScreenButtonsController : MonoBehaviour
         // Start Game Button
         startGameButton.gameObject.SetActive(isHost);
         startGameButton.interactable = LobbyManager.Instance.CanStartGame();
-        startGameButton.interactable = true;
 
         // Change Team Button (always visible, only interactable when allowed)
         changeTeamButton.gameObject.SetActive(!isHost);

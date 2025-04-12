@@ -46,7 +46,11 @@ public class NetworkServer : IDisposable
 
     private void ApprovalCheck(NetworkManager.ConnectionApprovalRequest request, NetworkManager.ConnectionApprovalResponse response)
     {
-        if (request.Payload.Length > MaxConnectionPayload || gameHasStarted)
+        // *********************
+        // If want to prevent further joining for the game session, we can add gameHasStarted to prevent connection.
+        // We can use it to prevent connection after Selection Scene.
+        // *********************
+        if (request.Payload.Length > MaxConnectionPayload)
         {
             response.Approved = false;
             response.CreatePlayerObject = false;
@@ -66,6 +70,7 @@ public class NetworkServer : IDisposable
         {
             // Attempt to deserialize the payload
             userData = JsonUtility.FromJson<UserData>(payload);
+            userData.clientId = request.ClientNetworkId;
         }
         catch
         {
@@ -86,8 +91,6 @@ public class NetworkServer : IDisposable
 
         response.Approved = true;
 
-        _ = SpawnPlayerDelayed(request.ClientNetworkId);
-
         // When we adjust the Approval Check in Network Manager,
         // We need to create the player object with this code,
         // beacuse Network Manager make it false when we change approval check automatically
@@ -97,21 +100,6 @@ public class NetworkServer : IDisposable
 
         Debug.LogWarning($"Approval Request: ClientId {request.ClientNetworkId}, Payload {payload}");
 
-    }
-
-    private async Task SpawnPlayerDelayed(ulong clientId)
-    {
-        await Task.Delay(1000);
-
-        // Where will the player be spawned on the scene (except host),
-        // Host will be spawned on the (0,0,0) when the server first start
-        //// We moved this two lines here inside Instantiate method to create player obect.
-        //response.Position = SpawnPoint.GetRandomSpawnPosition();
-        //response.Rotation = Quaternion.identity;
-
-        //NetworkObject playerInstance = GameObject.Instantiate(playerPrefab, SpawnPoint.GetRandomSpawnPosition(), Quaternion.identity);
-        //playerInstance.SpawnAsPlayerObject(clientId);
-        Debug.Log("Player is Spawned but no object for now");
     }
 
 
@@ -126,17 +114,33 @@ public class NetworkServer : IDisposable
     // Or, we can keep storing it 
     private void OnClientDisconnect(ulong clientId)
     {
+        Debug.Log($"[NetworkServer] Client {clientId} is disconnecting...");
+
         if (clientIdToAuth.TryGetValue(clientId, out string authId))
         {
             clientIdToAuth.Remove(clientId);
+            Debug.Log($"[NetworkServer] Removed clientId {clientId} from clientIdToAuth.");
 
-            OnUserLeft?.Invoke(authIdToUserData[authId]);
-
-            authIdToUserData.Remove(authId);
+            if (authIdToUserData.ContainsKey(authId))
+            {
+                OnUserLeft?.Invoke(authIdToUserData[authId]);
+                authIdToUserData.Remove(authId);
+                Debug.Log($"[NetworkServer] Removed authId {authId} from authIdToUserData.");
+            }
+            else
+            {
+                Debug.LogWarning($"[NetworkServer] authId {authId} not found in authIdToUserData.");
+            }
 
             OnClientLeft?.Invoke(authId);
+            Debug.Log($"[NetworkServer] OnClientLeft invoked for authId {authId}.");
+        }
+        else
+        {
+            Debug.LogWarning($"[NetworkServer] clientId {clientId} not found in clientIdToAuth.");
         }
     }
+
 
     public void SetCharacter(ulong clientId, int characterId)
     {
@@ -237,7 +241,6 @@ public class NetworkServer : IDisposable
     {
         if (networkManager == null)
         {
-            Debug.LogWarning("From NetworkServer, networkManager is null");
             return;
         }
 

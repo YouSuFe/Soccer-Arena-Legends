@@ -100,6 +100,7 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
 
 
     public bool CanShoot { get; private set; }
+    public bool isPlayerHoldingBall { get;  set; }
     public bool IsPlayerDeath { get; private set; }
 
     // Event for when the player dies
@@ -173,6 +174,8 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
             CanShoot = false;
             activeBall = null;
         }
+
+        isPlayerHoldingBall = false;
     }
 
     public override void OnNetworkDespawn()
@@ -212,6 +215,7 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
         {
             //Debug.Log($"Gameobject {gameObject} {NetworkManager.Singleton.LocalClientId} Health: {Health.Value}, Strength: {Strength.Value}, Speed: {Speed.Value}\n{Stats}");
         }
+
     }
 
     private void SubscribeEvents()
@@ -542,11 +546,12 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
         BallAttachmentStatus = BallAttachmentStatus.WhenShot;
         Debug.Log($"[Client] Making Shoot from this client {NetworkManager.LocalClientId} {BallAttachmentStatus}");
         CanShoot = false;
+        isPlayerHoldingBall = false;
     }
 
     public bool CheckIfCurrentlyHasBall()
     {
-        return ActiveBall != null && CanShoot;
+        return ActiveBall != null && isPlayerHoldingBall;
     }
 
 
@@ -656,6 +661,8 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
         SetPlayerSimulationState(false);
 
         CanShoot = false;
+
+        isPlayerHoldingBall = false;
 
         activeBall = null;
 
@@ -954,6 +961,8 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
 
         Debug.LogWarning($"Inside a player {name} we are calling Take Ball invoke");
         OnTakeBall?.Invoke();
+
+        isPlayerHoldingBall = true;
 
         // Only owner should be allowed to shoot
         if (IsOwner)

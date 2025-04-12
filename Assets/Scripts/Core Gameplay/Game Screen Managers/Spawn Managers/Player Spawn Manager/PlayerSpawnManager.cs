@@ -112,16 +112,6 @@ public class PlayerSpawnManager : NetworkBehaviour
             NetworkManager.Singleton.SceneManager.OnLoadComplete += OnSceneLoaded;
 
         }
-
-        //if (IsHost)
-        //{
-        //    UserData userData = networkServer.GetUserDataByClientId(NetworkManager.Singleton.LocalClientId);
-
-        //    // Store Host's user data in the dictionary
-        //    clientUserData[NetworkManager.Singleton.LocalClientId] = userData;
-
-        //    SpawnPlayer(NetworkManager.Singleton.LocalClientId, userData.characterId, userData.weaponId, userData.teamIndex, false, false);
-        //}
     }
 
     #endregion
@@ -152,6 +142,22 @@ public class PlayerSpawnManager : NetworkBehaviour
             return;
         }
 
+        if (userData.characterId == -1 || userData.weaponId == -1)
+        {
+            bool assigned = LateJoinerUtility.AssignRandomCharacterAndWeapon(
+                userData,
+                clientUserData.Values,
+                CharacterDatabase,
+                WeaponDatabase
+            );
+
+            if (assigned)
+            {
+                networkServer.SetCharacter(userData.clientId, userData.characterId);
+                networkServer.SetWeapon(userData.clientId, userData.weaponId);
+            }
+        }
+
         clientUserData[clientId] = userData;
 
         Debug.Log($"[OnClientConnected] Stored userData for client {clientId}, will spawn on scene load.");
@@ -175,6 +181,8 @@ public class PlayerSpawnManager : NetworkBehaviour
             clientUserData[clientId] = userData; // Fallback safety
         }
 
+        Debug.Log($"[OnSceneLoaded] Spawning client {clientId} Character {userData.characterId} Weapon...{userData.characterId}");
+
         // ✅ Now it's safe to spawn
         StartCoroutine(DelayedPlayerSpawn(clientId, userData.characterId, userData.weaponId, userData.teamIndex, delayInSeconds: 1.25f));
     }
@@ -183,9 +191,31 @@ public class PlayerSpawnManager : NetworkBehaviour
     {
         yield return new WaitForSeconds(delayInSeconds);
 
+        Debug.Log($"[DelayedPlayerSpawn] Preparing to spawn client {clientId}...");
+
+        // 🧠 Check for invalid character/weapon
+        if ((characterId == -1 || weaponId == -1) && clientUserData.TryGetValue(clientId, out var fallbackData))
+        {
+            Debug.LogWarning($"[DelayedPlayerSpawn] Invalid characterId or weaponId for client {clientId}. Attempting fallback from clientUserData...");
+
+            if (characterId == -1)
+            {
+                characterId = fallbackData.characterId;
+                Debug.Log($"[DelayedPlayerSpawn] Recovered characterId={characterId} from clientUserData for client {clientId}");
+            }
+
+            if (weaponId == -1)
+            {
+                weaponId = fallbackData.weaponId;
+                Debug.Log($"[DelayedPlayerSpawn] Recovered weaponId={weaponId} from clientUserData for client {clientId}");
+            }
+        }
+
         Debug.Log($"[DelayedPlayerSpawn] Spawning client {clientId} after {delayInSeconds} seconds...");
+
         SpawnPlayer(clientId, characterId, weaponId, teamIndex, false, false);
     }
+
 
     private void OnClientDisconnected(ulong clientId)
     {
@@ -758,6 +788,8 @@ public class PlayerSpawnManager : NetworkBehaviour
         {
             Debug.LogWarning($"CameraSwitchHandler not found on player {playerInstance.name}.");
         }
+        Debug.Log("[Client] Camera settings are set.");
+
     }
 
     #endregion

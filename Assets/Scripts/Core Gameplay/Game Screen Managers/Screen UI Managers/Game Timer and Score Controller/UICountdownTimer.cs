@@ -94,7 +94,7 @@ public class UICountdownTimer : MonoBehaviour
         {
             startCountdownObject.SetActive(true); // Show countdown
             UpdatePrepUI(TimerManager.Instance.GetPrepDurationValue()); // Force update immediately
-            Debug.LogWarning($"UI Countdown Prep Duration Value is {TimerManager.Instance.GetPrepDurationValue()}");
+            Debug.Log($"UI Countdown Prep Duration Value is {TimerManager.Instance.GetPrepDurationValue()}");
         }
         else
         {

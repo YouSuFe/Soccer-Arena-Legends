@@ -203,6 +203,7 @@ public class BallOwnershipManager : NetworkBehaviour
 
         // 🔹 Update the player's shoot status
         playerShooter.BallAttachmentStatus = BallAttachmentStatus.WhenShot;
+        playerShooter.isPlayerHoldingBall = false;
 
         // ToDo: Every client will be get this event, no need to actually beacuse we only change shooter status.
         NotifyPlayerShotBallClientRpc(clientId);
