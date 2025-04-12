@@ -92,7 +92,7 @@ public abstract class Pickup : NetworkBehaviour
             else
             {
                 Debug.Log($"[SERVER] Pickup rejected for {entity.gameObject.name}. Sending rollback request.");
-                RevertPickupEffectClientRpc(playerId);
+                RevertPickupEffectClientRpc(RpcUtils.ToClient(playerId));
             }
 
             DestroyPickupClientRpc();
@@ -103,14 +103,11 @@ public abstract class Pickup : NetworkBehaviour
     /// ClientRpc: If the server rejects the pickup, revert the effect.
     /// </summary>
     [ClientRpc]
-    private void RevertPickupEffectClientRpc(ulong playerId)
+    private void RevertPickupEffectClientRpc(ClientRpcParams clientRpcParams = default)
     {
-        if (NetworkManager.Singleton.LocalClientId == playerId)
-        {
-            Entity entity = GetComponent<Entity>();
-            Debug.Log($"[CLIENT] Server rejected the pickup. Rolling back effect on {entity.gameObject.name}");
-            RevertPickupEffect(entity); // 🔹 Undo only the modifier applied
-        }
+        Entity entity = GetComponent<Entity>();
+        Debug.Log($"[CLIENT] Server rejected the pickup. Rolling back effect on {entity.gameObject.name}");
+        RevertPickupEffect(entity); // 🔹 Undo only the modifier applied
     }
 
     /// <summary>
