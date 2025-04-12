@@ -1,3 +1,4 @@
+using System;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -9,6 +10,11 @@ using UnityEngine;
 /// </summary>
 public abstract class Pickup : NetworkBehaviour
 {
+    /// <summary>
+    /// To send infromation about to be spawned again to the server
+    /// </summary>
+    public event Action OnCollected;
+
     /// <summary>
     /// Applies the pickup effect to the entity (e.g., modifying stats).
     /// </summary>
@@ -44,6 +50,9 @@ public abstract class Pickup : NetworkBehaviour
             {
                 ApplyPickupEffect(entity);
                 Debug.Log($"[SERVER] Pickup applied to {entity.gameObject.name}");
+
+                OnCollected?.Invoke(); // ✅ Notify zone
+                GetComponent<NetworkObject>().Despawn(true); // ✅ Proper destory
 
                 // Remove pickup for all clients
                 DestroyPickupClientRpc();
@@ -88,6 +97,8 @@ public abstract class Pickup : NetworkBehaviour
             {
                 ApplyPickupEffect(entity);
                 Debug.Log($"[SERVER] Pickup confirmed for {entity.gameObject.name}");
+                OnCollected?.Invoke(); // ✅ Notify zone
+                GetComponent<NetworkObject>().Despawn(true); // ✅ Proper despawn
             }
             else
             {
@@ -118,7 +129,6 @@ public abstract class Pickup : NetworkBehaviour
     private void DestroyPickupClientRpc()
     {
         Debug.Log($"[ALL CLIENTS] Destroying pickup: {gameObject.name}");
-        Destroy(gameObject);
     }
 
     private bool ValidatePickup(Entity entity)

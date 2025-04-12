@@ -210,7 +210,7 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
 
         if (IsOwner)
         {
-            Debug.Log($"Gameobject {gameObject} {NetworkManager.Singleton.LocalClientId} Health: {Health.Value}, Strength: {Strength.Value}, Speed: {Speed.Value}\n{Stats}");
+            //Debug.Log($"Gameobject {gameObject} {NetworkManager.Singleton.LocalClientId} Health: {Health.Value}, Strength: {Strength.Value}, Speed: {Speed.Value}\n{Stats}");
         }
     }
 

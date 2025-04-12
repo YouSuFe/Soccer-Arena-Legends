@@ -10,9 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dadd10c139aba439bbf7814a2d44db37, type: 3}
-  m_Name: AttackModifierAddBuff
+  m_Name: SM_MulDebuff
   m_EditorClassIdentifier: 
-  statType: 1
-  operatorType: 0
-  value: 10
-  duration: 5
+  modifierSourceTag: 1
+  statType: 2
+  operatorType: 1
+  value: 0.5
+  duration: 10

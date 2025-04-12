@@ -1,0 +1,106 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &9054321483877638922
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3168329171478411857}
+  - component: {fileID: 815334797948332670}
+  - component: {fileID: 2810234741671439335}
+  m_Layer: 0
+  m_Name: PickupSpawnManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3168329171478411857
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9054321483877638922}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 534.5, y: 295.5, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &815334797948332670
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9054321483877638922}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  GlobalObjectIdHash: 934876637
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
+--- !u!114 &2810234741671439335
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9054321483877638922}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7235ca55ab75d474ca9f4e38a1116fa4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
+  healthZoneBlue:
+  - {fileID: 0}
+  - {fileID: 0}
+  healthZoneRed:
+  - {fileID: 0}
+  - {fileID: 0}
+  buffZoneBlue:
+  - {fileID: 0}
+  - {fileID: 0}
+  buffZoneRed:
+  - {fileID: 0}
+  - {fileID: 0}
+  mysteryPoint: {fileID: 0}
+  healthPrefabs:
+  - {fileID: 4170473605171419435, guid: 109bf7a1609594dfbb504bc7d2a24dfa, type: 3}
+  - {fileID: 4170473605171419435, guid: bb904029d58e14a989803e8094795f8e, type: 3}
+  speedPrefabs:
+  - {fileID: 6437293858035551357, guid: 223bd11c148c44da9ab32a38b603274f, type: 3}
+  - {fileID: 6437293858035551357, guid: bba61e00c75bc4c7da8e5f04d690f6ae, type: 3}
+  strengthPrefabs:
+  - {fileID: 3857818223570090759, guid: 65b6e2640747741159e1867921ece26c, type: 3}
+  - {fileID: 3857818223570090759, guid: dc936c2ee61f046f680718ab594f482a, type: 3}
+  mysteryBuffPrefabs:
+  - {fileID: 3857818223570090759, guid: fcf77c3a46f034e3ba0e60447ce5c694, type: 3}
+  - {fileID: 4170473605171419435, guid: 28dd35e1b6b8046f79b07affd4028ecd, type: 3}
+  - {fileID: 6437293858035551357, guid: 33346b3bcad894bdf9c3a58ff48bb908, type: 3}
+  mysteryDebuffPrefabs:
+  - {fileID: 3857818223570090759, guid: 9f797307550a0450c8c8980872d076ae, type: 3}
+  - {fileID: 4170473605171419435, guid: 3d0e91f6b9c564818b380b26ce1132a7, type: 3}
+  - {fileID: 6437293858035551357, guid: 7e69961a057dd46a6a326ae357b01ec8, type: 3}
+  healthCooldown: 7
+  buffCooldown: 10
+  mysteryCooldown: 13
