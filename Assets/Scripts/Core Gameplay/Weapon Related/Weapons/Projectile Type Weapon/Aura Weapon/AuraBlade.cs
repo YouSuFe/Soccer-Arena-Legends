@@ -33,6 +33,23 @@ public class AuraBlade : NetworkBehaviour, IProjectileNetworkInitializer, IDestr
         {
             auraWeapon = aura;
             WeaponOwnerClientId = aura.OwnerClientId;
+
+            AssignAuraWeaponClientRpc(aura.NetworkObjectId, RpcUtils.ToClient(aura.OwnerClientId));
+        }
+    }
+
+    [ClientRpc]
+    private void AssignAuraWeaponClientRpc(ulong auraWeaponNetId, ClientRpcParams clientRpcParams = default)
+    {
+        if (NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(auraWeaponNetId, out var netObj)
+            && netObj.TryGetComponent<AuraWeapon>(out var aura))
+        {
+            auraWeapon = aura;
+            Debug.Log("AuraWeapon reference assigned via ClientRpc.");
+        }
+        else
+        {
+            Debug.LogWarning("⚠️ Failed to find auraWeapon on client when assigning via ClientRpc.");
         }
     }
 
@@ -124,7 +141,26 @@ public class AuraBlade : NetworkBehaviour, IProjectileNetworkInitializer, IDestr
     [ClientRpc]
     private void ShowFloatingDamageClientRpc(int damage, ClientRpcParams rpcParams = default)
     {
-        auraWeapon.GetCurrentPlayer()?.PlayerUIController?.ShowFloatingDamage(Vector3.zero, damage);
+        if (auraWeapon == null)
+        {
+            Debug.LogError("[ClientRpc] auraWeapon is NULL on the client.");
+            return;
+        }
+
+        var player = auraWeapon.GetCurrentPlayer();
+        if (player == null)
+        {
+            Debug.LogError("[ClientRpc] GetCurrentPlayer() returned NULL.");
+            return;
+        }
+
+        if (player.PlayerUIController == null)
+        {
+            Debug.LogError("[ClientRpc] PlayerUIController is NULL on the client.");
+            return;
+        }
+
+        player.PlayerUIController.ShowFloatingDamage(Vector3.zero, damage);
     }
 
 

@@ -95,7 +95,6 @@ public class PlayerMovementState : IState
             ClearMovementInput();
             return;
         }
-
         ReadMovementInput();
     }
 

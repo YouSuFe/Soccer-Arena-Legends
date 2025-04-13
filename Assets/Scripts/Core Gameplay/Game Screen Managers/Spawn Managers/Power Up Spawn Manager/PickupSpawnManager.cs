@@ -42,13 +42,20 @@ public class PickupSpawnManager : NetworkBehaviour
         mystery = new PickupZoneGroup(new[] { mysteryPoint }, this, mysteryCooldown, GetRandomMystery);
 
 
-        MultiplayerGameStateManager.Instance.OnGameStateChanged += HandleGameStateChange;
+        MultiplayerGameStateManager.Instance.NetworkGameState.OnValueChanged += HandleGameStateChange;
+    }
+
+    public override void OnNetworkDespawn()
+    {
+        base.OnNetworkDespawn();
+        MultiplayerGameStateManager.Instance.NetworkGameState.OnValueChanged -= HandleGameStateChange;
+
     }
 
     /// <summary>
     /// Syncs zones to the current GameState.
     /// </summary>
-    private void HandleGameStateChange(GameState state)
+    private void HandleGameStateChange(GameState previous, GameState state)
     {
         if (state == GameState.InGame)
         {

@@ -15,23 +15,24 @@ public class BallMovementController : NetworkBehaviour
 
     #region NetworkBehaviour Methods
 
-    private void Start()
+    public override void OnNetworkSpawn()
     {
+        base.OnNetworkSpawn();
         BallOwnershipManager = GetComponent<BallOwnershipManager>();
         ballReference = GetComponent<BallReference>();
         ballSO = ballReference.BallSO;
         ballRigidbody = ballReference.BallRigidbody;
 
-        MultiplayerGameStateManager.Instance.OnGameStateChanged += HandleGameStateChanged;
+        MultiplayerGameStateManager.Instance.NetworkGameState.OnValueChanged += HandleGameStateChanged;
     }
 
     public override void OnNetworkDespawn()
     {
         base.OnNetworkDespawn();
-        MultiplayerGameStateManager.Instance.OnGameStateChanged -= HandleGameStateChanged;
+        MultiplayerGameStateManager.Instance.NetworkGameState.OnValueChanged -= HandleGameStateChanged;
     }
 
-    private void HandleGameStateChanged(GameState newState)
+    private void HandleGameStateChanged(GameState previous, GameState newState)
     {
         if(newState == GameState.PreGame)
         {

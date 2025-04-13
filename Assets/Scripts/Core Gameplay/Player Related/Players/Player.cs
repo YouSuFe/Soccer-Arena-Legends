@@ -51,9 +51,7 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
     [SerializeField] private float playerRespawnDelay = 10f;
 
     [Header("Game State Settings")]
-    //[SerializeField] private GameStateEventChannel gameStateEventChannel;
     [SerializeField] private GameState CurrentGameState = GameState.WaitingForPlayers;
-
 
 
 
@@ -213,6 +211,7 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
 
         if (IsOwner)
         {
+            Debug.Log("Curret Game State is ," + CurrentGameState);
             //Debug.Log($"Gameobject {gameObject} {NetworkManager.Singleton.LocalClientId} Health: {Health.Value}, Strength: {Strength.Value}, Speed: {Speed.Value}\n{Stats}");
         }
 
@@ -235,7 +234,9 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
         if(MultiplayerGameStateManager.Instance != null)
         {
             Debug.Log($"Multiplayer Server Game Manager is not null and subscribing the event");
-            MultiplayerGameStateManager.Instance.OnGameStateChanged += GameStateManager_OnGameStateChanged;
+            MultiplayerGameStateManager.Instance.NetworkGameState.OnValueChanged += GameStateManager_OnGameStateChanged;
+            GameStateManager_OnGameStateChanged(CurrentGameState, MultiplayerGameStateManager.Instance.GetCurrentState());
+
         }
     }
 
@@ -260,7 +261,7 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
         if (MultiplayerGameStateManager.Instance != null)
         {
             Debug.Log($"Multiplayer Server Game Manager is not null and unsubscribing the event");
-            MultiplayerGameStateManager.Instance.OnGameStateChanged -= GameStateManager_OnGameStateChanged;
+            MultiplayerGameStateManager.Instance.NetworkGameState.OnValueChanged -= GameStateManager_OnGameStateChanged;
         }
     }
 
@@ -329,8 +330,10 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
         ScoreboardManager.Instance.AdjustScoreboardVisibility(value);
     }
 
-    private void GameStateManager_OnGameStateChanged(GameState newState)
+    private void GameStateManager_OnGameStateChanged(GameState previous, GameState newState)
     {
+        Debug.Log($" From Player : Game state changed from {previous} to {newState}");
+
         this.CurrentGameState = newState;
     }
 

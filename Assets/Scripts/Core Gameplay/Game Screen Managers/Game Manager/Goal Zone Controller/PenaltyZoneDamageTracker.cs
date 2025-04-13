@@ -47,7 +47,7 @@ public class PenaltyZoneDamageTracker : NetworkBehaviour
     {
         if (!IsServer) return;
 
-        MultiplayerGameStateManager.Instance.OnGameStateChanged += OnGameStateChanged;
+        MultiplayerGameStateManager.Instance.NetworkGameState.OnValueChanged += OnGameStateChanged;
     }
 
     public override void OnNetworkDespawn()
@@ -55,7 +55,7 @@ public class PenaltyZoneDamageTracker : NetworkBehaviour
         if (!IsServer) return;
 
         if (MultiplayerGameStateManager.Instance != null)
-            MultiplayerGameStateManager.Instance.OnGameStateChanged -= OnGameStateChanged;
+            MultiplayerGameStateManager.Instance.NetworkGameState.OnValueChanged -= OnGameStateChanged;
     }
 
     #endregion
@@ -65,7 +65,7 @@ public class PenaltyZoneDamageTracker : NetworkBehaviour
     /// <summary>
     /// Called when the game state changes. Clears zone data if game is not in an active damage phase.
     /// </summary>
-    private void OnGameStateChanged(GameState newState)
+    private void OnGameStateChanged(GameState previous, GameState newState)
     {
         if (newState == GameState.PreGame || newState == GameState.EndGame)
         {

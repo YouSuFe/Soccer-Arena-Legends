@@ -16,11 +16,9 @@ public class MultiplayerGameStateManager : NetworkBehaviour
 {
     public static MultiplayerGameStateManager Instance;
 
-    private NetworkVariable<GameState> gameState = new NetworkVariable<GameState>(GameState.WaitingForPlayers);
+    public NetworkVariable<GameState> NetworkGameState = new NetworkVariable<GameState>(GameState.WaitingForPlayers);
 
     private float startCountDown = 3f;
-
-    public event Action<GameState> OnGameStateChanged;
 
     private void Awake()
     {
@@ -31,10 +29,10 @@ public class MultiplayerGameStateManager : NetworkBehaviour
     public override void OnNetworkSpawn()
     {
         Debug.Log($"Game state Manager's OnNetworkSpawn is called on {name}");
-        gameState.OnValueChanged += HandleGameStateChanged;
+        NetworkGameState.OnValueChanged += HandleGameStateChanged;
 
         // ToDo : Check if this code necessary for late joiners. Try it on Prep State, if Late Joiners also call the regular method, then do not need this.
-        //HandleGameStateChanged(gameState.Value, gameState.Value);
+        HandleGameStateChanged(NetworkGameState.Value, NetworkGameState.Value);
 
         if (IsServer)
         {
@@ -46,7 +44,7 @@ public class MultiplayerGameStateManager : NetworkBehaviour
     public override void OnDestroy()
     {
         base.OnDestroy();
-        gameState.OnValueChanged -= HandleGameStateChanged;
+        NetworkGameState.OnValueChanged -= HandleGameStateChanged;
 
     }
 
@@ -55,7 +53,6 @@ public class MultiplayerGameStateManager : NetworkBehaviour
     private void HandleGameStateChanged(GameState previous, GameState next)
     {
         Debug.Log($"Game state changed from {previous} to {next}");
-        OnGameStateChanged?.Invoke(next);
 
         switch (next)
         {
@@ -78,14 +75,14 @@ public class MultiplayerGameStateManager : NetworkBehaviour
     {
         if (IsServer)
         {
-            Debug.Log($"The game state changed from {gameState.Value} to {newState} from SetGameState");
-            gameState.Value = newState;
+            Debug.Log($"The game state changed from {NetworkGameState.Value} to {newState} from SetGameState");
+            NetworkGameState.Value = newState;
         }
     }
 
     public GameState GetCurrentState()
     {
-        return gameState.Value;
+        return NetworkGameState.Value;
     }
 
     #endregion
@@ -128,10 +125,6 @@ public class MultiplayerGameStateManager : NetworkBehaviour
         yield return new WaitForSeconds(startCountDown);
         Debug.Log("Starting to game with changing the state to PreGame");
 
-
-        // ToDo: Add a reset all skill and health etc, values resetting.
-
-
         SetGameState(GameState.PreGame);
     }
 
@@ -142,16 +135,6 @@ public class MultiplayerGameStateManager : NetworkBehaviour
 
     private void HandlePreGame()
     {
-        foreach (var client in NetworkManager.Singleton.ConnectedClientsList)
-        {
-            ulong clientId = client.ClientId;
-
-            if (NetworkManager.Singleton.ConnectedClients.TryGetValue(clientId, out var clientObj))
-            {
-                //var player = clientObj.PlayerObject.GetComponent<PlayerController>();
-            }
-        }
-
         Debug.Log("Trying to start Prep Timer from Handle Pre Game");
         TimerManager.Instance.StartPrepTimer(); // 🔥 Show countdown UI
 
@@ -176,6 +159,6 @@ public class MultiplayerGameStateManager : NetworkBehaviour
 
     private void HandleEndGame()
     {
-        // Show post-game stats, etc.
+        HostSingleton.Instance.GameManager.NetworkServer.EndGame();
     }
 }

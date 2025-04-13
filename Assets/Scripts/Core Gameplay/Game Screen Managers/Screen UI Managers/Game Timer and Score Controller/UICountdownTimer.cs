@@ -50,7 +50,7 @@ public class UICountdownTimer : MonoBehaviour
         if (MultiplayerGameStateManager.Instance != null)
         {
             Debug.Log($"Subscribe from {name} MultiplayerGameStateManager. Subscribtion is happened!");
-            MultiplayerGameStateManager.Instance.OnGameStateChanged -= HandleGameStateChanged;
+            MultiplayerGameStateManager.Instance.NetworkGameState.OnValueChanged -= HandleGameStateChanged;
 
         }
         else
@@ -77,8 +77,8 @@ public class UICountdownTimer : MonoBehaviour
         if (MultiplayerGameStateManager.Instance != null )
         {
             Debug.Log($"Subscribe from {name} MultiplayerGameStateManager. Subscribtion is happened!");
-            MultiplayerGameStateManager.Instance.OnGameStateChanged -= HandleGameStateChanged;
-            MultiplayerGameStateManager.Instance.OnGameStateChanged += HandleGameStateChanged;
+            MultiplayerGameStateManager.Instance.NetworkGameState.OnValueChanged -= HandleGameStateChanged;
+            MultiplayerGameStateManager.Instance.NetworkGameState.OnValueChanged += HandleGameStateChanged;
 
         }
         else
@@ -88,7 +88,7 @@ public class UICountdownTimer : MonoBehaviour
         }
     }
 
-    private void HandleGameStateChanged(GameState newState)
+    private void HandleGameStateChanged(GameState previous, GameState newState)
     {
         if (newState == GameState.PreGame)
         {
