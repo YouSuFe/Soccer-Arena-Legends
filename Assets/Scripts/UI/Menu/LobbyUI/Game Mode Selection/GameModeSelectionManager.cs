@@ -7,7 +7,10 @@ public class GameModeManager : MonoBehaviour
 
     private void Start()
     {
-        Hide();
+        if(LobbyManager.Instance.IsInLobby())
+        {
+            Hide();
+        }
     }
 
     private void OnEnable()

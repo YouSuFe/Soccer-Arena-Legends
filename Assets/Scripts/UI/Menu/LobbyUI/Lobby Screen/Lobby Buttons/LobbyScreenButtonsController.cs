@@ -14,8 +14,6 @@ public class LobbyScreenButtonsController : MonoBehaviour
 
     [Header("Serialized Objects")]
     [SerializeField] private GameObject currentLobbyUI;
-    [SerializeField] private GameObject mainMenuUI;
-
 
     private void Awake()
     {
@@ -107,9 +105,6 @@ public class LobbyScreenButtonsController : MonoBehaviour
         if (currentLobbyUI.activeSelf)
         {
             LobbyManager.Instance.LeaveLobby();
-
-            currentLobbyUI.SetActive(false); // Close current UI
-            mainMenuUI.SetActive(true); // Open the main menu UI
         }
     }
 

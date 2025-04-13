@@ -19,8 +19,8 @@ public class LobbyGameSettingsUI : MonoBehaviour
 
     private void Start()
     {
-        warningPopup.SetActive(false);
         warningOkButton.onClick.AddListener(() => warningPopup.SetActive(false));
+        warningPopup.SetActive(false);
 
         // ✅ Listen for lobby updates
         LobbyManager.Instance.OnJoinedLobby += OnLobbyUpdated;

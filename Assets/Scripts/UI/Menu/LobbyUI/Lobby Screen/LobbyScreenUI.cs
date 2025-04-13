@@ -43,6 +43,7 @@ public class LobbyScreenUI : MonoBehaviour
     private void LobbyManager_OnLeftLobby()
     {
         ClearLobby();
+        Hide();
     }
 
     private void LobbyManager_OnLeftLobby(Lobby lobby)
@@ -50,8 +51,6 @@ public class LobbyScreenUI : MonoBehaviour
         ClearLobby();
         Hide();
     }
-
-
 
 
     private void UpdateLobby_Event(Lobby lobby)
