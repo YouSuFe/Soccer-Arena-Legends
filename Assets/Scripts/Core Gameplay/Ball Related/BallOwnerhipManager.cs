@@ -40,6 +40,7 @@ public class BallOwnershipManager : NetworkBehaviour
 
     private ulong lastAssistTouchPlayerId = NO_OWNER;
 
+    private bool isDangerousShot = false;
 
     // Events triggered on ball interactions
     public event Action<PlayerAbstract> OnBallPickedUp;
@@ -247,6 +248,7 @@ public class BallOwnershipManager : NetworkBehaviour
         lastSkillInfluencerId = NO_OWNER;
         lastAssistTouchPlayerId = NO_OWNER;
         currentBallState.Value = BallState.Idle;
+        SetDangerousShot(false);
     }
 
     public void ResetCurrentOwnershipId()
@@ -279,6 +281,10 @@ public class BallOwnershipManager : NetworkBehaviour
         lastAssistTouchPlayerId = NO_OWNER;
     }
 
+    public void SetDangerousShot(bool value)
+    {
+        isDangerousShot = value;
+    }
     #endregion
 
     #region Utility Methods
@@ -355,6 +361,11 @@ public class BallOwnershipManager : NetworkBehaviour
     public BallState GetCurrentBallState()
     {
         return currentBallState.Value;
+    }
+
+    public bool IsDangerousShot()
+    {
+        return isDangerousShot;
     }
     #endregion
 }

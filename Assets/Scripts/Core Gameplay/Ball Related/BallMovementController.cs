@@ -153,6 +153,19 @@ public class BallMovementController : NetworkBehaviour
         // ❌ Skip if we're hitting a teammate (either from skill or regular throw)
         if (IsFriendlyFire(targetClientId)) return;
 
+        // ✅ Try to get the actual player script from the hit object
+        if (collision.collider.TryGetComponent<PlayerAbstract>(out var defender))
+        {
+            // 🟦 SAVE CHECK GOES HERE
+            if (BallOwnershipManager != null && BallOwnershipManager.IsDangerousShot())
+            {
+                ulong defenderId = defender.OwnerClientId;
+                GameManager.Instance.AddSave(defenderId);
+                BallOwnershipManager.SetDangerousShot(false);
+                Debug.Log($"[Ball] SAVE registered for player {defenderId}");
+            }
+        }
+
         // ✅ Do the damage & feedback
         ApplyBallDamage(damageable, targetClientId, speed);
 
