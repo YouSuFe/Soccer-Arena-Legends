@@ -2,6 +2,9 @@ using UnityEngine;
 
 public class GameModeManager : MonoBehaviour
 {
+    [SerializeField] private GameObject gameMenuPanel;
+    [SerializeField] private SettingsMenuManager settingsMenuManager;
+
     [SerializeField] private GameModeSelectionEffect[] gameModeButtons; // Assign buttons in Inspector
     private int selectedIndex = -1;
 
@@ -19,6 +22,11 @@ public class GameModeManager : MonoBehaviour
         {
             ResetSelectedIndex();
         }
+    }
+
+    public void OnSettingsClicked()
+    {
+        settingsMenuManager.OpenSettings(gameMenuPanel);
     }
 
     public void OnGameModeClicked(int index)

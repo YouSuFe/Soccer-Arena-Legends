@@ -18,6 +18,11 @@ public static class AudioExtensions
         return Mathf.Log10(Mathf.Max(sliderValue, 0.0001f)) * 20;
     }
 
+    public static float ToLinearVolume(this float db)
+    {
+        return Mathf.Pow(10f, db / 20f);
+    }
+
     /// <summary>
     /// Given a fraction in the range of [0, 1], convert it to a logarithmic scale (also in range [0, 1])
     /// that mimics the way we hear volume (since human perception of sound volume is logarithmic).
