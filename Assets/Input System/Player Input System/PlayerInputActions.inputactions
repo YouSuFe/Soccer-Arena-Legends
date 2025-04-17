@@ -54,7 +54,7 @@
                     "name": "Dash",
                     "type": "Button",
                     "id": "a5f211bb-7d36-4f7a-bf64-75dfd3c3a1a9",
-                    "expectedControlType": "Button",
+                    "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
@@ -63,7 +63,7 @@
                     "name": "PlayerSkill",
                     "type": "Button",
                     "id": "3f5cbf65-2819-4465-9ed1-1a2e1937cb1d",
-                    "expectedControlType": "Button",
+                    "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
@@ -108,7 +108,7 @@
                     "name": "HeavyAttack",
                     "type": "Button",
                     "id": "7219c35f-0578-4657-8a52-29746c5263b8",
-                    "expectedControlType": "Button",
+                    "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
@@ -135,7 +135,7 @@
                     "name": "LeftMouseHoldAction",
                     "type": "Button",
                     "id": "887fbc4a-64fe-4276-b990-c87e82ecc6e2",
-                    "expectedControlType": "Button",
+                    "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
@@ -153,7 +153,16 @@
                     "name": "StatisticsTab",
                     "type": "Button",
                     "id": "2c66cd06-3a0e-4ff1-a557-5bb6550d0dfd",
-                    "expectedControlType": "Button",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "OptionsTab",
+                    "type": "Button",
+                    "id": "56ee3419-d110-477f-a4e8-259f49c935aa",
+                    "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
@@ -388,6 +397,17 @@
                     "processors": "",
                     "groups": "",
                     "action": "StatisticsTab",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "45daee1c-f9a3-4545-a5cb-1c2faa7ec4b3",
+                    "path": "<Keyboard>/escape",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "OptionsTab",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

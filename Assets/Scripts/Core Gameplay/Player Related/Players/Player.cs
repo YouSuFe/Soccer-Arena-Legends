@@ -229,6 +229,7 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
 
         InputReader.OnStatisticTabOpen += InputReader_OnStatisticTabVisibility;
         InputReader.OnStatisticTabClose += InputReader_OnStatisticTabVisibility;
+        InputReader.OnOptionTabOpen += InputReader_OnOptionsTabVisiblity;
 
         if(MultiplayerGameStateManager.Instance != null)
         {
@@ -238,6 +239,7 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
 
         }
     }
+
 
     public void TriggerCooldownChanged(SkillType type, float remaining)
     {
@@ -256,6 +258,7 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
 
         InputReader.OnStatisticTabOpen -= InputReader_OnStatisticTabVisibility;
         InputReader.OnStatisticTabClose -= InputReader_OnStatisticTabVisibility;
+        InputReader.OnOptionTabOpen -= InputReader_OnOptionsTabVisiblity;
 
         if (MultiplayerGameStateManager.Instance != null)
         {
@@ -327,6 +330,12 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
     private void InputReader_OnStatisticTabVisibility(bool value)
     {
         ScoreboardManager.Instance.AdjustScoreboardVisibility(value);
+    }
+
+
+    private void InputReader_OnOptionsTabVisiblity()
+    {
+        OptionsUIManager.Instance.AdjustOptionsUIVisibility();
     }
 
     private void GameStateManager_OnGameStateChanged(GameState previous, GameState newState)

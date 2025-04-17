@@ -90,19 +90,28 @@ public class ControllerSettingsManager : MonoBehaviour, ISettingsTab
     {
         if (temp == null || initial == null)
         {
-            Debug.LogWarning("[AudioSettingsManager] temp or initial is null");
+            Debug.LogWarning("[ControllerSettingsManager] temp or initial is null");
             return false;
         }
 
-        bool changed = !temp.Equals(initial);
-        if (changed)
+        bool controllerChanged = !temp.Equals(initial);
+        bool rebindChanged = RebindManager.Instance != null && RebindManager.Instance.HasUnsavedChanges();
+
+        if (controllerChanged)
         {
-            Debug.Log($"[ControllerSettingsManager] Changed:");
+            Debug.Log($"[ControllerSettingsManager] Controller values changed:");
             Debug.Log($"Sensitivity: {temp.sensitivity} != {initial.sensitivity}");
             Debug.Log($"InvertY: {temp.invertYAxis} != {initial.invertYAxis}");
         }
-        return changed;
+
+        if (rebindChanged)
+        {
+            Debug.Log($"[ControllerSettingsManager] Input bindings changed via rebind system.");
+        }
+
+        return controllerChanged || rebindChanged;
     }
+
 
     public void ApplySettings()
     {
@@ -111,12 +120,18 @@ public class ControllerSettingsManager : MonoBehaviour, ISettingsTab
 
         ApplySensitivityLive(initial.sensitivity);
         ApplyInvertYLive(initial.invertYAxis);
+
+        // Apply rebinds (only if there are pending ones)
+        RebindManager.Instance?.ApplyPendingRebinds();
     }
 
     public void RevertToInitial()
     {
         temp = initial.Clone();
         ApplyToUI(initial);
+
+        // Revert rebinds to PlayerPrefs state
+        RebindManager.Instance?.RevertToInitial();
     }
 
     public void ResetToDefault()

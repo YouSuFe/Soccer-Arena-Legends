@@ -41,6 +41,8 @@ public class InputReader : ScriptableObject, IPlayerActions
     public event Action<bool> OnStatisticTabOpen;
     public event Action<bool> OnStatisticTabClose;
 
+    public event Action OnOptionTabOpen;
+
     // Inputs
     public Vector2 CurrentMovement { get; private set; }
     public Vector2 MouseDelta { get; private set; }
@@ -268,6 +270,13 @@ public class InputReader : ScriptableObject, IPlayerActions
         {
             OnStatisticTabClose?.Invoke(false);
         }
+    }
+
+    public void OnOptionsTab(InputAction.CallbackContext context)
+    {
+        if (context.performed)
+            OnOptionTabOpen?.Invoke();
+
     }
 
     #region Utility Methods
