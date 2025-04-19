@@ -436,6 +436,38 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2093033866}
     m_Modifications:
+    - target: {fileID: 2993433660925029458, guid: 43967d83fd83b4dc780ecc7602ebfc3d, type: 3}
+      propertyPath: m_Text
+      value: Mert Games
+      objectReference: {fileID: 0}
+    - target: {fileID: 2993433660925029458, guid: 43967d83fd83b4dc780ecc7602ebfc3d, type: 3}
+      propertyPath: m_CharacterLimit
+      value: 16
+      objectReference: {fileID: 0}
+    - target: {fileID: 2993433661032404079, guid: 43967d83fd83b4dc780ecc7602ebfc3d, type: 3}
+      propertyPath: m_text
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 2993433661032404079, guid: 43967d83fd83b4dc780ecc7602ebfc3d, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2993433661032404079, guid: 43967d83fd83b4dc780ecc7602ebfc3d, type: 3}
+      propertyPath: m_fontSize
+      value: 48
+      objectReference: {fileID: 0}
+    - target: {fileID: 2993433661032404079, guid: 43967d83fd83b4dc780ecc7602ebfc3d, type: 3}
+      propertyPath: m_TextStyleHashCode
+      value: -1183493901
+      objectReference: {fileID: 0}
+    - target: {fileID: 2993433661755935709, guid: 43967d83fd83b4dc780ecc7602ebfc3d, type: 3}
+      propertyPath: m_text
+      value: "Mert Games\u200B"
+      objectReference: {fileID: 0}
+    - target: {fileID: 2993433661755935709, guid: 43967d83fd83b4dc780ecc7602ebfc3d, type: 3}
+      propertyPath: m_fontStyle
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2993433662569029619, guid: 43967d83fd83b4dc780ecc7602ebfc3d, type: 3}
       propertyPath: m_Interactable
       value: 1
