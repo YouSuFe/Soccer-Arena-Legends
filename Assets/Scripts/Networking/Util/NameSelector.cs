@@ -1,3 +1,4 @@
+using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -25,9 +26,16 @@ public class NameSelector : MonoBehaviour
         }
 
         connectButton.onClick.AddListener(Connect);
-
+        nameField.onValueChanged.AddListener(HandleTextChanged);
         nameField.text = PlayerPrefs.GetString(PlayerNameKey, string.Empty);
         HandleNameChanged();
+    }
+
+    private void HandleTextChanged(string fieldText)
+    {
+        connectButton.interactable =
+            fieldText.Length >= minNameLength &&
+            fieldText.Length <= maxNameLength;
     }
 
     public void HandleNameChanged()
