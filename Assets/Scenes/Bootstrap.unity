@@ -460,6 +460,18 @@ PrefabInstance:
       propertyPath: m_TextStyleHashCode
       value: -1183493901
       objectReference: {fileID: 0}
+    - target: {fileID: 2993433661109289774, guid: 43967d83fd83b4dc780ecc7602ebfc3d, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2993433661393670088, guid: 43967d83fd83b4dc780ecc7602ebfc3d, type: 3}
+      propertyPath: m_text
+      value: Enter a name between 1-16 character
+      objectReference: {fileID: 0}
+    - target: {fileID: 2993433661393670090, guid: 43967d83fd83b4dc780ecc7602ebfc3d, type: 3}
+      propertyPath: m_Name
+      value: Text_Info
+      objectReference: {fileID: 0}
     - target: {fileID: 2993433661755935709, guid: 43967d83fd83b4dc780ecc7602ebfc3d, type: 3}
       propertyPath: m_text
       value: "Mert Games\u200B"
@@ -468,9 +480,21 @@ PrefabInstance:
       propertyPath: m_fontStyle
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 2993433661839468368, guid: 43967d83fd83b4dc780ecc7602ebfc3d, type: 3}
+      propertyPath: m_Color.a
+      value: 0.8509804
+      objectReference: {fileID: 0}
+    - target: {fileID: 2993433661839468370, guid: 43967d83fd83b4dc780ecc7602ebfc3d, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2993433662569029619, guid: 43967d83fd83b4dc780ecc7602ebfc3d, type: 3}
       propertyPath: m_Interactable
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2993433662569029629, guid: 43967d83fd83b4dc780ecc7602ebfc3d, type: 3}
+      propertyPath: m_Name
+      value: ConfirmButton
       objectReference: {fileID: 0}
     - target: {fileID: 2993433662791533356, guid: 43967d83fd83b4dc780ecc7602ebfc3d, type: 3}
       propertyPath: m_Name
@@ -557,7 +581,8 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
-    m_RemovedGameObjects: []
+    m_RemovedGameObjects:
+    - {fileID: 2993433661839468370, guid: 43967d83fd83b4dc780ecc7602ebfc3d, type: 3}
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 43967d83fd83b4dc780ecc7602ebfc3d, type: 3}
@@ -620,7 +645,7 @@ MonoBehaviour:
   nameField: {fileID: 1255929899}
   connectButton: {fileID: 1255929898}
   minNameLength: 1
-  maxNameLength: 12
+  maxNameLength: 16
 --- !u!4 &1295105471
 Transform:
   m_ObjectHideFlags: 0
