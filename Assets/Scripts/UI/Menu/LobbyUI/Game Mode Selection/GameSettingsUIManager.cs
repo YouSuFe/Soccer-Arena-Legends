@@ -1,7 +1,5 @@
-using System;
 using TMPro;
 using UnityEngine;
-using UnityEngine.Events;
 using UnityEngine.UI;
 
 public class GameSettingsUIManager : MonoBehaviour
@@ -10,9 +8,11 @@ public class GameSettingsUIManager : MonoBehaviour
     [SerializeField] private GameModeManager gameModeManager;
 
     [Header("UI Panels")]
-    [SerializeField] private GameObject gameModeSelectionScreen; // Main UI panel
+    [SerializeField] private GameObject generalMenuScreen; // Main UI panel
     [SerializeField] private GameObject gameSettingsPanel; // Settings UI panel
     [SerializeField] private GameObject LobbyScreenUI;
+    [SerializeField] private GameObject modeSelectionButton; // Mode Button UI panel
+    [SerializeField] private GameObject modeSelectionUI; // Mode Selection UI panel
 
     [Header("Map Selection")]
     [SerializeField] private ToggleGroup mapToggleGroup; // ToggleGroup for Map Selection
@@ -61,7 +61,7 @@ public class GameSettingsUIManager : MonoBehaviour
 
         // Default Player Amount
         playerAmountSlider.minValue = 2;
-        playerAmountSlider.maxValue = 12;
+        playerAmountSlider.maxValue = 10;
         playerAmountSlider.value = 2;
         playerAmountSlider.wholeNumbers = true;
         playerAmountSlider.onValueChanged.AddListener(UpdatePlayerAmountText);
@@ -103,7 +103,7 @@ public class GameSettingsUIManager : MonoBehaviour
             selectedBallType,
             selectedMap);
 
-        gameModeSelectionScreen.SetActive(false);
+        generalMenuScreen.SetActive(false);
         LobbyScreenUI.SetActive(true);
         CloseGameSettingsUI();
     }
@@ -113,6 +113,8 @@ public class GameSettingsUIManager : MonoBehaviour
     public void OpenGameSettingsUI()
     {
         gameSettingsPanel.SetActive(true);
+        modeSelectionButton.SetActive(false);
+        modeSelectionUI.SetActive(false);
 
         // Apply pre-selected Game Mode from GameModeManager
         int preSelectedIndex = gameModeManager.GetSelectedIndex();
@@ -142,6 +144,8 @@ public class GameSettingsUIManager : MonoBehaviour
 
     public void CloseGameSettingsUI()
     {
+        modeSelectionButton.SetActive(true);
+        modeSelectionUI.SetActive(true);
         gameSettingsPanel.SetActive(false);
         ResetGameSettings();
     }
@@ -171,7 +175,7 @@ public class GameSettingsUIManager : MonoBehaviour
     // 🔢 Player Amount Slider Logic (Only Even Numbers)
     public void UpdatePlayerAmountText(float playerAmount)
     {
-        // Ensure only even numbers (2, 4, 6, 8, ... up to 12)
+        // Ensure only even numbers (2, 4, 6, 8, ... up to 10)
         int roundedValue = Mathf.RoundToInt(playerAmount);
         if (roundedValue % 2 != 0) roundedValue++; // Ensure even number
 
