@@ -105,10 +105,10 @@ public class LobbyScreenUI : MonoBehaviour
 
             lobbyPlayerSingleUI.SetKickPlayerandMigrateButtonsVisible(
                 LobbyManager.Instance.IsLobbyHost() &&
-                player.Id != AuthenticationService.Instance.PlayerId // Don't allow kick self
+                player.Id != AuthenticationService.Instance.PlayerId
             );
 
-            lobbyPlayerSingleUI.UpdatePlayer(player);
+            lobbyPlayerSingleUI.UpdatePlayer(player, playerTeam);
         }
 
         // ✅ Load game settings into dropdowns when lobby updates

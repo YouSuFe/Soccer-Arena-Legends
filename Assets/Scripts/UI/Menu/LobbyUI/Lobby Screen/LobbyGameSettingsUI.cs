@@ -1,4 +1,5 @@
-﻿using TMPro;
+﻿using System.Collections;
+using TMPro;
 using Unity.Services.Lobbies.Models;
 using UnityEngine;
 using UnityEngine.UI;
@@ -13,15 +14,10 @@ public class LobbyGameSettingsUI : MonoBehaviour
     [SerializeField] private TMP_Dropdown playerAmountDropdown;
 
     [Header("Warning Popup")]
-    [SerializeField] private GameObject warningPopup;
-    [SerializeField] private TextMeshProUGUI warningText;
-    [SerializeField] private Button warningOkButton;
+    [SerializeField] private PopupMessageUI popupMessageUI;
 
     private void Start()
     {
-        warningOkButton.onClick.AddListener(() => warningPopup.SetActive(false));
-        warningPopup.SetActive(false);
-
         // ✅ Listen for lobby updates
         LobbyManager.Instance.OnJoinedLobby += OnLobbyUpdated;
         LobbyManager.Instance.OnJoinedLobbyUpdate += OnLobbyUpdated;
@@ -126,17 +122,11 @@ public class LobbyGameSettingsUI : MonoBehaviour
 
         if (LobbyManager.Instance.GetJoinedLobby().Players.Count > newPlayerAmount)
         {
-            ShowWarning("Too many players! Lobby has more players than the selected amount.");
+            popupMessageUI.Show("Player Limit", "Too many players! Lobby has more players than the selected amount.", PopupMessageType.Error);
             return;
         }
 
         LobbyManager.Instance.UpdateLobbyPlayerAmount(newPlayerAmount);
-    }
-
-    private void ShowWarning(string message)
-    {
-        warningPopup.SetActive(true);
-        warningText.text = message;
     }
 
     private void OnDestroy()

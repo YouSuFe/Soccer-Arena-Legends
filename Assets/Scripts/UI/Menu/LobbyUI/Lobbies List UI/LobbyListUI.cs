@@ -8,14 +8,20 @@ public class LobbyListUI : MonoBehaviour
 {
     public static LobbyListUI Instance { get; private set; }
 
+    [Header("References")]
+    [SerializeField] private LobbyFilterUI filterUI;
+
+    [Header("UI")]
     [SerializeField] private Transform lobbySingleTemplate;
     [SerializeField] private Transform container;
     [SerializeField] private Button refreshButton;
 
-    private void Awake() {
+    private List<Lobby> currentLobbyList = new();
+
+    private void Awake()
+    {
         if (Instance != null && Instance != this)
         {
-            Debug.LogError("Öylemiymiş yav, hadi yav");
             Destroy(gameObject); // Destroy the duplicate
             return;
         }
@@ -25,58 +31,60 @@ public class LobbyListUI : MonoBehaviour
         refreshButton.onClick.AddListener(RefreshButtonClick);
     }
 
-    private void Start() {
+    private void Start()
+    {
         LobbyManager.Instance.OnLobbyListChanged += LobbyManager_OnLobbyListChanged;
         LobbyManager.Instance.OnJoinedLobby += LobbyManager_OnJoinedLobby;
         LobbyManager.Instance.OnLeftLobby += LobbyManager_OnLeftLobby;
         LobbyManager.Instance.OnKickedFromLobby += LobbyManager_OnKickedFromLobby;
 
+        filterUI.OnFilterChanged += filter => UpdateLobbyList(currentLobbyList, filter);
+
         Hide();
     }
 
 
 
-    private void LobbyManager_OnKickedFromLobby(Lobby lobby) {
+    private void LobbyManager_OnKickedFromLobby(Lobby lobby)
+    {
         Show();
     }
 
-    private void LobbyManager_OnLeftLobby() {
+    private void LobbyManager_OnLeftLobby()
+    {
         Show();
     }
 
-    private void LobbyManager_OnJoinedLobby(Lobby lobby) {
+    private void LobbyManager_OnJoinedLobby(Lobby lobby)
+    {
         Hide();
     }
 
-    private void LobbyManager_OnLobbyListChanged(List<Lobby> lobbyList) {
-        UpdateLobbyList(lobbyList);
+    private void LobbyManager_OnLobbyListChanged(List<Lobby> lobbyList)
+    {
+        UpdateLobbyList(lobbyList, filterUI?.GetFilterData());
     }
 
-    private void UpdateLobbyList(List<Lobby> lobbyList) {
-        if (container == null)
+    private void UpdateLobbyList(List<Lobby> lobbyList, FilterData filter = null)
+    {
+        currentLobbyList = lobbyList;
+
+        foreach (Transform child in container)
         {
-            Debug.Log("Container is null");
-            if(lobbySingleTemplate == null)
-            {
-                Debug.Log("Template is null");
-                return;
-            }
-            return;
-        }
-
-        foreach (Transform child in container) {
             if (child == lobbySingleTemplate) continue;
-
             Destroy(child.gameObject);
         }
 
-        foreach (Lobby lobby in lobbyList) {
+        foreach (Lobby lobby in lobbyList)
+        {
+            if (filter != null && !filter.Matches(lobby)) continue;
+
             Transform lobbySingleTransform = Instantiate(lobbySingleTemplate, container);
             lobbySingleTransform.gameObject.SetActive(true);
-            LobbyListSingleUI lobbyListSingleUI = lobbySingleTransform.GetComponent<LobbyListSingleUI>();
-            lobbyListSingleUI.UpdateLobby(lobby);
+            lobbySingleTransform.GetComponent<LobbyListSingleUI>().UpdateLobby(lobby);
         }
     }
+
 
     private async void RefreshButtonClick()
     {
@@ -89,11 +97,13 @@ public class LobbyListUI : MonoBehaviour
         refreshButton.interactable = true;
     }
 
-    private void Hide() {
+    private void Hide()
+    {
         gameObject.SetActive(false);
     }
 
-    private void Show() {
+    private void Show()
+    {
         gameObject.SetActive(true);
     }
 
@@ -105,7 +115,11 @@ public class LobbyListUI : MonoBehaviour
             LobbyManager.Instance.OnJoinedLobby -= LobbyManager_OnJoinedLobby;
             LobbyManager.Instance.OnLeftLobby -= LobbyManager_OnLeftLobby;
             LobbyManager.Instance.OnKickedFromLobby -= LobbyManager_OnKickedFromLobby;
+
+
         }
+
+        filterUI.OnFilterChanged -= filter => UpdateLobbyList(currentLobbyList, filter);
     }
 
 }

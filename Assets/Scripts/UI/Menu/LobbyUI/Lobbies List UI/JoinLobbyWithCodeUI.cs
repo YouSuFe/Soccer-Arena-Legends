@@ -7,7 +7,8 @@ public class JoinLobbyWithCodeUI : MonoBehaviour
     [SerializeField] private TMP_InputField lobbyCodeInputField;
     [SerializeField] private Button joinLobbyButton;
 
-    private TextMeshProUGUI feedbackText;
+    [Header("Popup UI")]
+    [SerializeField] private PopupMessageUI popupMessageUI;
 
     private void Start()
     {
@@ -20,38 +21,41 @@ public class JoinLobbyWithCodeUI : MonoBehaviour
         LobbyManager.Instance.OnJoinLobbyByCodeFailure += OnJoinLobbyFailure;
     }
 
-
-    private void OnJoinLobbySuccess(string message)
-    {
-        DisplayFeedback(message);
-    }
-
-    private void OnJoinLobbyFailure(string message)
-    {
-        DisplayFeedback(message);
-    }
-
     private void OnJoinLobbyClicked()
     {
         string lobbyCode = lobbyCodeInputField.text.Trim();
 
         if (string.IsNullOrEmpty(lobbyCode))
         {
-            DisplayFeedback("Lobby code cannot be empty.");
+            ShowError("Join Failed", "Lobby code cannot be empty.");
             return;
         }
 
-        DisplayFeedback("Joining lobby...");
+        Debug.Log("Joining lobby...");
         LobbyManager.Instance.JoinLobbyByCode(lobbyCode);
     }
 
-    private void DisplayFeedback(string message)
+    private void OnJoinLobbySuccess(string message)
     {
-        if (feedbackText != null)
+        Debug.Log($"[JoinLobby Success] {message}");
+        // Optional: You could show an info popup here, or just let the UI proceed
+    }
+
+    private void OnJoinLobbyFailure(string message)
+    {
+        ShowError("Join Failed", message);
+    }
+
+    private void ShowError(string title, string message)
+    {
+        if (popupMessageUI != null)
         {
-            feedbackText.text = message;
+            popupMessageUI.Show(title, message, PopupMessageType.Error);
         }
-        Debug.Log(message);
+        else
+        {
+            Debug.LogError($"[Popup Error] {title}: {message}");
+        }
     }
 
     private void OnDestroy()

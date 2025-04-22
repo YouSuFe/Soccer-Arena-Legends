@@ -3,16 +3,16 @@
 public static class GameEnumsUtil
 {
     // 🗺️ Map Enum
-    public enum Map { StadiumMap, DesertMap, IceMap }
+    public enum Map { Stadium,/* DesertMap, IceMap */}
 
     // 🌍 Region Enum
     public enum Region { US_East, US_West, Europe, Asia }
 
     // 🎮 Game Mode Enum
-    public enum GameMode { SkillGameMode, CoreGameMode, Training }
+    public enum GameMode { SkillGameMode, /*CoreGameMode*/ }
 
     // ⚽ Ball Type Enum
-    public enum BallType { DefaultBall, FastBall, HeavyBall }
+    public enum BallType { DefaultBall, /*FastBall, HeavyBall */}
 
     // 🔵🔴 Team Enum
     public enum PlayerTeam { Blue, Red, Spectator }
