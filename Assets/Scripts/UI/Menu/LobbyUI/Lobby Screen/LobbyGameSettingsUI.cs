@@ -59,7 +59,7 @@ public class LobbyGameSettingsUI : MonoBehaviour
         gameModeDropdown.value = (int)GameEnumsUtil.StringToEnum(lobby.Data[LobbyManager.KEY_GAME_MODE].Value, GameEnumsUtil.GameMode.SkillGameMode);
         regionDropdown.value = (int)GameEnumsUtil.StringToEnum(lobby.Data[LobbyManager.KEY_REGION].Value, GameEnumsUtil.Region.Europe);
         ballTypeDropdown.value = (int)GameEnumsUtil.StringToEnum(lobby.Data[LobbyManager.KEY_BALL_TYPE].Value, GameEnumsUtil.BallType.DefaultBall);
-        mapDropdown.value = (int)GameEnumsUtil.StringToEnum(lobby.Data[LobbyManager.KEY_MAP].Value, GameEnumsUtil.Map.StadiumMap);
+        mapDropdown.value = (int)GameEnumsUtil.StringToEnum(lobby.Data[LobbyManager.KEY_MAP].Value, GameEnumsUtil.Map.Stadium);
         int maxPlayers = int.Parse(lobby.Data[LobbyManager.KEY_MAX_PLAYERS].Value);
         playerAmountDropdown.value = (maxPlayers / 2) - 1; // Convert 2,4,6,8,10,12 → dropdown index 0,1,2,3,4,5
 
