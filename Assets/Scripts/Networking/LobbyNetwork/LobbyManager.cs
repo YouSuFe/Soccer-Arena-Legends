@@ -610,9 +610,11 @@ public class LobbyManager : MonoBehaviour
 
         Debug.Log($"[GetPlayer] Assigned Team: {assignedTeam}");
 
+        string finalPlayerName = PlayerPrefs.GetString(NameSelector.PlayerNameKey, playerName);
+
         return new Player(AuthenticationService.Instance.PlayerId, null, new Dictionary<string, PlayerDataObject>
                 {
-                    { KEY_PLAYER_NAME, new PlayerDataObject(PlayerDataObject.VisibilityOptions.Public, playerName) },
+                    { KEY_PLAYER_NAME, new PlayerDataObject(PlayerDataObject.VisibilityOptions.Public, finalPlayerName) },
                     { KEY_PLAYER_TEAM, new PlayerDataObject(PlayerDataObject.VisibilityOptions.Public, GameEnumsUtil.EnumToString(assignedTeam)) }
                 });
     }
