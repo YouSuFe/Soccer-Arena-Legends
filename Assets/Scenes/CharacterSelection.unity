@@ -1869,7 +1869,7 @@ Camera:
   m_GameObject: {fileID: 330585543}
   m_Enabled: 1
   serializedVersion: 2
-  m_ClearFlags: 1
+  m_ClearFlags: 2
   m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
@@ -4797,6 +4797,10 @@ PrefabInstance:
     - target: {fileID: 7221047252617048192, guid: 790a6063fb9c045fc81e1f25a43d8dc0, type: 3}
       propertyPath: m_Name
       value: CharacterSelectButton (9)
+      objectReference: {fileID: 0}
+    - target: {fileID: 7221047252617048192, guid: 790a6063fb9c045fc81e1f25a43d8dc0, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -8916,7 +8920,7 @@ MonoBehaviour:
   visuals: {fileID: 3680280707514959767}
   characterIconImage: {fileID: 169849823891222436}
   playerNameText: {fileID: 5174340864114865744}
-  characterNameText: {fileID: 5867450706538751781}
+  characterNameText: {fileID: 6293232385769235227}
   weaponIconImage: {fileID: 361343374}
   weaponNameText: {fileID: 6199273748563633054}
 --- !u!114 &1999687400535198065
@@ -9971,6 +9975,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 906429759}
     m_Modifications:
+    - target: {fileID: 1836387007858318783, guid: 768242c4662444aab9934f0e4568027e, type: 3}
+      propertyPath: m_Name
+      value: Weapon
+      objectReference: {fileID: 0}
+    - target: {fileID: 3650038143938563256, guid: 768242c4662444aab9934f0e4568027e, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 4059586910225399153, guid: 768242c4662444aab9934f0e4568027e, type: 3}
       propertyPath: m_Pivot.x
       value: 0.5
@@ -10054,10 +10066,6 @@ PrefabInstance:
     - target: {fileID: 7221047252617048192, guid: 768242c4662444aab9934f0e4568027e, type: 3}
       propertyPath: m_Name
       value: WeaponSelectButton
-      objectReference: {fileID: 0}
-    - target: {fileID: 7988153110765796247, guid: 768242c4662444aab9934f0e4568027e, type: 3}
-      propertyPath: m_TargetGraphic
-      value: 
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -11864,7 +11872,7 @@ MonoBehaviour:
     m_SelectedTrigger: Selected
     m_DisabledTrigger: Disabled
   m_Interactable: 1
-  m_TargetGraphic: {fileID: 0}
+  m_TargetGraphic: {fileID: 3380411147978866608}
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []

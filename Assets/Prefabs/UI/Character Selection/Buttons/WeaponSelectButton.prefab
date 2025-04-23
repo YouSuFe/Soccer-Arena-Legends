@@ -192,7 +192,7 @@ MonoBehaviour:
     m_SelectedTrigger: Selected
     m_DisabledTrigger: Disabled
   m_Interactable: 1
-  m_TargetGraphic: {fileID: 0}
+  m_TargetGraphic: {fileID: 4439460935481936835}
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
@@ -363,7 +363,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 67ba9c683a13f49c29d25df56381eb2e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  iconImage: {fileID: 4439460935481936835}
+  iconImage: {fileID: 1238188320520002519}
   disabledOverlay: {fileID: 8291597779687146440}
   button: {fileID: 7988153110765796247}
 --- !u!1 &8291597779687146440
