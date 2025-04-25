@@ -30,7 +30,32 @@ using UnityEngine;
  */
 public class SelectionNetwork : NetworkBehaviour
 {
+
+    [Command] // Required by third-party software
+    public static void StartTheGame()
+    {
+        // ✅ Calls the instance method that contains actual logic
+        HostSingleton.Instance.GameManager.NetworkServer.StartGame();
+    }
+
+
+
+    #region Singleton and Properties
+
+
     public static SelectionNetwork Instance { get; private set; }
+
+
+
+    [Header("Databases")]
+    [SerializeField] private CharacterDatabase characterDatabase;
+    [SerializeField] private WeaponDatabase weaponDatabase;
+
+    [Header("Selection Settings")]
+    // If we want to start the game when max player is reached, we can use this.
+    [SerializeField] private int maxPlayers = 4;
+    [SerializeField] private float selectionTimeAmount = 90f;
+    [SerializeField] private float secondPhaseTime = 15f;
 
     // Stores frequently updated data (Character and Weapon selection)
     public NetworkList<PlayerSelectionState> PlayerSelections { get; private set; }
@@ -41,78 +66,14 @@ public class SelectionNetwork : NetworkBehaviour
 
     public Action OnSelectionStateChanged { get; internal set; }
 
-    [SerializeField] private CharacterDatabase characterDatabase;
-    [SerializeField] private WeaponDatabase weaponDatabase;
-
-    // If we want to start the game when max player is reached, we can use this.
-    [SerializeField] private int maxPlayers = 4;
-    [SerializeField] private float selectionTimeAmount = 90f;
-    [SerializeField] private float secondPhaseTime = 15f;
-
     private Dictionary<int, TeamSelectionData> teamData = new();
 
     private Coroutine timerCoroutine;
     private Coroutine secondTimerCoroutine;
 
-    /// <summary>
-    /// ✅ Called from external third-party software. This method is STATIC.
-    /// </summary>
-    [Command] // Required by third-party software
-    public static void ForceLockInAllPlayersStatic()
-    {
-        if (Instance == null)
-        {
-            Debug.LogError("SelectionNetwork Instance is null! Cannot force lock-in.");
-            return;
-        }
+    #endregion
 
-        // ✅ Calls the instance method that contains actual logic
-        Instance.ExecuteForceLockIn();
-    }
-
-    [Command] // Required by third-party software
-    public static void StartTheGame()
-    {
-        // ✅ Calls the instance method that contains actual logic
-        HostSingleton.Instance.GameManager.NetworkServer.StartGame();
-    }
-
-    /// <summary>
-    /// 🚀 The actual lock-in logic. This method is NOT static, so it can modify NetworkLists.
-    /// </summary>
-    private void ExecuteForceLockIn()
-    {
-        Debug.Log($"[ForceLockIn] Starting lock-in process for {PlayerSelections.Count} players.");
-
-        for (int i = 0; i < PlayerSelections.Count; i++)
-        {
-            PlayerSelectionState selection = PlayerSelections[i];
-            PlayerStatusState status = PlayerStatuses[i];
-            int teamIndex = status.TeamIndex;
-
-            if (status.IsLockedIn) continue; // Skip already locked-in players
-
-            if (!teamData.TryGetValue(teamIndex, out var team))
-            {
-                Debug.LogError($"[ForceLockIn] Team {teamIndex} not found in teamData!");
-                continue;
-            }
-
-            Debug.Log($"[Lock-In Process] Checking Player {selection.ClientId} (Team {teamIndex}): " +
-                      $"Character {selection.CharacterId}, Weapon {selection.WeaponId}, LockedIn: {status.IsLockedIn}");
-
-            // ✅ Lock in the player using our centralized method
-            LockInPlayer(selection.ClientId, ref selection, ref status);
-
-            // ✅ Store the updated selections in NetworkList
-            PlayerSelections[i] = selection;
-            PlayerStatuses[i] = status;
-        }
-
-        // Notify selection changes
-        NotifySelectionChanged();
-        Debug.Log("[ForceLockIn] Lock-in process complete.");
-    }
+    #region Unity Callbacks
 
     private void Awake()
     {
@@ -124,63 +85,21 @@ public class SelectionNetwork : NetworkBehaviour
         }
         Instance = this;
 
-        // Initialize NetworkLists for players' selection and status
         PlayerSelections = new NetworkList<PlayerSelectionState>();
         PlayerStatuses = new NetworkList<PlayerStatusState>();
     }
-
-    //private void Update()
-    //{
-    //    if (!IsServer) return; // Only the server should track this
-
-    //    if (lockedCharacters.Count > 0)
-    //    {
-    //        Debug.Log("Locked Characters: " + string.Join(", ", lockedCharacters));
-    //    }
-    //    else
-    //    {
-    //        Debug.Log(" No characters locked yet.");
-    //    }
-
-    //    if (lockedWeapons.Count > 0)
-    //    {
-    //        Debug.Log(" Locked Weapons: " + string.Join(", ", lockedWeapons));
-    //    }
-    //    else
-    //    {
-    //        Debug.Log(" No weapons locked yet.");
-    //    }
-    //}
-
 
     public override void OnNetworkSpawn()
     {
         if (IsServer)
         {
             selectionTimer.Value = selectionTimeAmount;
-
             InitializeTeamData();
 
-            Debug.Log("Inside Selection Network Is Server " + IsServer);
             NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
             NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnected;
 
-            ulong hostClientId = NetworkManager.Singleton.LocalClientId;
-            if (!IsPlayerInList(hostClientId))
-            {
-                Debug.Log($"Adding Host Player (Client ID: {hostClientId}) to the selection list.");
-                UserData userData = HostSingleton.Instance.GameManager.NetworkServer.GetUserDataByClientId(hostClientId);
-                if (userData != null)
-                {
-                    // Adding the host player to both NetworkLists
-                    PlayerSelections.Add(new PlayerSelectionState(hostClientId));
-                    PlayerStatuses.Add(new PlayerStatusState(hostClientId, false, userData.teamIndex, userData.userName));
-                }
-                else
-                {
-                    Debug.LogError("[OnNetworkSpawn] Failed to get UserData for host!");
-                }
-            }
+            AddHostPlayer();
         }
 
         if (IsClient && !IsServer)
@@ -203,7 +122,14 @@ public class SelectionNetwork : NetworkBehaviour
         }
     }
 
-    /// ✅ **Now initializes all teams (0 and 1) at the start. No missing teams!**
+    #endregion
+
+
+    #region Initialization
+
+    /// <summary>
+    /// Initializes team data at the start of the game.
+    /// </summary>
     private void InitializeTeamData()
     {
         teamData.Clear();
@@ -214,6 +140,28 @@ public class SelectionNetwork : NetworkBehaviour
         };
     }
 
+    private void AddHostPlayer()
+    {
+        ulong hostClientId = NetworkManager.Singleton.LocalClientId;
+        if (!IsPlayerInList(hostClientId))
+        {
+            UserData userData = HostSingleton.Instance.GameManager.NetworkServer.GetUserDataByClientId(hostClientId);
+            if (userData != null)
+            {
+                PlayerSelections.Add(new PlayerSelectionState(hostClientId));
+                PlayerStatuses.Add(new PlayerStatusState(hostClientId, false, userData.teamIndex, userData.userName));
+            }
+            else
+            {
+                Debug.LogError("[OnNetworkSpawn] Failed to get UserData for host!");
+            }
+        }
+    }
+
+    #endregion
+
+
+    #region Player Connection Management
 
     /*
      * Called when a new client connects to the server.
@@ -274,7 +222,13 @@ public class SelectionNetwork : NetworkBehaviour
         Debug.LogWarning($"[OnClientDisconnected] Player {clientId} was not found in the selection lists!");
     }
 
+    #endregion
 
+    #region Selection Timer
+
+    /// <summary>
+    /// Starts the selection timer.
+    /// </summary>
     private void StartSelectionTimer()
     {
         if (timerCoroutine != null) { StopCoroutine(timerCoroutine); }
@@ -320,127 +274,9 @@ public class SelectionNetwork : NetworkBehaviour
         HostSingleton.Instance.GameManager.NetworkServer.StartGame();
     }
 
-    [ServerRpc(RequireOwnership = false)]
-    private void RequestTeamLockDataServerRpc(ServerRpcParams serverRpcParams = default)
-    {
-        ulong clientId = serverRpcParams.Receive.SenderClientId;
+    #endregion
 
-        List<TeamLockData> teamLocks = new List<TeamLockData>();
-        foreach (var kvp in teamData) // ✅ Iterating over teamData instead of separate dictionaries
-        {
-            int teamIndex = kvp.Key;
-            TeamSelectionData team = kvp.Value;
-
-            // ✅ Creating a data packet for each team
-            teamLocks.Add(new TeamLockData(teamIndex, team.LockedCharacters, team.LockedWeapons));
-        }
-
-        Debug.Log("Server : Try to sync team lock datas to players");
-        SyncTeamLocksToClientClientRpc(teamLocks.ToArray(), clientId);
-    }
-
-    [ClientRpc]
-    private void SyncTeamLocksToClientClientRpc(TeamLockData[] teamLocks, ulong targetClientId)
-    {
-        if (NetworkManager.Singleton.LocalClientId != targetClientId) return;
-
-        teamData.Clear(); // ✅ Clearing teamData before updating
-
-        foreach (var teamLock in teamLocks)
-        {
-            TeamSelectionData team = new TeamSelectionData(characterDatabase, weaponDatabase);
-
-            // ✅ Copying locked characters and weapons from the server's data
-            foreach (var charId in teamLock.LockedCharacters)
-                team.LockedCharacters.Add(charId);
-
-            foreach (var weaponId in teamLock.LockedWeapons)
-                team.LockedWeapons.Add(weaponId);
-
-            teamData[teamLock.TeamIndex] = team;
-        }
-
-        Debug.Log("[SyncTeamLocks] Client received updated team lock data.");
-    }
-
-    private void ForceLockInAllPlayers()
-    {
-        Debug.Log($"[ForceLockIn] Starting lock-in process for {PlayerSelections.Count} players.");
-
-        for (int i = 0; i < PlayerSelections.Count; i++)
-        {
-            PlayerSelectionState selection = PlayerSelections[i];
-            PlayerStatusState status = PlayerStatuses[i];
-            int teamIndex = status.TeamIndex;
-
-            if (status.IsLockedIn) continue; // Skip already locked-in players
-
-            if (!teamData.TryGetValue(teamIndex, out var team))
-            {
-                Debug.LogError($"[ForceLockIn] Team {teamIndex} not found in teamData!");
-                continue;
-            }
-
-            Debug.Log($"[Lock-In Process] Checking Player {selection.ClientId} (Team {teamIndex}): " +
-                      $"Character {selection.CharacterId}, Weapon {selection.WeaponId}, LockedIn: {status.IsLockedIn}");
-
-            // ✅ Lock in the player using our centralized method
-            LockInPlayer(selection.ClientId, ref selection, ref status);
-
-            // ✅ Store the updated selections in NetworkList
-            PlayerSelections[i] = selection;
-            PlayerStatuses[i] = status;
-        }
-
-        // Notify selection changes
-        NotifySelectionChanged();
-        Debug.Log("[ForceLockIn] Lock-in process complete.");
-    }
-
-
-    /*
-     * Determines if a player can lock in their selection.
-     * Checks if the player has made valid selections that aren't taken.
-     */
-    public bool CanLockIn(ulong clientId)
-    {
-        int index = GetPlayerSelectionIndex(clientId);
-        if (index == -1) return false;
-
-        var selection = PlayerSelections[index];
-        var status = PlayerStatuses[index];
-        int teamIndex = status.TeamIndex;
-
-        if (characterDatabase == null || weaponDatabase == null)
-        {
-            Debug.LogError("[CanLockIn] CharacterDatabase or WeaponDatabase is not set!");
-            return false;
-        }
-
-        if (!characterDatabase.IsValidCharacterId(selection.CharacterId))
-        {
-            Debug.LogWarning($"[CanLockIn] CharacterId {selection.CharacterId} is INVALID.");
-            return false;
-        }
-
-        if (!weaponDatabase.IsValidWeaponId(selection.WeaponId))
-        {
-            Debug.LogWarning($"[CanLockIn] WeaponId {selection.WeaponId} is INVALID.");
-            return false;
-        }
-
-        // ✅ Use `teamData` for quick lookup instead of checking lists
-        if (!teamData.TryGetValue(teamIndex, out var team)) return false;
-
-        bool isCharacterValid = selection.CharacterId != -1 && !team.LockedCharacters.Contains(selection.CharacterId);
-        bool isWeaponValid = selection.WeaponId != -1 && !team.LockedWeapons.Contains(selection.WeaponId);
-
-        Debug.Log($"[CanLockIn] Client {clientId} → IsCharacterValid: {isCharacterValid}, IsWeaponValid: {isWeaponValid}");
-
-        return isCharacterValid && isWeaponValid;
-    }
-
-
+    #region Lock-In and Team Management
 
     public void LockInSelection()
     {
@@ -478,6 +314,8 @@ public class SelectionNetwork : NetworkBehaviour
         ResolveSelectionConflicts(status.TeamIndex);
 
         NotifySelectionChanged();
+
+        SyncTeamLocksToAllClientsClientRpc(GetTeamLocksArray());
     }
 
     private void LockInPlayer(ulong clientId, ref PlayerSelectionState selection, ref PlayerStatusState status)
@@ -561,6 +399,162 @@ public class SelectionNetwork : NetworkBehaviour
             PlayerSelections[i] = otherSelection;
         }
     }
+
+    /// <summary>
+    /// Forces all players to lock in their selections.
+    /// </summary>
+    private void ForceLockInAllPlayers()
+    {
+        Debug.Log($"[ForceLockIn] Starting lock-in process for {PlayerSelections.Count} players.");
+
+        for (int i = 0; i < PlayerSelections.Count; i++)
+        {
+            PlayerSelectionState selection = PlayerSelections[i];
+            PlayerStatusState status = PlayerStatuses[i];
+            int teamIndex = status.TeamIndex;
+
+            if (status.IsLockedIn) continue; // Skip already locked-in players
+
+            if (!teamData.TryGetValue(teamIndex, out var team))
+            {
+                Debug.LogError($"[ForceLockIn] Team {teamIndex} not found in teamData!");
+                continue;
+            }
+
+            Debug.Log($"[Lock-In Process] Checking Player {selection.ClientId} (Team {teamIndex}): " +
+                      $"Character {selection.CharacterId}, Weapon {selection.WeaponId}, LockedIn: {status.IsLockedIn}");
+
+            // ✅ Lock in the player using our centralized method
+            LockInPlayer(selection.ClientId, ref selection, ref status);
+
+            // ✅ Store the updated selections in NetworkList
+            PlayerSelections[i] = selection;
+            PlayerStatuses[i] = status;
+        }
+
+        // Notify selection changes
+        NotifySelectionChanged();
+        Debug.Log("[ForceLockIn] Lock-in process complete.");
+
+        SyncTeamLocksToAllClientsClientRpc(GetTeamLocksArray());
+
+    }
+
+    #region Sync Methods (Server <--> Clients)
+
+    [ServerRpc(RequireOwnership = false)]
+    private void RequestTeamLockDataServerRpc(ServerRpcParams serverRpcParams = default)
+    {
+        ulong clientId = serverRpcParams.Receive.SenderClientId;
+
+        List<TeamLockData> teamLocks = new List<TeamLockData>();
+        foreach (var kvp in teamData) // ✅ Iterating over teamData instead of separate dictionaries
+        {
+            int teamIndex = kvp.Key;
+            TeamSelectionData team = kvp.Value;
+
+            // ✅ Creating a data packet for each team
+            teamLocks.Add(new TeamLockData(teamIndex, team.LockedCharacters, team.LockedWeapons));
+        }
+
+        Debug.Log("Server : Try to sync team lock datas to players");
+        SyncTeamLocksToClientClientRpc(teamLocks.ToArray(), RpcUtils.ToClient(clientId));
+    }
+
+    // For individual player to inform when it is first connected if there is any locked character or weapon
+    [ClientRpc]
+    private void SyncTeamLocksToClientClientRpc(TeamLockData[] teamLocks, ClientRpcParams clientRpcParams = default)
+    {
+        teamData.Clear(); // ✅ Clearing teamData before updating
+
+        foreach (var teamLock in teamLocks)
+        {
+            TeamSelectionData team = new TeamSelectionData(characterDatabase, weaponDatabase);
+
+            // ✅ Copying locked characters and weapons from the server's data
+            foreach (var charId in teamLock.LockedCharacters)
+                team.LockedCharacters.Add(charId);
+
+            foreach (var weaponId in teamLock.LockedWeapons)
+                team.LockedWeapons.Add(weaponId);
+
+            teamData[teamLock.TeamIndex] = team;
+        }
+
+        Debug.Log("[SyncTeamLocks] Client received updated team lock data.");
+    }
+
+    // All player to inform about team data
+    [ClientRpc]
+    private void SyncTeamLocksToAllClientsClientRpc(TeamLockData[] teamLocks)
+    {
+        teamData.Clear();
+        foreach (var teamLock in teamLocks)
+        {
+            TeamSelectionData team = new TeamSelectionData(characterDatabase, weaponDatabase);
+            foreach (var charId in teamLock.LockedCharacters)
+                team.LockedCharacters.Add(charId);
+            foreach (var weaponId in teamLock.LockedWeapons)
+                team.LockedWeapons.Add(weaponId);
+
+            teamData[teamLock.TeamIndex] = team;
+        }
+
+        Debug.Log("[SyncTeamLocks] All clients updated their team lock data.");
+    }
+
+    #endregion
+
+
+    #endregion
+
+
+    #region Utility Methods
+
+    /*
+     * Determines if a player can lock in their selection.
+     * Checks if the player has made valid selections that aren't taken.
+     */
+    public bool CanLockIn(ulong clientId)
+    {
+        int index = GetPlayerSelectionIndex(clientId);
+        if (index == -1) return false;
+
+        var selection = PlayerSelections[index];
+        var status = PlayerStatuses[index];
+        int teamIndex = status.TeamIndex;
+
+        if (characterDatabase == null || weaponDatabase == null)
+        {
+            Debug.LogError("[CanLockIn] CharacterDatabase or WeaponDatabase is not set!");
+            return false;
+        }
+
+        if (!characterDatabase.IsValidCharacterId(selection.CharacterId))
+        {
+            Debug.LogWarning($"[CanLockIn] CharacterId {selection.CharacterId} is INVALID.");
+            return false;
+        }
+
+        if (!weaponDatabase.IsValidWeaponId(selection.WeaponId))
+        {
+            Debug.LogWarning($"[CanLockIn] WeaponId {selection.WeaponId} is INVALID.");
+            return false;
+        }
+
+        // ✅ Use `teamData` for quick lookup instead of checking lists
+        if (!teamData.TryGetValue(teamIndex, out var team)) return false;
+
+        bool isCharacterValid = selection.CharacterId != -1 && !team.LockedCharacters.Contains(selection.CharacterId);
+        bool isWeaponValid = selection.WeaponId != -1 && !team.LockedWeapons.Contains(selection.WeaponId);
+
+        Debug.Log($"[CanLockIn] Client {clientId} → IsCharacterValid: {isCharacterValid}, IsWeaponValid: {isWeaponValid}");
+
+        return isCharacterValid && isWeaponValid;
+    }
+
+
+
 
     private int GetPlayerSelectionIndex(ulong clientId)
     {
@@ -678,6 +672,16 @@ public class SelectionNetwork : NetworkBehaviour
         return availableWeapons;
     }
 
+    private TeamLockData[] GetTeamLocksArray()
+    {
+        List<TeamLockData> teamLocks = new List<TeamLockData>();
+        foreach (var kvp in teamData)
+        {
+            teamLocks.Add(new TeamLockData(kvp.Key, kvp.Value.LockedCharacters, kvp.Value.LockedWeapons));
+        }
+        return teamLocks.ToArray();
+    }
+
     private bool IsPlayerInList(ulong clientId)
     {
         foreach (var player in PlayerStatuses)
@@ -694,4 +698,7 @@ public class SelectionNetwork : NetworkBehaviour
     {
         OnSelectionStateChanged?.Invoke();
     }
+
+    #endregion
+
 }
