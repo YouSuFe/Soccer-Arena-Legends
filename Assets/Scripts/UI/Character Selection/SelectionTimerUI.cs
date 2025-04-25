@@ -10,6 +10,6 @@ public class SelectionTimerUI : MonoBehaviour
         if (SelectionNetwork.Instance == null) { return; }
 
         float timeLeft = SelectionNetwork.Instance.GetRemainingTime();
-        timerText.text = $"Time Left: {Mathf.CeilToInt(timeLeft)}s";
+        timerText.text = $"{Mathf.CeilToInt(timeLeft)}";
     }
 }

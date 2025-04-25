@@ -2782,9 +2782,8 @@ MonoBehaviour:
   visuals: {fileID: 1397841943}
   characterIconImage: {fileID: 850080504}
   playerNameText: {fileID: 986797799}
-  characterNameText: {fileID: 10671214}
+  statusText: {fileID: 10671214}
   weaponIconImage: {fileID: 1860494621}
-  weaponNameText: {fileID: 6199273748563633054}
 --- !u!114 &602713460
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3439,9 +3438,8 @@ MonoBehaviour:
   visuals: {fileID: 1506924104}
   characterIconImage: {fileID: 209369569}
   playerNameText: {fileID: 1867016016}
-  characterNameText: {fileID: 763578290}
+  statusText: {fileID: 763578290}
   weaponIconImage: {fileID: 1193052263}
-  weaponNameText: {fileID: 6199273748563633054}
 --- !u!114 &720228316
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4201,9 +4199,8 @@ MonoBehaviour:
   visuals: {fileID: 466664459}
   characterIconImage: {fileID: 1434425557}
   playerNameText: {fileID: 405152317}
-  characterNameText: {fileID: 1451054436}
+  statusText: {fileID: 0}
   weaponIconImage: {fileID: 860677728}
-  weaponNameText: {fileID: 6199273748563633054}
 --- !u!114 &882501443
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5238,9 +5235,8 @@ MonoBehaviour:
   visuals: {fileID: 1335177869}
   characterIconImage: {fileID: 725634791}
   playerNameText: {fileID: 1141804840}
-  characterNameText: {fileID: 106330273}
+  statusText: {fileID: 0}
   weaponIconImage: {fileID: 1296690124}
-  weaponNameText: {fileID: 6199273748563633054}
 --- !u!114 &1034714181
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8920,9 +8916,8 @@ MonoBehaviour:
   visuals: {fileID: 3680280707514959767}
   characterIconImage: {fileID: 169849823891222436}
   playerNameText: {fileID: 5174340864114865744}
-  characterNameText: {fileID: 6293232385769235227}
+  statusText: {fileID: 5867450706538751781}
   weaponIconImage: {fileID: 361343374}
-  weaponNameText: {fileID: 6199273748563633054}
 --- !u!114 &1999687400535198065
 MonoBehaviour:
   m_ObjectHideFlags: 0
