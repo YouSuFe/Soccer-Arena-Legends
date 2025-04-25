@@ -4,14 +4,13 @@ using UnityEngine.UI;
 
 public class SelectableLobbiesListUI : MonoBehaviour
 {
-    public float doubleClickThreshold = 0.5f; // Time in seconds for a valid double click
+    [Header("Selection Settings")]
+    [SerializeField] private float doubleClickThreshold = 0.5f; // Time in seconds for a valid double click
+    [SerializeField] private GameObject selectionBorder;
+
     private float lastClickTime = -1f;
     private int clickCount = 0;
-
-    public bool IsSelected { get; private set; } = false;
-
-    // Visual feedback components
-    public GameObject selectionBorder;
+    private bool isSelected = false;
 
     private Lobby lobby;
 
@@ -65,9 +64,9 @@ public class SelectableLobbiesListUI : MonoBehaviour
 
     public void Select()
     {
-        if (!IsSelected)
+        if (!isSelected)
         {
-            IsSelected = true;
+            isSelected = true;
             LobbySelectionManager.Instance.SelectButton(this);
 
             // Show selection visual
@@ -82,9 +81,9 @@ public class SelectableLobbiesListUI : MonoBehaviour
 
     public void Deselect()
     {
-        if (IsSelected)
+        if (isSelected)
         {
-            IsSelected = false;
+            isSelected = false;
 
             // Hide selection visual
             if (selectionBorder != null)
@@ -104,24 +103,30 @@ public class SelectableLobbiesListUI : MonoBehaviour
             return;
         }
 
-        // Client-side pre-check: Max players
-        if (lobby.Players.Count >= lobby.MaxPlayers)
+        // ✅ Client-side pre-check: Custom Max players from lobby.Data
+        if (lobby.Data.TryGetValue(LobbyManager.KEY_MAX_PLAYERS, out var maxPlayersData))
         {
-            Debug.LogWarning("Lobby is full! Cannot join.");
-            // Show feedback to the player
-            return;
-        }
+            int softMaxPlayers = int.Parse(maxPlayersData.Value);
 
-        if (lobby != null)
-        {
-            LobbyScreenUI.Instance.Show();
-            LobbyManager.Instance.JoinLobby(lobby, OnJoinLobbySuccess, OnJoinLobbyFailed);
+            if (lobby.Players.Count >= softMaxPlayers)
+            {
+                Debug.LogWarning("Lobby is full (according to custom MaxPlayers)!");
+
+                PopupManager.Instance.ShowPopup("Lobby Full", "This lobby is already full. Please join another one.", PopupMessageType.Error);
+
+                return;
+            }
         }
         else
         {
-            Debug.LogError("Lobby is null! Ensure SetLobby is called before using this button.");
+            Debug.LogWarning("No custom MaxPlayers found in lobby.Data! Joining anyway...");
         }
+
+        // ✅ Proceed to join if allowed
+        LobbyScreenUI.Instance.Show();
+        LobbyManager.Instance.JoinLobby(lobby, OnJoinLobbySuccess, OnJoinLobbyFailed);
     }
+
 
     private void OnJoinLobbySuccess()
     {

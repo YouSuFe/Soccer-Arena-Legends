@@ -444,6 +444,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 25994f7a68bcf41089055871700b48f6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  popUpMessage: {fileID: 2918009089473294473, guid: c80f66ace36ee45989b86afde671cfd8, type: 3}
   doubleClickThreshold: 0.5
   selectionBorder: {fileID: 712078455306194166}
 --- !u!114 &484255606457513300

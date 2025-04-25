@@ -13,9 +13,6 @@ public class LobbyGameSettingsUI : MonoBehaviour
     [SerializeField] private TMP_Dropdown mapDropdown;
     [SerializeField] private TMP_Dropdown playerAmountDropdown;
 
-    [Header("Warning Popup")]
-    [SerializeField] private PopupMessageUI popupMessageUI;
-
     private void Start()
     {
         // ✅ Listen for lobby updates
@@ -122,7 +119,7 @@ public class LobbyGameSettingsUI : MonoBehaviour
 
         if (LobbyManager.Instance.GetJoinedLobby().Players.Count > newPlayerAmount)
         {
-            popupMessageUI.Show("Player Limit", "Too many players! Lobby has more players than the selected amount.", PopupMessageType.Error);
+            PopupManager.Instance.ShowPopup("Player Limit", "Too many players! Lobby has more players than the selected amount.", PopupMessageType.Error);
             return;
         }
 

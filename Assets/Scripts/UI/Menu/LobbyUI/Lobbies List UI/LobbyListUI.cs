@@ -43,10 +43,9 @@ public class LobbyListUI : MonoBehaviour
         Hide();
     }
 
-
-
     private void LobbyManager_OnKickedFromLobby(Lobby lobby)
     {
+        PopupManager.Instance.ShowPopup("Kicked!", "You have been kicked by the host from the lobby!", PopupMessageType.Error);
         Show();
     }
 

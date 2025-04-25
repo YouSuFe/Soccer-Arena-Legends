@@ -95,5 +95,8 @@ public class PopupMessageUI : MonoBehaviour
 
         canvasGroup.alpha = 0f;
         root.SetActive(false);
+
+        // ToDo: Make it persistent accross scenes and reusable
+        Destroy(gameObject);
     }
 }

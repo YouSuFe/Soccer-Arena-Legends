@@ -7,9 +7,6 @@ public class JoinLobbyWithCodeUI : MonoBehaviour
     [SerializeField] private TMP_InputField lobbyCodeInputField;
     [SerializeField] private Button joinLobbyButton;
 
-    [Header("Popup UI")]
-    [SerializeField] private PopupMessageUI popupMessageUI;
-
     private void Start()
     {
         if (joinLobbyButton != null)
@@ -48,9 +45,9 @@ public class JoinLobbyWithCodeUI : MonoBehaviour
 
     private void ShowError(string title, string message)
     {
-        if (popupMessageUI != null)
+        if (PopupManager.Instance != null)
         {
-            popupMessageUI.Show(title, message, PopupMessageType.Error);
+            PopupManager.Instance.ShowPopup(title, message, PopupMessageType.Error);
         }
         else
         {

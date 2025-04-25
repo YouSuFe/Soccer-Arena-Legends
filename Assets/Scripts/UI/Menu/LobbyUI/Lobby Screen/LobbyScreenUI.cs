@@ -52,7 +52,6 @@ public class LobbyScreenUI : MonoBehaviour
         Hide();
     }
 
-
     private void UpdateLobby_Event(Lobby lobby)
     {
         UpdateLobby();

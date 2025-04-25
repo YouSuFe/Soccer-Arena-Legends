@@ -3611,7 +3611,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4845276930943762971, guid: 2da3dcc22749e7f4280737786d898334, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0
+      value: -0.000015258789
       objectReference: {fileID: 0}
     - target: {fileID: 4845637959249703711, guid: 2da3dcc22749e7f4280737786d898334, type: 3}
       propertyPath: m_AnchorMax.y
@@ -4806,6 +4806,51 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 633169846}
   m_CullTransparentMesh: 1
+--- !u!1 &639209112
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 639209114}
+  - component: {fileID: 639209113}
+  m_Layer: 0
+  m_Name: Pop Up Manager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &639209113
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 639209112}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cc7a5898a327f4693881c33bf06e251e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  popupPrefab: {fileID: 2918009089473294473, guid: c80f66ace36ee45989b86afde671cfd8, type: 3}
+--- !u!4 &639209114
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 639209112}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 201.5569, y: 154.76292, z: -300.03293}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &640342817
 GameObject:
   m_ObjectHideFlags: 0
@@ -16835,6 +16880,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 25994f7a68bcf41089055871700b48f6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  popUpMessage: {fileID: 0}
   doubleClickThreshold: 0.5
   selectionBorder: {fileID: 1615453933946591073}
 --- !u!1 &1144363627153076501
@@ -30209,6 +30255,7 @@ MonoBehaviour:
   lobbySingleTemplate: {fileID: 2548696034500355673, guid: 34f64240623cd486a8382dbdaa551223, type: 3}
   container: {fileID: 7711488268175952621}
   refreshButton: {fileID: 4679899044000104866}
+  popUpMessage: {fileID: 0}
 --- !u!224 &5870590037400903745
 RectTransform:
   m_ObjectHideFlags: 0
@@ -39553,6 +39600,7 @@ SceneRoots:
   - {fileID: 564752671}
   - {fileID: 1121912068}
   - {fileID: 6888578636080068526}
+  - {fileID: 639209114}
   - {fileID: 353416320}
   - {fileID: 353041615}
   - {fileID: 493169463}
