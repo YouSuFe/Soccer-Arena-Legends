@@ -63,11 +63,12 @@ public class LobbyManager : MonoBehaviour
 
     #region Lobby Management
 
-    public async void CreateLobby(string lobbyName, int maxPlayers, bool isPrivate,
+    public async void CreateLobby(string lobbyName, int hardMaxPlayer, bool isPrivate,
                         GameEnumsUtil.Region region,
                         GameEnumsUtil.GameMode gameMode,
                         GameEnumsUtil.BallType ballType,
-                        GameEnumsUtil.Map map)
+                        GameEnumsUtil.Map map,
+                        int customMaxPlayers)
     {
         try
         {
@@ -84,15 +85,15 @@ public class LobbyManager : MonoBehaviour
                 { KEY_REGION, new DataObject(DataObject.VisibilityOptions.Public, GameEnumsUtil.EnumToString(region)) },
                 { KEY_GAME_MODE, new DataObject(DataObject.VisibilityOptions.Public, GameEnumsUtil.EnumToString(gameMode)) },
                 { KEY_BALL_TYPE, new DataObject(DataObject.VisibilityOptions.Public, GameEnumsUtil.EnumToString(ballType)) },
-                { KEY_MAX_PLAYERS, new DataObject(DataObject.VisibilityOptions.Public, maxPlayers.ToString()) },
+                { KEY_MAX_PLAYERS, new DataObject(DataObject.VisibilityOptions.Public, customMaxPlayers.ToString()) }
             }
             };
 
             lobbyName = PlayerPrefs.GetString(NameSelector.PlayerNameKey, playerName);
 
 
-            Lobby lobby = await LobbyService.Instance.CreateLobbyAsync(lobbyName, maxPlayers, options);
-            Debug.Log($"Lobby '{lobby.Name}' created with mode '{gameMode}'. Lobby's privecy {isPrivate} with max {maxPlayers}");
+            Lobby lobby = await LobbyService.Instance.CreateLobbyAsync(lobbyName, hardMaxPlayer, options);
+            Debug.Log($"Lobby '{lobby.Name}' created with mode '{gameMode}'. Lobby's privecy {isPrivate} with max {hardMaxPlayer}");
 
             // Assign to joinedLobby
             joinedLobby = lobby;
@@ -141,7 +142,7 @@ public class LobbyManager : MonoBehaviour
 
                     //Debug.Log($"Host ID: {joinedLobby.HostId}, Player ID: {AuthenticationService.Instance.PlayerId}");
 
-                    //DebugLobby(joinedLobby);
+                    DebugLobby(joinedLobby);
 
                     if (!IsPlayerInLobby())
                     {
@@ -166,7 +167,19 @@ public class LobbyManager : MonoBehaviour
     {
         try
         {
-            QueryResponse lobbyListQueryResponse = await LobbyService.Instance.QueryLobbiesAsync();
+            var queryOptions = new QueryLobbiesOptions
+            {
+                Filters = new List<QueryFilter>()
+                {
+                    new QueryFilter(QueryFilter.FieldOptions.Created, "2020-01-01T00:00:00.000Z", QueryFilter.OpOptions.GT)
+                },
+                Order = new List<QueryOrder>()
+                {
+                    new QueryOrder(false, QueryOrder.FieldOptions.Created)
+                }
+            };
+
+            QueryResponse lobbyListQueryResponse = await LobbyService.Instance.QueryLobbiesAsync(queryOptions);
 
             OnLobbyListChanged?.Invoke(lobbyListQueryResponse.Results);
         }
@@ -190,6 +203,19 @@ public class LobbyManager : MonoBehaviour
                 Debug.LogError("[JoinLobbyByCode] Failed to fetch lobby. It might not exist.");
                 OnJoinLobbyByCodeFailure?.Invoke($"Failed to join lobby: {lobbyCode}");
                 return;
+            }
+
+            // ✅ Check custom max players
+            if (lobby.Data.TryGetValue(KEY_MAX_PLAYERS, out var maxPlayersData))
+            {
+                int customMaxPlayers = int.Parse(maxPlayersData.Value);
+
+                if (lobby.Players.Count >= customMaxPlayers)
+                {
+                    Debug.LogWarning("[JoinLobbyByCode] Cannot join: Lobby is full (Custom MaxPlayers limit).");
+                    OnJoinLobbyByCodeFailure?.Invoke("Lobby is full!");
+                    return;
+                }
             }
 
             // Get the correct player data
@@ -225,6 +251,19 @@ public class LobbyManager : MonoBehaviour
     {
         try
         {
+            // ✅ Check custom max players
+            if (lobby.Data.TryGetValue(KEY_MAX_PLAYERS, out var maxPlayersData))
+            {
+                int customMaxPlayers = int.Parse(maxPlayersData.Value);
+
+                if (lobby.Players.Count >= customMaxPlayers)
+                {
+                    Debug.LogWarning("[JoinLobby] Cannot join: Lobby is full (Custom MaxPlayers limit).");
+                    onJoinLobbyFailed?.Invoke("Lobby is full!");
+                    return;
+                }
+            }
+
             Player player = GetPlayer(lobby);
             joinedLobby = await LobbyService.Instance.JoinLobbyByIdAsync(lobby.Id, new JoinLobbyByIdOptions { Player = player });
             Debug.Log($"Player {player} is joined to Lobby '{joinedLobby.Name}' with mode" +

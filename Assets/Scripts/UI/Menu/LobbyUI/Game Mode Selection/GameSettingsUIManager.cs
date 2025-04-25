@@ -48,6 +48,10 @@ public class GameSettingsUIManager : MonoBehaviour
     [SerializeField] private Button createLobbyButton;
     [SerializeField] private Button cancelButton;
 
+    // Summary
+    // It is a value lobby will have fix amount of max player it will have.
+    // Even if lobby max player data is changed, this value remains and lobby cannot exceed this value.
+    private const int HARD_MAX_PLAYER = 10;
     private string lobbyName;
     private bool isPrivate;
 
@@ -96,12 +100,13 @@ public class GameSettingsUIManager : MonoBehaviour
         // ✅ Call LobbyManager to create the lobby
         LobbyManager.Instance.CreateLobby(
             lobbyName,
-            playerAmount,
+            HARD_MAX_PLAYER,
             isPrivate,
             selectedRegion,
             selectedGameMode,
             selectedBallType,
-            selectedMap);
+            selectedMap,
+            playerAmount);
 
         generalMenuScreen.SetActive(false);
         LobbyScreenUI.SetActive(true);

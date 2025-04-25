@@ -18,7 +18,15 @@ public class LobbyListSingleUI : MonoBehaviour
         this.lobby = lobby;
 
         lobbyNameText.text = lobby.Name;
-        playersText.text = $"{lobby.Players.Count}/{lobby.MaxPlayers}";
+
+        if (lobby.Data.TryGetValue(LobbyManager.KEY_MAX_PLAYERS, out var maxPlayersData))
+        {
+            playersText.text = $"{lobby.Players.Count}/{maxPlayersData.Value}";
+        }
+        else
+        {
+            playersText.text = $"{lobby.Players.Count}/?";
+        }
 
         if (lobby.Data.TryGetValue(LobbyManager.KEY_GAME_MODE, out var gameMode))
         {
