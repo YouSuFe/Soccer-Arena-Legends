@@ -11,10 +11,14 @@ public class WeaponSelectDisplay : NetworkBehaviour
     [SerializeField] private WeaponDatabase weaponDatabase;
     [SerializeField] private Transform weaponsHolder;
     [SerializeField] private WeaponSelectButton selectButtonPrefab;
-    [SerializeField] private PlayerCard[] playerCards;
     [SerializeField] private GameObject weaponInfoPanel;
     [SerializeField] private TMP_Text weaponNameText;
     [SerializeField] private Transform weaponPreviewSpawnPoint;
+
+    [Header("Character Display")]
+    [SerializeField] private CharacterSelectDisplay characterSelectDisplay;
+
+    private List<PlayerCard> playerCards => characterSelectDisplay.GetActivePlayerCards();
 
     private GameObject weaponPreviewInstance;
     private List<WeaponSelectButton> weaponButtons = new List<WeaponSelectButton>();
@@ -117,7 +121,7 @@ public class WeaponSelectDisplay : NetworkBehaviour
 
     private void HandlePlayersStateChanged<T>(NetworkListEvent<T> changeEvent)
     {
-        playerInfoCache.Clear(); // ✅ Ensure cached data is refreshed
+        playerInfoCache.Clear();
 
         if (SelectionNetwork.Instance.PlayerSelections.Count == SelectionNetwork.Instance.PlayerStatuses.Count)
         {
@@ -178,16 +182,11 @@ public class WeaponSelectDisplay : NetworkBehaviour
             }
         }
 
-        int teamCount = reusableTeamSelections.Count;
-        for (int i = 0; i < playerCards.Length; i++)
+        for (int i = 0; i < reusableTeamSelections.Count; i++)
         {
-            if (i < teamCount)
+            if (i < playerCards.Count)
             {
                 playerCards[i].UpdateWeaponDisplay(reusableTeamSelections[i]);
-            }
-            else
-            {
-                playerCards[i].DisableDisplay();
             }
         }
 

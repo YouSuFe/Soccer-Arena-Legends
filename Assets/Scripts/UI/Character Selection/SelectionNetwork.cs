@@ -174,7 +174,7 @@ public class SelectionNetwork : NetworkBehaviour
                 {
                     // Adding the host player to both NetworkLists
                     PlayerSelections.Add(new PlayerSelectionState(hostClientId));
-                    PlayerStatuses.Add(new PlayerStatusState(hostClientId, false, userData.teamIndex));
+                    PlayerStatuses.Add(new PlayerStatusState(hostClientId, false, userData.teamIndex, userData.userName));
                 }
                 else
                 {
@@ -235,7 +235,7 @@ public class SelectionNetwork : NetworkBehaviour
         {
             // ✅ Add player to selection and status lists
             PlayerSelections.Add(new PlayerSelectionState(clientId));
-            PlayerStatuses.Add(new PlayerStatusState(clientId, false, userData.teamIndex));
+            PlayerStatuses.Add(new PlayerStatusState(clientId, false, userData.teamIndex, userData.userName));
 
             Debug.Log($"[OnClientConnected] Player {clientId} added to selections and status lists (Team {userData.teamIndex})");
         }

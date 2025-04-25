@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Unity.Collections;
 using Unity.Netcode;
 
 public struct PlayerSelectionState : INetworkSerializable, IEquatable<PlayerSelectionState>
@@ -35,12 +36,14 @@ public struct PlayerStatusState : INetworkSerializable, IEquatable<PlayerStatusS
     public ulong ClientId;
     public bool IsLockedIn;
     public int TeamIndex;
+    public FixedString64Bytes PlayerName;
 
-    public PlayerStatusState(ulong clientId, bool isLockedIn = false, int teamIndex = -1)
+    public PlayerStatusState(ulong clientId, bool isLockedIn = false, int teamIndex = -1, string playerName = "Unknown")
     {
         ClientId = clientId;
         IsLockedIn = isLockedIn;
         TeamIndex = teamIndex;
+        PlayerName = playerName;
     }
 
     public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
@@ -48,15 +51,18 @@ public struct PlayerStatusState : INetworkSerializable, IEquatable<PlayerStatusS
         serializer.SerializeValue(ref ClientId);
         serializer.SerializeValue(ref IsLockedIn);
         serializer.SerializeValue(ref TeamIndex);
+        serializer.SerializeValue(ref PlayerName);
     }
 
     public bool Equals(PlayerStatusState other)
     {
         return ClientId == other.ClientId &&
                IsLockedIn == other.IsLockedIn &&
-               TeamIndex == other.TeamIndex;
+               TeamIndex == other.TeamIndex &&
+               PlayerName.Equals(other.PlayerName);
     }
 }
+
 
 // It is for late joiners to sync character and weapons
 public struct TeamLockData : INetworkSerializable

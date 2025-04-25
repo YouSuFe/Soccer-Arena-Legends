@@ -11,10 +11,14 @@ public class CharacterSelectDisplay : NetworkBehaviour
     [SerializeField] private CharacterDatabase characterDatabase;
     [SerializeField] private Transform charactersHolder;
     [SerializeField] private CharacterSelectButton selectButtonPrefab;
-    [SerializeField] private PlayerCard[] playerCards;
     [SerializeField] private GameObject characterInfoPanel;
     [SerializeField] private TMP_Text characterNameText;
     [SerializeField] private Transform previewSpawnPoint;
+
+    [Header("Player Card")]
+    [SerializeField] private Transform playerCardParent;
+    [SerializeField] private PlayerCard playerCardPrefab;
+    private List<PlayerCard> activePlayerCards = new();
 
     private GameObject characterPreviewInstance;
     private List<CharacterSelectButton> characterButtons = new List<CharacterSelectButton>();
@@ -190,17 +194,18 @@ public class CharacterSelectDisplay : NetworkBehaviour
         }
 
         // Update player card UI efficiently
-        int teamCount = reusableTeamSelections.Count;
-        for (int i = 0; i < playerCards.Length; i++)
+        foreach (var card in activePlayerCards)
         {
-            if (i < teamCount)
-            {
-                playerCards[i].UpdateCharacterDisplay(reusableTeamSelections[i], reusableTeamStatuses[i]);
-            }
-            else
-            {
-                playerCards[i].DisableDisplay();
-            }
+            Destroy(card.gameObject);
+        }
+
+        activePlayerCards.Clear();
+
+        for (int i = 0; i < reusableTeamSelections.Count; i++)
+        {
+            var card = Instantiate(playerCardPrefab, playerCardParent);
+            card.UpdateCharacterDisplay(reusableTeamSelections[i], reusableTeamStatuses[i]);
+            activePlayerCards.Add(card);
         }
 
         // Notify UI updates only once at the end
@@ -234,5 +239,11 @@ public class CharacterSelectDisplay : NetworkBehaviour
 
         return (-1, -1);
     }
+
+    public List<PlayerCard> GetActivePlayerCards()
+    {
+        return activePlayerCards;
+    }
+
 
 }

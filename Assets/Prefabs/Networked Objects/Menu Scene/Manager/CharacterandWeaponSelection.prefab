@@ -76,15 +76,11 @@ MonoBehaviour:
   characterDatabase: {fileID: 11400000, guid: 204c2f8e41bda4d2ea47809138328500, type: 2}
   charactersHolder: {fileID: 0}
   selectButtonPrefab: {fileID: 1639168958307097048, guid: 790a6063fb9c045fc81e1f25a43d8dc0, type: 3}
-  playerCards:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
   characterInfoPanel: {fileID: 0}
   characterNameText: {fileID: 0}
   previewSpawnPoint: {fileID: 8640391568901730626}
+  playerCardParent: {fileID: 0}
+  playerCardPrefab: {fileID: 4168353699038111491, guid: 07dd537bbbd6a4e108e5b3e0d1967b1d, type: 3}
 --- !u!114 &569277289858727057
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -101,15 +97,10 @@ MonoBehaviour:
   weaponDatabase: {fileID: 11400000, guid: 9a9a19ab72d68486790a2dde430355d5, type: 2}
   weaponsHolder: {fileID: 0}
   selectButtonPrefab: {fileID: 28686770641022167, guid: 768242c4662444aab9934f0e4568027e, type: 3}
-  playerCards:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
   weaponInfoPanel: {fileID: 0}
   weaponNameText: {fileID: 0}
   weaponPreviewSpawnPoint: {fileID: 8640391568901730626}
+  characterSelectDisplay: {fileID: 2411759141332238467}
 --- !u!1 &3707533062308888472
 GameObject:
   m_ObjectHideFlags: 0

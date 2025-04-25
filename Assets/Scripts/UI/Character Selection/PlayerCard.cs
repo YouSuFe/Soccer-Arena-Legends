@@ -32,10 +32,8 @@ public class PlayerCard : MonoBehaviour
 
         statusText.text = status.IsLockedIn ? $"Selected" : $"Selecting...";
 
-        string finalPlayerName = PlayerPrefs.GetString(NameSelector.PlayerNameKey, "Unkown");
-
         // ✅ Player name is now based on `PlayerStatusState`
-        playerNameText.text = finalPlayerName;
+        playerNameText.text = status.PlayerName.ToString();
 
         if (!visuals.activeSelf)
         {
