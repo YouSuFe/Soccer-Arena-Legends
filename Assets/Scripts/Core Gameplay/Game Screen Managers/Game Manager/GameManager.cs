@@ -104,7 +104,8 @@ public class GameManager : NetworkBehaviour
                 userData.userName,
                 clientId,
                 userData.teamIndex,
-                userData.characterId
+                userData.characterId,
+                userData.weaponId
             );
             persistentStats[authId] = statSync;
         }
@@ -168,7 +169,11 @@ public class GameManager : NetworkBehaviour
 
 
 
-
+    [ClientRpc]
+    public void ShowGoalAnnouncementClientRpc(string playerName, int teamIndex, bool isOwnGoal)
+    {
+        HUDCanvasManager.Instance?.PlayerUIController?.ShowGoalAnnouncement(playerName, teamIndex, isOwnGoal);
+    }
 
     // Called when a goal is scored
     public void AddGoal(ulong clientId)
@@ -179,16 +184,21 @@ public class GameManager : NetworkBehaviour
             stats.Goals.Value++;
         }
 
-        int team = PlayerSpawnManager.Instance.GetUserData(clientId).teamIndex;
+        var userData = PlayerSpawnManager.Instance.GetUserData(clientId);
+        if (userData != null)
+        {
+            ShowGoalAnnouncementClientRpc(userData.userName, userData.teamIndex, false);
 
-        if (team == 0) BlueTeamScore.Value++;
-        else if (team == 1) RedTeamScore.Value++;
-
+            if (userData.teamIndex == 0)
+                BlueTeamScore.Value++;
+            else if (userData.teamIndex == 1)
+                RedTeamScore.Value++;
+        }
         // Set the state post game for the game
         MultiplayerGameStateManager.Instance.SetGameState(GameState.PostGame);
     }
 
-    public void AddTeamScoreWithoutCredit(Team scoringTeam)
+    public void AddTeamScoreWithoutCredit(Team scoringTeam, ulong clientId)
     {
         accidentalGoals[scoringTeam]++;
 
@@ -198,6 +208,12 @@ public class GameManager : NetworkBehaviour
             RedTeamScore.Value++;
 
         Debug.Log($"[GameManager] Accidental goal — Team {scoringTeam} score incremented. Total Accidental: {accidentalGoals[scoringTeam]}");
+
+        var userData = PlayerSpawnManager.Instance.GetUserData(clientId);
+        if (userData != null)
+        {
+            ShowGoalAnnouncementClientRpc(userData.userName, userData.teamIndex, true);
+        }
 
         /// <summary>
         /// Prevents forced opening during gameplay while ensuring UI reflects accidental goal updates in real-time.

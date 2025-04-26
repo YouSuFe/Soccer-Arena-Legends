@@ -24,7 +24,7 @@ public class HUDCanvasManager : MonoBehaviour
     /// <summary>
     /// Attach the UI to this player's data
     /// </summary>
-    public void AttachToPlayer(PlayerAbstract player)
+    public void AttachToPlayer(PlayerAbstract player, int characterId, int weaponId)
     {
         if (player == null)
         {
@@ -35,7 +35,7 @@ public class HUDCanvasManager : MonoBehaviour
         Debug.Log($"[HUD] Attaching HUD to player: {player.name}");
 
         playerUIController.Cleanup(); // safely dispose previous
-        playerUIController.Initialize(player, player.Stats, player.Stats.Mediator);
+        playerUIController.Initialize(player, player.Stats, player.Stats.Mediator, characterId, weaponId);
 
         // Give the player a reference to the HUD
         player.SetPlayerUIManager(playerUIController);

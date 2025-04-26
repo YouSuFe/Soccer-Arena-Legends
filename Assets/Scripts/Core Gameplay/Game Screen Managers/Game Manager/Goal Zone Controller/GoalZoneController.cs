@@ -34,7 +34,7 @@ public class GoalZoneController : NetworkBehaviour
             if (skillTeam == goalTeam)
             {
                 Debug.Log($"[GoalZone] Accidental skill goal — own goal by {skillPlayer.OwnerClientId}");
-                GameManager.Instance.AddTeamScoreWithoutCredit(GetOpposingTeam(goalTeam));
+                GameManager.Instance.AddTeamScoreWithoutCredit(GetOpposingTeam(goalTeam), skillPlayer.OwnerClientId);
             }
             else
             {
@@ -61,7 +61,7 @@ public class GoalZoneController : NetworkBehaviour
         else
         {
             Debug.Log($"[GoalZone] Unknown source — accidental goal for opposing team.");
-            GameManager.Instance.AddTeamScoreWithoutCredit(GetOpposingTeam(goalTeam));
+            GameManager.Instance.AddTeamScoreWithoutCredit(GetOpposingTeam(goalTeam), ulong.MaxValue);
         }
 
         if (goalScored)

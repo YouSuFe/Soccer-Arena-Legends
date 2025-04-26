@@ -294,7 +294,7 @@ public class PlayerSpawnManager : NetworkBehaviour
                 player.TeleportToSpawn(spawnPosition, spawnRotation);
             }
 
-            AssignClientVisuals(clientId, player);
+            AssignClientVisuals(clientId, player, characterId, weaponId);
             return;
         }
 
@@ -315,7 +315,7 @@ public class PlayerSpawnManager : NetworkBehaviour
         playerScript.SetBallOwnershipManagerAndEvents(spawnedBall.GetComponent<BallOwnershipManager>());
 
         activePlayers[clientId] = playerScript;
-        AssignClientVisuals(clientId, playerScript);
+        AssignClientVisuals(clientId, playerScript, characterId, weaponId);
     }
 
     private IEnumerator DelayedResetAndRespawn(PlayerAbstract player, int weaponId, Vector3 spawnPos, Quaternion spawnRot)
@@ -366,14 +366,14 @@ public class PlayerSpawnManager : NetworkBehaviour
         }
     }
 
-    private void AssignClientVisuals(ulong clientId, PlayerAbstract playerScript)
+    private void AssignClientVisuals(ulong clientId, PlayerAbstract playerScript, int characterId, int weaponId)
     {
 
         Debug.Log("Player Spawn Manager : Inisde the Assigning visuals");
         ulong playerObjId = playerScript.NetworkObjectId;
         ulong ballObjId = spawnedBall.GetComponent<NetworkObject>().NetworkObjectId;
 
-        AssignHUDToClientRpc(playerObjId, RpcUtils.ToClient(clientId));
+        AssignHUDToClientRpc(playerObjId, characterId, weaponId, RpcUtils.ToClient(clientId));
         AssignBallManagerToClientRpc(playerObjId, ballObjId, RpcUtils.ToClient(clientId));
         AssignCinemachineCameraToClientRpc(playerObjId, ballObjId, RpcUtils.ToClient(clientId));
 
@@ -672,7 +672,7 @@ public class PlayerSpawnManager : NetworkBehaviour
     #region HUD Management
 
     [ClientRpc]
-    private void AssignHUDToClientRpc(ulong playerObjectId, ClientRpcParams rpcParams = default)
+    private void AssignHUDToClientRpc(ulong playerObjectId, int characterId, int weaponId, ClientRpcParams rpcParams = default)
     {
         if (!NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(playerObjectId, out NetworkObject netObj))
         {
@@ -681,7 +681,7 @@ public class PlayerSpawnManager : NetworkBehaviour
         }
 
         PlayerAbstract player = netObj.GetComponent<PlayerAbstract>();
-        HUDCanvasManager.Instance.AttachToPlayer(player);
+        HUDCanvasManager.Instance.AttachToPlayer(player, characterId, weaponId);
     }
 
 

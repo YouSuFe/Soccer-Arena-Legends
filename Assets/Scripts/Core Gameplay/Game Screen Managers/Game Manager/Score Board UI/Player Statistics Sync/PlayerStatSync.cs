@@ -9,6 +9,7 @@ public class PlayerStatSync : NetworkBehaviour
     public NetworkVariable<ulong> BoundClientId = new();
     public NetworkVariable<int> TeamIndex = new();
     public NetworkVariable<int> CharacterId = new();
+    public NetworkVariable<int> WeaponId = new();
 
     public NetworkVariable<FixedString32Bytes> PlayerName = new();
     public NetworkVariable<int> Goals = new();
@@ -17,7 +18,7 @@ public class PlayerStatSync : NetworkBehaviour
     public NetworkVariable<int> Assists = new();
     public NetworkVariable<int> Saves = new();
 
-    public void Initialize(string playerName, ulong clientId, int teamIndex, int characterId)
+    public void Initialize(string playerName, ulong clientId, int teamIndex, int characterId, int weaponId)
     {
         if (!IsServer) return;
 
@@ -25,6 +26,7 @@ public class PlayerStatSync : NetworkBehaviour
         BoundClientId.Value = clientId;
         TeamIndex.Value = teamIndex;
         CharacterId.Value = characterId;
+        WeaponId.Value = weaponId;
     }
 
     public override void OnNetworkSpawn()

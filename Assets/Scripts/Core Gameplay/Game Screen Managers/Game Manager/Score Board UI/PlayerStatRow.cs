@@ -16,6 +16,7 @@ public class PlayerStatRow : MonoBehaviour
     [Header("Visuals")]
     [SerializeField] private Image backgroundImage;  // For highlighting the local player
     [SerializeField] private Image characterIconImage; // To show the character icon
+    [SerializeField] private Image weaponIconImage; // To show the character icon
 
     [SerializeField] private Color localPlayerColor = new Color(1f, 1f, 0.5f); // e.g., light yellow
     [SerializeField] private Color defaultColor = Color.white;
@@ -29,6 +30,7 @@ public class PlayerStatRow : MonoBehaviour
         int saves,
         bool isLocalPlayer,
         int characterId,
+        int weaponId,
         int totalScore)
     {
         playerNameText.text = playerName;
@@ -48,5 +50,12 @@ public class PlayerStatRow : MonoBehaviour
         Character character = PlayerSpawnManager.Instance.CharacterDatabase.GetCharacterById(characterId);
         if (character != null && character.Icon != null)
             characterIconImage.sprite = character.Icon;
+
+        Weapon weapon = PlayerSpawnManager.Instance.WeaponDatabase.GetWeaponById(weaponId);
+        if (weapon != null && weapon.Icon != null)
+        {
+            weaponIconImage.sprite = weapon.Icon;
+        }
+
     }
 }

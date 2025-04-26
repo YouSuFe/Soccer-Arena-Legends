@@ -11,6 +11,23 @@ public class PlayerUIController : MonoBehaviour
 {
     #region Fields
 
+    [Header("Goal Announcement UI")]
+    [SerializeField] private TextMeshProUGUI goalAnnouncementText;
+    [SerializeField] private CanvasGroup goalAnnouncementCanvasGroup;
+    [SerializeField] private Color blueTeamColor = Color.blue;
+    [SerializeField] private Color redTeamColor = Color.red;
+    [SerializeField] private Color neutralColor = Color.white;
+    [SerializeField] private string goalScoredText = "scored a goal!";
+    [SerializeField] private string ownGoalScoredText = "scored an own goal!";
+
+    [Header("Player Info Panel Elements")]
+    [Tooltip("Current Player's character name.")]
+    [SerializeField] private TextMeshProUGUI characterNameText;
+    [Tooltip("Current Player's weapon name.")]
+    [SerializeField] private TextMeshProUGUI weaponNameText;
+    [SerializeField] private Image characterIconImage;
+    [SerializeField] private Image weaponIconImage;
+
     [Header("Floating Damage Text")]
     [Tooltip("Prefab for displaying floating damage numbers.")]
     public GameObject floatingDamageTextPrefab;
@@ -48,8 +65,8 @@ public class PlayerUIController : MonoBehaviour
 
 
     [Header("Stamina Elements")]
-    [Tooltip("Filling bar image for stamina.")]
-    public Image staminaBarImage;
+    [Tooltip("Slider component for stamina.")]
+    public Slider staminaBarSlider;
 
     [Tooltip("Text field displaying stamina values (current/max).")]
     public TextMeshProUGUI staminaText;
@@ -85,6 +102,7 @@ public class PlayerUIController : MonoBehaviour
 
     private Coroutine ballSkillCoroutine;
     private Coroutine weaponSkillCoroutine;
+    private Coroutine goalAnnouncementCoroutine;
 
     private PlayerModelManager modelManager;
     private PlayerHUDPresenter presenter;
@@ -93,6 +111,7 @@ public class PlayerUIController : MonoBehaviour
 
     private void Start()
     {
+        goalAnnouncementCanvasGroup.alpha = 0;
         Hide();
     }
 
@@ -113,21 +132,44 @@ public class PlayerUIController : MonoBehaviour
     /// <summary>
     /// Initializes the UI Manager with the player's stats, mediator, and model manager.
     /// </summary>
-    public void Initialize(PlayerAbstract player, Stats stats, StatsMediator mediator)
+    public void Initialize(PlayerAbstract player, Stats stats, StatsMediator mediator, int characterId, int weaponId)
     {
         Show();
 
         modelManager = new PlayerModelManager(stats, mediator, player);
         presenter = new PlayerHUDPresenter(modelManager, this);
 
-        InitializeUIElements(player, stats);
+        InitializeUIElements(player, stats, characterId, weaponId);
     }
 
     /// <summary>
     /// Sets the default state of all UI elements at the start of the game.
     /// </summary>
-    private void InitializeUIElements(PlayerAbstract player, Stats stats)
+    private void InitializeUIElements(PlayerAbstract player, Stats stats, int characterId, int weaponId)
     {
+
+        // Character Setup
+        if (characterId != -1 && characterIconImage != null)
+        {
+            var character = PlayerSpawnManager.Instance.CharacterDatabase.GetCharacterById(characterId);
+            if (character != null && character.Icon != null)
+            {
+                characterIconImage.sprite = character.Icon;
+                characterNameText.text = character.DisplayName;
+            }
+        }
+
+        // Weapon Setup
+        if (weaponId != -1 && weaponIconImage != null)
+        {
+            var weapon = PlayerSpawnManager.Instance.WeaponDatabase.GetWeaponById(weaponId);
+            if (weapon != null && weapon.Icon != null)
+            {
+                weaponIconImage.sprite = weapon.Icon;
+                weaponNameText.text = weapon.DisplayName;
+            }
+        }
+
         // Health Initialization
         healthyHealthText.gameObject.SetActive(true);
         dangerHealthText.gameObject.SetActive(false);
@@ -156,7 +198,7 @@ public class PlayerUIController : MonoBehaviour
         weaponSkillReadyIndicator.gameObject.SetActive(true);
 
         // Initialize stamina UI
-        staminaBarImage.fillAmount = 1f;
+        staminaBarSlider.value = 1f;
         staminaText.text = $"{player.PlayerStamina} / {player.PlayerMaxStamina}";
 
         // Death UI
@@ -359,10 +401,64 @@ public class PlayerUIController : MonoBehaviour
     /// <param name="maxStamina">The player's maximum stamina.</param>
     public void UpdateStaminaBar(float currentStamina, float maxStamina)
     {
-        float fillAmount = Mathf.Clamp01(currentStamina / maxStamina);
-        staminaBarImage.fillAmount = fillAmount;
+        float value = Mathf.Clamp01(currentStamina / maxStamina);
+        staminaBarSlider.value = value;
 
         staminaText.text = $"{Mathf.FloorToInt(currentStamina)} / {Mathf.FloorToInt(maxStamina)}";
+    }
+
+    #endregion
+
+    #region Goal Announcement Logic
+
+    public void ShowGoalAnnouncement(string playerName, int teamIndex, bool isOwnGoal)
+    {
+        if (goalAnnouncementCoroutine != null)
+            StopCoroutine(goalAnnouncementCoroutine);
+
+        goalAnnouncementCoroutine = StartCoroutine(ShowGoalTextCoroutine(playerName, teamIndex, isOwnGoal));
+    }
+
+    private IEnumerator ShowGoalTextCoroutine(string playerName, int teamIndex, bool isOwnGoal)
+    {
+        // Determine color for the player name
+        Color playerColor = neutralColor;
+        switch (teamIndex)
+        {
+            case 0:
+                playerColor = blueTeamColor;
+                break;
+            case 1:
+                playerColor = redTeamColor;
+                break;
+        }
+
+        // Convert color to HEX
+        string colorHex = ColorUtility.ToHtmlStringRGB(playerColor);
+
+        // Build the final text
+        string playerNameColored = $"<color=#{colorHex}>{playerName}</color>";
+        string actionText = isOwnGoal ? ownGoalScoredText : goalScoredText;
+
+        goalAnnouncementText.text = $"{playerNameColored} {actionText}";
+        goalAnnouncementText.color = Color.white; // Overall color stays white
+
+        // Show and Fade In
+        goalAnnouncementCanvasGroup.alpha = 1f;
+
+        yield return new WaitForSeconds(3f); // Display duration
+
+        // Fade Out Smoothly (optional small polish)
+        float fadeDuration = 1f;
+        float elapsed = 0f;
+        while (elapsed < fadeDuration)
+        {
+            elapsed += Time.deltaTime;
+            goalAnnouncementCanvasGroup.alpha = Mathf.Lerp(1f, 0f, elapsed / fadeDuration);
+            yield return null;
+        }
+
+        goalAnnouncementCanvasGroup.alpha = 0f;
     }
 
     #endregion

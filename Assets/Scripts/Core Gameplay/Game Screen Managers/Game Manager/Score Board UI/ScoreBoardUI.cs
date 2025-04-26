@@ -41,6 +41,7 @@ public class ScoreboardUI : MonoBehaviour
             ulong clientId = stat.BoundClientId.Value;
             int teamIndex = stat.TeamIndex.Value;
             int characterId = stat.CharacterId.Value;
+            int weaponId = stat.WeaponId.Value;
 
             Transform parent = (teamIndex == 0) ? blueTeamContainer : redTeamContainer;
 
@@ -59,6 +60,7 @@ public class ScoreboardUI : MonoBehaviour
                 stat.Saves.Value,
                 isLocalPlayer,
                 characterId,
+                weaponId,
                 totalScore
             );
         }
