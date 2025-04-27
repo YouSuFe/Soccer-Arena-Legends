@@ -40,7 +40,7 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
     public float PlayerMaxStamina { get; set; }
 
     [Header("Input Reader")]
-    [field: SerializeField] public InputReader InputReader { get; private set; }
+    [field: SerializeField] public InputReader GameplayInputReader { get; private set; }
 
     [Space]
 
@@ -167,7 +167,7 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
 
             playerCamera = Camera.main; // Finds the camera tagged as MainCamera
 
-            InputReader.EnableInputActions();
+            GameplayInputReader.EnableInputActions();
 
             CanShoot = false;
             activeBall = null;
@@ -183,7 +183,7 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
 
         if(IsOwner)
         {
-            InputReader.DisableInputActions();
+            GameplayInputReader.DisableInputActions();
         }
 
         if(IsServer)
@@ -220,16 +220,11 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
     {
         if (!IsOwner) return;
 
-        InputReader.OnPlayerSkillUsed += InputManager_OnPlayerBallSkillUsed;
-        InputReader.OnWeaponSkillUsed += InputManager_OnWeaponSkillUsed;
-        InputReader.OnRegularAttackPerformed += InputManager_OnRegularAttack;
-        InputReader.OnHeavyAttackPerformed += InputManager_OnHeavyAttack;
-        InputReader.OnProjectilePerformed += InputManager_OnProjectile;
-
-
-        InputReader.OnStatisticTabOpen += InputReader_OnStatisticTabVisibility;
-        InputReader.OnStatisticTabClose += InputReader_OnStatisticTabVisibility;
-        InputReader.OnOptionTabOpen += InputReader_OnOptionsTabVisiblity;
+        GameplayInputReader.OnPlayerSkillUsed += InputManager_OnPlayerBallSkillUsed;
+        GameplayInputReader.OnWeaponSkillUsed += InputManager_OnWeaponSkillUsed;
+        GameplayInputReader.OnRegularAttackPerformed += InputManager_OnRegularAttack;
+        GameplayInputReader.OnHeavyAttackPerformed += InputManager_OnHeavyAttack;
+        GameplayInputReader.OnProjectilePerformed += InputManager_OnProjectile;
 
         if(MultiplayerGameStateManager.Instance != null)
         {
@@ -250,15 +245,11 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
     {
         if (!IsOwner) return;
 
-        InputReader.OnPlayerSkillUsed -= InputManager_OnPlayerBallSkillUsed;
-        InputReader.OnWeaponSkillUsed -= InputManager_OnWeaponSkillUsed;
-        InputReader.OnRegularAttackPerformed -= InputManager_OnRegularAttack;
-        InputReader.OnHeavyAttackPerformed -= InputManager_OnHeavyAttack;
-        InputReader.OnProjectilePerformed -= InputManager_OnProjectile;
-
-        InputReader.OnStatisticTabOpen -= InputReader_OnStatisticTabVisibility;
-        InputReader.OnStatisticTabClose -= InputReader_OnStatisticTabVisibility;
-        InputReader.OnOptionTabOpen -= InputReader_OnOptionsTabVisiblity;
+        GameplayInputReader.OnPlayerSkillUsed -= InputManager_OnPlayerBallSkillUsed;
+        GameplayInputReader.OnWeaponSkillUsed -= InputManager_OnWeaponSkillUsed;
+        GameplayInputReader.OnRegularAttackPerformed -= InputManager_OnRegularAttack;
+        GameplayInputReader.OnHeavyAttackPerformed -= InputManager_OnHeavyAttack;
+        GameplayInputReader.OnProjectilePerformed -= InputManager_OnProjectile;
 
         if (MultiplayerGameStateManager.Instance != null)
         {
@@ -325,17 +316,6 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
             Debug.Log("Shooting the Projectile from " + name);
             ShootBall();
         }
-    }
-
-    private void InputReader_OnStatisticTabVisibility(bool value)
-    {
-        ScoreboardManager.Instance.AdjustScoreboardVisibility(value);
-    }
-
-
-    private void InputReader_OnOptionsTabVisiblity()
-    {
-        OptionsUIManager.Instance.AdjustOptionsUIVisibility();
     }
 
     private void GameStateManager_OnGameStateChanged(GameState previous, GameState newState)
@@ -855,16 +835,16 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
         // 🔹 Client-side logic (owner only)
         if (IsOwner)
         {
-            if (InputReader != null)
+            if (GameplayInputReader != null)
             {
                 if (isEnabled)
                 {
-                    InputReader.EnableInputActions();
+                    GameplayInputReader.EnableInputActions();
                     Debug.Log("[Client] Input enabled.");
                 }
                 else
                 {
-                    InputReader.DisableInputActions();
+                    GameplayInputReader.DisableInputActions();
                     Debug.Log("[Client] Input disabled.");
                 }
             }

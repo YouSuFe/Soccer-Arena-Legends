@@ -65,7 +65,6 @@ public class LobbyScreenButtonsController : MonoBehaviour
         await HostSingleton.Instance.GameManager.StartHostAsync();
     }
 
-#if UNITY_EDITOR
     // ToDo: Delete this after
     [Command]
     public async static void StartGameSession()
@@ -74,7 +73,6 @@ public class LobbyScreenButtonsController : MonoBehaviour
         Debug.Log("Starting game...");
         await HostSingleton.Instance.GameManager.StartHostAsync();
     }
-#endif
     private async void HandleChangeTeam()
     {
         if (!LobbyManager.Instance.CanSwitchTeam())

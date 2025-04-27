@@ -5,7 +5,7 @@ public class OptionsUIManager : MonoBehaviour
     #region Serialized Fields
 
     [Header("UI References")]
-    [SerializeField] private GameObject optionsUI;
+    [SerializeField] private OptionsUIController optionsUIController;
 
     #endregion
 
@@ -25,27 +25,15 @@ public class OptionsUIManager : MonoBehaviour
         Instance = this;
     }
 
-
     #endregion
 
-    #region MonoBehaviour Methods
+    #region Public Methods
 
-    private void Start()
+    public void ToggleOptionsMenu()
     {
-        optionsUI.SetActive(false);
-    }
-
-    public void AdjustOptionsUIVisibility()
-    {
-        if(optionsUI.activeSelf)
-        {
-            optionsUI.SetActive(false);
-        }
-        else
-        {
-            optionsUI.SetActive(true);
-        }
+        optionsUIController.ToggleOptionsMenu();
     }
 
     #endregion
 }
+
