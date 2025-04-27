@@ -142,7 +142,7 @@ public class LobbyManager : MonoBehaviour
 
                     //Debug.Log($"Host ID: {joinedLobby.HostId}, Player ID: {AuthenticationService.Instance.PlayerId}");
 
-                    DebugLobby(joinedLobby);
+                    //DebugLobby(joinedLobby);
 
                     if (!IsPlayerInLobby())
                     {

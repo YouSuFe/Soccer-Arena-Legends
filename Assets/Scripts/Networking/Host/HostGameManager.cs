@@ -151,21 +151,20 @@ public class HostGameManager : IDisposable
 
         try
         {
-            await LobbyService.Instance.DeleteLobbyAsync(lobbyId);
+            await LobbyService.Instance.RemovePlayerAsync(lobbyId, AuthenticationService.Instance.PlayerId);
         }
         catch (LobbyServiceException e)
         {
-            Debug.Log(e);
+            Debug.LogError($"[Host Shutdown] Error while leaving lobby: {e}");
         }
 
-        // If it tries to delete the lobby twice, just in case we put empty
         lobbyId = string.Empty;
 
         NetworkServer.OnClientLeft -= HandleClientLeft;
 
         NetworkServer?.Dispose();
-
     }
+
 
 }
 

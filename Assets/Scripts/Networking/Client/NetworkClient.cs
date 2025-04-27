@@ -105,24 +105,24 @@ public class NetworkClient : IDisposable
                 PopupMessageType.Error
             );
 
-            ClientSingleton.Instance.StartCoroutine(WaitAndReturnToMenu());
+            ClientSingleton.Instance.StartCoroutine(WaitAndReturnToMenu(false));
         }
         else
         {
-            FinalizeDisconnect();
+            FinalizeDisconnect(true);
         }
     }
 
-    private IEnumerator WaitAndReturnToMenu()
+    private IEnumerator WaitAndReturnToMenu(bool shouldLeaveLobby)
     {
-        yield return new WaitForSeconds(3.5f); // Wait for popup to show
+        yield return new WaitForSeconds(3.5f);
 
-        FinalizeDisconnect();
+        FinalizeDisconnect(shouldLeaveLobby);
     }
 
-    private async void FinalizeDisconnect()
+    private async void FinalizeDisconnect(bool shouldLeaveLobby)
     {
-        if (LobbyManager.Instance.IsInLobby())
+        if (shouldLeaveLobby && LobbyManager.Instance.IsInLobby())
         {
             await LeaveLobbySafely();
         }
