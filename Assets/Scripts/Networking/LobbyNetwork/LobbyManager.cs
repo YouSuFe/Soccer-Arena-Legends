@@ -525,15 +525,20 @@ public class LobbyManager : MonoBehaviour
             try
             {
                 await LobbyService.Instance.RemovePlayerAsync(joinedLobby.Id, AuthenticationService.Instance.PlayerId);
-                joinedLobby = null;
 
-                OnLeftLobby?.Invoke();
+                ClearJoinedLobby();
             }
             catch (LobbyServiceException e)
             {
                 Debug.Log(e);
             }
         }
+    }
+
+    public void ClearJoinedLobby()
+    {
+        joinedLobby = null;
+        OnLeftLobby?.Invoke();
     }
 
     public async void KickPlayer(string playerId)

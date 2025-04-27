@@ -22327,8 +22327,8 @@ MonoBehaviour:
   confirmLeavePanel: {fileID: 1282901200}
   settingsButton: {fileID: 2096829185}
   leaveButton: {fileID: 901962942}
-  confirmLeaveBackButton: {fileID: 1401496491}
-  confirmLeaveConfirmButton: {fileID: 1232560050}
+  confirmLeaveYesButton: {fileID: 1401496491}
+  confirmLeaveNoButton: {fileID: 1232560050}
 --- !u!43 &1218522830
 Mesh:
   m_ObjectHideFlags: 0

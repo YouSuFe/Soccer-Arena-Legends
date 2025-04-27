@@ -358,7 +358,7 @@ MonoBehaviour:
     m_InternalValue: 10
   Speed:
     m_InternalValue: 5
-  <InputReader>k__BackingField: {fileID: 11400000, guid: 71ed99219920443b89ce98868d684423, type: 2}
+  <GameplayInputReader>k__BackingField: {fileID: 0}
   meshes:
   - {fileID: 3033828086907824091}
   - {fileID: 7249505127952177388}

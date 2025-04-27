@@ -7,6 +7,9 @@ public class PopupManager : MonoBehaviour
     [Header("Popup Prefab")]
     [SerializeField] private PopupMessageUI popupPrefab;
 
+    [Header("Default Popup Parent")]
+    [SerializeField] private Transform defaultParent;
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -25,6 +28,11 @@ public class PopupManager : MonoBehaviour
         {
             Debug.LogError("[PopupManager] Popup prefab not assigned!");
             return;
+        }
+
+        if (parent == null)
+        {
+            parent = defaultParent; // Use persistent canvas by default
         }
 
         if (parent == null)

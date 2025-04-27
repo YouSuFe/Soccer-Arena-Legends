@@ -1,8 +1,10 @@
 using System;
+using System.Collections;
 using System.Text;
 using System.Threading.Tasks;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
+using Unity.Services.Lobbies;
 using Unity.Services.Lobbies.Models;
 using Unity.Services.Relay;
 using Unity.Services.Relay.Models;
@@ -90,11 +92,41 @@ public class NetworkClient : IDisposable
         // Means Host is disconnected
         if (clientId != 0 && clientId != networkManager.LocalClientId) return;
 
-        Disconnect();
+        Disconnect(showHostLeftMessage: true);
     }
 
-    public void Disconnect()
+    public void Disconnect(bool showHostLeftMessage = false)
     {
+        if (showHostLeftMessage)
+        {
+            PopupManager.Instance.ShowPopup(
+                "Disconnected",
+                "Host has left the game. Returning to menu...",
+                PopupMessageType.Error
+            );
+
+            ClientSingleton.Instance.StartCoroutine(WaitAndReturnToMenu());
+        }
+        else
+        {
+            FinalizeDisconnect();
+        }
+    }
+
+    private IEnumerator WaitAndReturnToMenu()
+    {
+        yield return new WaitForSeconds(3.5f); // Wait for popup to show
+
+        FinalizeDisconnect();
+    }
+
+    private async void FinalizeDisconnect()
+    {
+        if (LobbyManager.Instance.IsInLobby())
+        {
+            await LeaveLobbySafely();
+        }
+
         if (SceneManager.GetActiveScene().name != MenuSceneName)
         {
             SceneManager.LoadScene(MenuSceneName);
@@ -103,7 +135,26 @@ public class NetworkClient : IDisposable
         if (networkManager.IsConnectedClient)
         {
             networkManager.Shutdown();
-            Debug.LogWarning("Shutting Down");
+            Debug.LogWarning("Shutting Down Client");
+        }
+    }
+
+    private async Task LeaveLobbySafely()
+    {
+        try
+        {
+            await LobbyService.Instance.RemovePlayerAsync(
+                LobbyManager.Instance.GetJoinedLobby().Id,
+                Unity.Services.Authentication.AuthenticationService.Instance.PlayerId
+            );
+        }
+        catch (LobbyServiceException e)
+        {
+            Debug.LogError($"Error while trying to leave lobby: {e}");
+        }
+        finally
+        {
+            LobbyManager.Instance.ClearJoinedLobby();
         }
     }
 

@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using Unity.Netcode;
+using UnityEngine;
 using UnityEngine.UI;
 
 public class OptionsUIController : MonoBehaviour
@@ -11,8 +12,8 @@ public class OptionsUIController : MonoBehaviour
     [Header("Buttons")]
     [SerializeField] private Button settingsButton;
     [SerializeField] private Button leaveButton;
-    [SerializeField] private Button confirmLeaveBackButton;
-    [SerializeField] private Button confirmLeaveConfirmButton;
+    [SerializeField] private Button confirmLeaveYesButton;
+    [SerializeField] private Button confirmLeaveNoButton;
 
     private void Awake()
     {
@@ -23,11 +24,11 @@ public class OptionsUIController : MonoBehaviour
         if (leaveButton != null)
             leaveButton.onClick.AddListener(OpenConfirmLeavePanel);
 
-        if (confirmLeaveBackButton != null)
-            confirmLeaveBackButton.onClick.AddListener(CancelLeave);
+        if (confirmLeaveYesButton != null)
+            confirmLeaveYesButton.onClick.AddListener(ConfirmExit);
 
-        if (confirmLeaveConfirmButton != null)
-            confirmLeaveConfirmButton.onClick.AddListener(ConfirmExit);
+        if (confirmLeaveNoButton != null)
+            confirmLeaveNoButton.onClick.AddListener(CancelLeave);
 
         HideAllPanels();
     }
@@ -84,7 +85,20 @@ public class OptionsUIController : MonoBehaviour
 
     public void ConfirmExit()
     {
-        // Add your exit logic here
         Debug.Log("Player confirmed to exit.");
+        CursorController.UnlockCursor();
+
+        if (NetworkManager.Singleton.IsHost)
+        {
+            // Host case
+            HostSingleton.Instance.GameManager.ShutDown();
+            NetworkManager.Singleton.Shutdown();
+            UnityEngine.SceneManagement.SceneManager.LoadScene("Menu");
+        }
+        else
+        {
+            // Client case
+            ClientSingleton.Instance.GameManager.Disconnect();
+        }
     }
 }
