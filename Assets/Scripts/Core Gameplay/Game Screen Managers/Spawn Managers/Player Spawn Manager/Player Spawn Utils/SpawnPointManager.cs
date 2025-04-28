@@ -3,17 +3,19 @@ using UnityEngine;
 
 public class SpawnPointManager
 {
-    private List<Transform> availableBlueTeamSpawns = new List<Transform>();
-    private List<Transform> availableRedTeamSpawns = new List<Transform>();
+    private List<Transform> originalBlueTeamSpawns;
+    private List<Transform> originalRedTeamSpawns;
 
-    private Transform[] allBlueTeamSpawns;
-    private Transform[] allRedTeamSpawns;
+    private List<Transform> availableBlueTeamSpawns;
+    private List<Transform> availableRedTeamSpawns;
 
     public SpawnPointManager(Transform[] blueTeamSpawns, Transform[] redTeamSpawns)
     {
-        allBlueTeamSpawns = blueTeamSpawns;
-        allRedTeamSpawns = redTeamSpawns;
-        ResetSpawnPoints();
+        originalBlueTeamSpawns = new List<Transform>(blueTeamSpawns);
+        originalRedTeamSpawns = new List<Transform>(redTeamSpawns);
+
+        availableBlueTeamSpawns = new List<Transform>(originalBlueTeamSpawns);
+        availableRedTeamSpawns = new List<Transform>(originalRedTeamSpawns);
     }
 
     /// <summary>
@@ -23,37 +25,27 @@ public class SpawnPointManager
     {
         availableBlueTeamSpawns.Clear();
         availableRedTeamSpawns.Clear();
-        availableBlueTeamSpawns.AddRange(allBlueTeamSpawns);
-        availableRedTeamSpawns.AddRange(allRedTeamSpawns);
+        availableBlueTeamSpawns.AddRange(originalBlueTeamSpawns);
+        availableRedTeamSpawns.AddRange(originalRedTeamSpawns);
     }
 
     /// <summary>
-    /// Gets a **random spawn point for a single player** (used for new connections).
+    /// Gets a random available spawn point and reserves it (removes it from list).
     /// </summary>
-    public Transform GetSingleSpawnPoint(int teamIndex)
-    {
-        Transform[] spawnPoints = teamIndex == 0 ? allBlueTeamSpawns : allRedTeamSpawns;
-        return spawnPoints[Random.Range(0, spawnPoints.Length)];
-    }
-
-    /// <summary>
-    /// Gets a **unique spawn point for bulk player spawning** (prevents overlap).
-    /// </summary>
-    public Transform GetUniqueSpawnPoint(int teamIndex)
+    public Transform GetRandomAvailableSpawnPoint(int teamIndex)
     {
         List<Transform> availableSpawns = teamIndex == 0 ? availableBlueTeamSpawns : availableRedTeamSpawns;
 
         if (availableSpawns.Count == 0)
         {
-            Debug.LogWarning($"No available spawn points for team {teamIndex}! Resetting spawn points.");
-            ResetSpawnPoints(); // Reset if all are used.
+            Debug.LogWarning($"All spawn points used for team {teamIndex}, resetting.");
+            ResetSpawnPoints();
             availableSpawns = teamIndex == 0 ? availableBlueTeamSpawns : availableRedTeamSpawns;
         }
 
         int randomIndex = Random.Range(0, availableSpawns.Count);
         Transform spawnPoint = availableSpawns[randomIndex];
-        availableSpawns.RemoveAt(randomIndex); // Mark it as used.
-
+        availableSpawns.RemoveAt(randomIndex);
         return spawnPoint;
     }
 }

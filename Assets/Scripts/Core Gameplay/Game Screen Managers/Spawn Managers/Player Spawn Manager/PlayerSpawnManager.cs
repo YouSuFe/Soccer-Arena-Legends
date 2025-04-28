@@ -213,7 +213,7 @@ public class PlayerSpawnManager : NetworkBehaviour
 
         Debug.Log($"[DelayedPlayerSpawn] Spawning client {clientId} after {delayInSeconds} seconds...");
 
-        SpawnPlayer(clientId, characterId, weaponId, teamIndex, false, false);
+        SpawnPlayer(clientId, characterId, weaponId, teamIndex, false);
     }
 
 
@@ -254,7 +254,7 @@ public class PlayerSpawnManager : NetworkBehaviour
     /// **True** → If spawning multiple players at once (ensures unique spawn points).  
     /// **False** → If spawning a single player (allows random spawn selection).
     /// </param>
-    public void SpawnPlayer(ulong clientId, int characterId, int weaponId, int teamIndex, bool isBulkSpawn = false, bool isRespawn = true)
+    public void SpawnPlayer(ulong clientId, int characterId, int weaponId, int teamIndex, bool isRespawn = true)
     {
         if (!IsServer) return;
 
@@ -271,9 +271,14 @@ public class PlayerSpawnManager : NetworkBehaviour
         }
 
 
-        Transform spawnTransform = isBulkSpawn
-            ? spawnPointManager.GetUniqueSpawnPoint(teamIndex)
-            : spawnPointManager.GetSingleSpawnPoint(teamIndex);
+        Transform spawnTransform = spawnPointManager.GetRandomAvailableSpawnPoint(teamIndex);
+
+        if (spawnTransform == null)
+        {
+            Debug.LogError("No spawn point available for player spawn!");
+            return;
+        }
+
         Vector3 spawnPosition = spawnTransform.position;
         Quaternion spawnRotation = spawnTransform.rotation;
 
@@ -337,7 +342,7 @@ public class PlayerSpawnManager : NetworkBehaviour
             return;
         }
 
-        SpawnPlayer(clientId, userData.characterId, userData.weaponId, userData.teamIndex, false, true);
+        SpawnPlayer(clientId, userData.characterId, userData.weaponId, userData.teamIndex, true);
     }
 
     /// <summary>
@@ -362,7 +367,7 @@ public class PlayerSpawnManager : NetworkBehaviour
             ulong clientId = entry.Key;
             UserData userData = entry.Value;
 
-            SpawnPlayer(clientId, userData.characterId, userData.weaponId, userData.teamIndex, true, true);
+            SpawnPlayer(clientId, userData.characterId, userData.weaponId, userData.teamIndex, true);
         }
     }
 
