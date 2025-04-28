@@ -35,6 +35,7 @@ public class PlayerController : NetworkBehaviour
     public Transform MainCameraTransform { get; private set; }
 
     private CameraSwitchHandler cameraSwitchHandler;
+    public CameraSwitchHandler CameraSwitchHandler => cameraSwitchHandler;
 
     public PlayerMovementStateMachine MovementStateMachine { get; private set; }
 

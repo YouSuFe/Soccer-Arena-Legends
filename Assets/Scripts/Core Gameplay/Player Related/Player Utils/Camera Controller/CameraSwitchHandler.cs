@@ -115,7 +115,7 @@ public class CameraSwitchHandler : MonoBehaviour
         OnCameraSwitch?.Invoke();
     }
 
-    private Transform GetCurrentActiveCameraTransform()
+    public Transform GetCurrentActiveCameraTransform()
     {
         return currentCameraMode switch
         {
@@ -128,6 +128,57 @@ public class CameraSwitchHandler : MonoBehaviour
     public bool IsFPSCameraActive()
     {
         return currentCameraMode == CameraMode.FirstPerson;
+    }
+
+    public void RealignActiveCameraToLookAnchor()
+    {
+        Transform activeCam = GetCurrentActiveCameraTransform();
+        if (activeCam != null && cameraLookAnchor != null)
+        {
+            Debug.Log($"[RealignActiveCameraToLookAnchor] Realigning active camera: {activeCam.name} to CameraLookAnchor position {cameraLookAnchor.transform.position} and rotation {cameraLookAnchor.transform.rotation.eulerAngles}");
+
+            activeCam.position = cameraLookAnchor.transform.position;
+            activeCam.rotation = cameraLookAnchor.transform.rotation;
+        }
+        else
+        {
+            Debug.LogWarning("[RealignActiveCameraToLookAnchor] Failed - ActiveCam or CameraLookAnchor is NULL.");
+        }
+    }
+
+
+    public void ForceSnapActiveCamera()
+    {
+        if (cameraLookAnchor == null)
+        {
+            Debug.LogWarning("[ForceSnapActiveCamera] CameraLookAnchor is NULL.");
+            return;
+        }
+
+        if (currentCameraMode == CameraMode.FirstPerson)
+        {
+            if (fpsCamera != null)
+            {
+                fpsCamera.ForceCameraPosition(cameraLookAnchor.transform.position, cameraLookAnchor.transform.rotation);
+                Debug.Log($"[ForceSnapActiveCamera] Forced FPS Camera {fpsCamera.name} to CameraLookAnchor position {cameraLookAnchor.transform.position} and rotation {cameraLookAnchor.transform.rotation.eulerAngles}");
+            }
+            else
+            {
+                Debug.LogWarning("[ForceSnapActiveCamera] FPS Camera is NULL.");
+            }
+        }
+        else
+        {
+            if (lookAtCamera != null)
+            {
+                lookAtCamera.ForceCameraPosition(cameraLookAnchor.transform.position, cameraLookAnchor.transform.rotation);
+                Debug.Log($"[ForceSnapActiveCamera] Forced TPS Camera {lookAtCamera.name} to CameraLookAnchor position {cameraLookAnchor.transform.position} and rotation {cameraLookAnchor.transform.rotation.eulerAngles}");
+            }
+            else
+            {
+                Debug.LogWarning("[ForceSnapActiveCamera] TPS Camera is NULL.");
+            }
+        }
     }
 }
 

@@ -164,6 +164,10 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: -23.5
       objectReference: {fileID: 0}
+    - target: {fileID: 2669957641426452014, guid: 5fc84ac41f77e4aa0bc2a97c9f9c29b9, type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 2774116576836267440, guid: 5fc84ac41f77e4aa0bc2a97c9f9c29b9, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
@@ -358,7 +362,7 @@ MonoBehaviour:
     m_InternalValue: 10
   Speed:
     m_InternalValue: 5
-  <GameplayInputReader>k__BackingField: {fileID: 0}
+  <GameplayInputReader>k__BackingField: {fileID: 11400000, guid: 71ed99219920443b89ce98868d684423, type: 2}
   meshes:
   - {fileID: 3033828086907824091}
   - {fileID: 7249505127952177388}

@@ -735,6 +735,8 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
 
     private IEnumerator DelayedTeleport(Vector3 newPosition, Quaternion newRotation)
     {
+        Transform activeCam = PlayerController.CameraSwitchHandler.GetCurrentActiveCameraTransform();
+
         Rigidbody rb = GetComponent<Rigidbody>();
         if (rb != null)
         {
@@ -749,9 +751,31 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
         {
             netTransform.Teleport(newPosition, newRotation, transform.localScale);
             Physics.SyncTransforms();
+
+
+            if (activeCam != null)
+            {
+                activeCam.rotation = transform.rotation; // Match Player
+                Debug.Log($"[TeleportFix] Set Active Camera {activeCam.name} {activeCam.rotation} rotation to Player rotation {transform.rotation.eulerAngles}");
+            }
+
+            PlayerController.CameraSwitchHandler.RealignActiveCameraToLookAnchor();
+            PlayerController.CameraSwitchHandler.ForceSnapActiveCamera();
         }
 
+        Debug.LogError($"Player Rotation : {transform.rotation.eulerAngles}");
+
         yield return null;
+
+
+        if (activeCam != null)
+        {
+            activeCam.rotation = transform.rotation; // Match Player
+            Debug.Log($"[TeleportFix] Set Active Camera {activeCam.name} {activeCam.rotation} rotation to Player rotation {transform.rotation.eulerAngles}");
+        }
+
+        PlayerController.CameraSwitchHandler.RealignActiveCameraToLookAnchor();
+        PlayerController.CameraSwitchHandler.ForceSnapActiveCamera();
 
         if (rb != null)
         {
