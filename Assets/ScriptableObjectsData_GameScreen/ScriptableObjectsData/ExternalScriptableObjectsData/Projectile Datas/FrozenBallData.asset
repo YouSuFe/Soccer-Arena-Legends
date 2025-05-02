@@ -1,0 +1,46 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d03670096bb1443e6a466ab1e01cff67, type: 3}
+  m_Name: FrozenBallData
+  m_EditorClassIdentifier: 
+  interactableLayerMask:
+    serializedVersion: 2
+    m_Bits: 15040
+  skillRadius: 5
+  enemyLayerMask:
+    serializedVersion: 2
+    m_Bits: 6656
+  iceExplosionVFX: {fileID: 100004, guid: a538c26b827a66e45a17c1f359fbd88b, type: 3}
+  projectileTrail: {fileID: 3598296823676955802, guid: dd45780edd80f4fa2877491c3a365466, type: 3}
+  frozenBallExpoSoundData:
+    clip: {fileID: 8300000, guid: 90af38775c5bd43c084091ac77fe7257, type: 3}
+    mixerGroup: {fileID: -2848197126003448455, guid: 2ead715704bc04e2ba187b5e9227d6a7, type: 2}
+    loop: 0
+    playOnAwake: 0
+    frequentSound: 0
+    mute: 0
+    bypassEffects: 0
+    bypassListenerEffects: 0
+    bypassReverbZones: 0
+    priority: 128
+    volume: 1
+    pitch: 1
+    panStereo: 0
+    spatialBlend: 1
+    reverbZoneMix: 1
+    dopplerLevel: 1
+    spread: 0
+    minDistance: 1
+    maxDistance: 500
+    ignoreListenerVolume: 0
+    ignoreListenerPause: 0
+    rolloffMode: 0

@@ -122,7 +122,7 @@ public class EagleShotPlayer : PlayerAbstract
         }
 
         //ToDo: Activate it when add sound into game manager
-        //PlaySoundWithParent(eagleShotPlayerBallSkillSoundData, activeBall.transform.position, activeBall.transform);
+        PlaySoundWithParent(eagleShotPlayerBallSkillSoundData, activeBall.transform.position, activeBall.transform);
     }
 
 }

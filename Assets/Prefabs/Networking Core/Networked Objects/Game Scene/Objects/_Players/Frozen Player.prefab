@@ -1,0 +1,173 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1001 &2132392081676317627
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: -522735561323780711, guid: 5fc84ac41f77e4aa0bc2a97c9f9c29b9, type: 3}
+      propertyPath: GlobalObjectIdHash
+      value: 2736347246
+      objectReference: {fileID: 0}
+    - target: {fileID: 5698860483337757140, guid: 5fc84ac41f77e4aa0bc2a97c9f9c29b9, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5698860483337757140, guid: 5fc84ac41f77e4aa0bc2a97c9f9c29b9, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5698860483337757140, guid: 5fc84ac41f77e4aa0bc2a97c9f9c29b9, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5698860483337757140, guid: 5fc84ac41f77e4aa0bc2a97c9f9c29b9, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5698860483337757140, guid: 5fc84ac41f77e4aa0bc2a97c9f9c29b9, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5698860483337757140, guid: 5fc84ac41f77e4aa0bc2a97c9f9c29b9, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5698860483337757140, guid: 5fc84ac41f77e4aa0bc2a97c9f9c29b9, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5698860483337757140, guid: 5fc84ac41f77e4aa0bc2a97c9f9c29b9, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5698860483337757140, guid: 5fc84ac41f77e4aa0bc2a97c9f9c29b9, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5698860483337757140, guid: 5fc84ac41f77e4aa0bc2a97c9f9c29b9, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5917657169526711097, guid: 5fc84ac41f77e4aa0bc2a97c9f9c29b9, type: 3}
+      propertyPath: m_Name
+      value: Frozen Player
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 5917657169526711097, guid: 5fc84ac41f77e4aa0bc2a97c9f9c29b9, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: -1946053330103631110}
+  m_SourcePrefab: {fileID: 100100000, guid: 5fc84ac41f77e4aa0bc2a97c9f9c29b9, type: 3}
+--- !u!4 &215890529541897727 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2263401886513827396, guid: 5fc84ac41f77e4aa0bc2a97c9f9c29b9, type: 3}
+  m_PrefabInstance: {fileID: 2132392081676317627}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &2138771414789095640 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 16244226739123043, guid: 5fc84ac41f77e4aa0bc2a97c9f9c29b9, type: 3}
+  m_PrefabInstance: {fileID: 2132392081676317627}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &3085235753345706389 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 3983208327192336942, guid: 5fc84ac41f77e4aa0bc2a97c9f9c29b9, type: 3}
+  m_PrefabInstance: {fileID: 2132392081676317627}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &4139016163485450667 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2659228286576144912, guid: 5fc84ac41f77e4aa0bc2a97c9f9c29b9, type: 3}
+  m_PrefabInstance: {fileID: 2132392081676317627}
+  m_PrefabAsset: {fileID: 0}
+--- !u!137 &4510532944952861223 stripped
+SkinnedMeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 2526350736945615260, guid: 5fc84ac41f77e4aa0bc2a97c9f9c29b9, type: 3}
+  m_PrefabInstance: {fileID: 2132392081676317627}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &5730965333343391874 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 5917657169526711097, guid: 5fc84ac41f77e4aa0bc2a97c9f9c29b9, type: 3}
+  m_PrefabInstance: {fileID: 2132392081676317627}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &-1946053330103631110
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5730965333343391874}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3237e635ac17d49bd8658b3860ff11cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
+  baseStats: {fileID: 11400000, guid: d339b097c526743989b0a08ccfb2bf30, type: 2}
+  Health:
+    m_InternalValue: 100
+  Strength:
+    m_InternalValue: 10
+  Speed:
+    m_InternalValue: 5
+  <GameplayInputReader>k__BackingField: {fileID: 11400000, guid: 71ed99219920443b89ce98868d684423, type: 2}
+  meshes:
+  - {fileID: 8077656473268952336}
+  - {fileID: 4510532944952861223}
+  playerRespawnDelay: 10
+  CurrentGameState: 0
+  ballSkillTrigger: 0
+  ballHolder: {fileID: 215890529541897727}
+  cameraLookAnchor: {fileID: 4139016163485450667}
+  eyeTrackingPoint: {fileID: 3085235753345706389}
+  followTrackingPoint: {fileID: 7576827821205993152}
+  weaponHolder: {fileID: 6780819316272358609}
+  projectileHolder: {fileID: 2138771414789095640}
+  ballSpeedMultiplier: 2
+  playerSkillCooldownTime: 10
+  IgnoredAimedLayers:
+    serializedVersion: 2
+    m_Bits: 2688
+  iceManPlayerBallSkillSoundData:
+    clip: {fileID: 8300000, guid: 3a93b826c795c4ec4a397e65abe509be, type: 3}
+    mixerGroup: {fileID: -2848197126003448455, guid: 2ead715704bc04e2ba187b5e9227d6a7, type: 2}
+    loop: 0
+    playOnAwake: 0
+    frequentSound: 0
+    mute: 0
+    bypassEffects: 0
+    bypassListenerEffects: 0
+    bypassReverbZones: 0
+    priority: 128
+    volume: 1
+    pitch: 1
+    panStereo: 0
+    spatialBlend: 1
+    reverbZoneMix: 1
+    dopplerLevel: 1
+    spread: 0
+    minDistance: 1
+    maxDistance: 500
+    ignoreListenerVolume: 0
+    ignoreListenerPause: 0
+    rolloffMode: 0
+  iceSpeedBuffVFX: {fileID: 7604546852241721121, guid: 104ec9f16cce648f0ad47e6ffce82ac5, type: 3}
+--- !u!4 &6780819316272358609 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4867696791416035178, guid: 5fc84ac41f77e4aa0bc2a97c9f9c29b9, type: 3}
+  m_PrefabInstance: {fileID: 2132392081676317627}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &7576827821205993152 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8408655423718786427, guid: 5fc84ac41f77e4aa0bc2a97c9f9c29b9, type: 3}
+  m_PrefabInstance: {fileID: 2132392081676317627}
+  m_PrefabAsset: {fileID: 0}
+--- !u!137 &8077656473268952336 stripped
+SkinnedMeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 7894351165183798955, guid: 5fc84ac41f77e4aa0bc2a97c9f9c29b9, type: 3}
+  m_PrefabInstance: {fileID: 2132392081676317627}
+  m_PrefabAsset: {fileID: 0}

@@ -88,7 +88,13 @@ public class PlayerController : NetworkBehaviour
             MainCameraTransform = Camera.main.transform;
 
             cameraSwitchHandler?.SetOwnerControlled(true);
+            AnimationData.Initialize();
+            ColliderUtility.Initialize(gameObject);
+            ColliderUtility.CalculateCapsuleColliderDimension();
         }
+
+        // ✅ Ensure ALL players have a valid movement state machine
+        MovementStateMachine = new PlayerMovementStateMachine(this, cameraSwitchHandler);
     }
 
     public override void OnNetworkDespawn()
@@ -103,15 +109,9 @@ public class PlayerController : NetworkBehaviour
     /// </summary>
     private void Start()
     {
-        // ✅ Ensure ALL players have a valid movement state machine
-        MovementStateMachine = new PlayerMovementStateMachine(this, cameraSwitchHandler);
-
         // ✅ Only the owner should process inputs and UI updates
         if (!IsOwner) return;
 
-        AnimationData.Initialize();
-        ColliderUtility.Initialize(gameObject);
-        ColliderUtility.CalculateCapsuleColliderDimension();
         InputReader.EnableInputActions();
 
         // ✅ Set the initial movement state
