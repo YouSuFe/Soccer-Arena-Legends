@@ -1,0 +1,173 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1001 &1685341897399839912
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: -522735561323780711, guid: 5fc84ac41f77e4aa0bc2a97c9f9c29b9, type: 3}
+      propertyPath: GlobalObjectIdHash
+      value: 1573130245
+      objectReference: {fileID: 0}
+    - target: {fileID: 5698860483337757140, guid: 5fc84ac41f77e4aa0bc2a97c9f9c29b9, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5698860483337757140, guid: 5fc84ac41f77e4aa0bc2a97c9f9c29b9, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5698860483337757140, guid: 5fc84ac41f77e4aa0bc2a97c9f9c29b9, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5698860483337757140, guid: 5fc84ac41f77e4aa0bc2a97c9f9c29b9, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5698860483337757140, guid: 5fc84ac41f77e4aa0bc2a97c9f9c29b9, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5698860483337757140, guid: 5fc84ac41f77e4aa0bc2a97c9f9c29b9, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5698860483337757140, guid: 5fc84ac41f77e4aa0bc2a97c9f9c29b9, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5698860483337757140, guid: 5fc84ac41f77e4aa0bc2a97c9f9c29b9, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5698860483337757140, guid: 5fc84ac41f77e4aa0bc2a97c9f9c29b9, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5698860483337757140, guid: 5fc84ac41f77e4aa0bc2a97c9f9c29b9, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5917657169526711097, guid: 5fc84ac41f77e4aa0bc2a97c9f9c29b9, type: 3}
+      propertyPath: m_Name
+      value: Gravity Guy
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 5917657169526711097, guid: 5fc84ac41f77e4aa0bc2a97c9f9c29b9, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7897892690066317582}
+  m_SourcePrefab: {fileID: 100100000, guid: 5fc84ac41f77e4aa0bc2a97c9f9c29b9, type: 3}
+--- !u!4 &579470668236759788 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2263401886513827396, guid: 5fc84ac41f77e4aa0bc2a97c9f9c29b9, type: 3}
+  m_PrefabInstance: {fileID: 1685341897399839912}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &1682727296268902347 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 16244226739123043, guid: 5fc84ac41f77e4aa0bc2a97c9f9c29b9, type: 3}
+  m_PrefabInstance: {fileID: 1685341897399839912}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &2316182095530358406 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 3983208327192336942, guid: 5fc84ac41f77e4aa0bc2a97c9f9c29b9, type: 3}
+  m_PrefabInstance: {fileID: 1685341897399839912}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &3712359789063511736 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2659228286576144912, guid: 5fc84ac41f77e4aa0bc2a97c9f9c29b9, type: 3}
+  m_PrefabInstance: {fileID: 1685341897399839912}
+  m_PrefabAsset: {fileID: 0}
+--- !u!137 &3777657084857367860 stripped
+SkinnedMeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 2526350736945615260, guid: 5fc84ac41f77e4aa0bc2a97c9f9c29b9, type: 3}
+  m_PrefabInstance: {fileID: 1685341897399839912}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &5006934408422707089 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 5917657169526711097, guid: 5fc84ac41f77e4aa0bc2a97c9f9c29b9, type: 3}
+  m_PrefabInstance: {fileID: 1685341897399839912}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &7897892690066317582
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5006934408422707089}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 24f5224ef79b84055b174195e9e18fda, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
+  baseStats: {fileID: 11400000, guid: 2d319f43d22074791adf4fb345560185, type: 2}
+  Health:
+    m_InternalValue: 100
+  Strength:
+    m_InternalValue: 10
+  Speed:
+    m_InternalValue: 5
+  <GameplayInputReader>k__BackingField: {fileID: 11400000, guid: 71ed99219920443b89ce98868d684423, type: 2}
+  meshes:
+  - {fileID: 8857972478906008067}
+  - {fileID: 3777657084857367860}
+  playerRespawnDelay: 10
+  CurrentGameState: 0
+  ballSkillTrigger: 0
+  ballHolder: {fileID: 579470668236759788}
+  cameraLookAnchor: {fileID: 3712359789063511736}
+  eyeTrackingPoint: {fileID: 2316182095530358406}
+  followTrackingPoint: {fileID: 7192813789034719699}
+  weaponHolder: {fileID: 6119831106984410050}
+  projectileHolder: {fileID: 1682727296268902347}
+  ballSpeedMultiplier: 2
+  playerSkillCooldownTime: 10
+  IgnoredAimedLayers:
+    serializedVersion: 2
+    m_Bits: 2688
+  gravityManPlayerBallSkillSoundData:
+    clip: {fileID: 8300000, guid: 1a2a28162ee4b46f4af8c1e9fd2ad1b1, type: 3}
+    mixerGroup: {fileID: -2848197126003448455, guid: 2ead715704bc04e2ba187b5e9227d6a7, type: 2}
+    loop: 0
+    playOnAwake: 0
+    frequentSound: 0
+    mute: 0
+    bypassEffects: 0
+    bypassListenerEffects: 0
+    bypassReverbZones: 0
+    priority: 128
+    volume: 1
+    pitch: 1
+    panStereo: 0
+    spatialBlend: 1
+    reverbZoneMix: 1
+    dopplerLevel: 1
+    spread: 0
+    minDistance: 1
+    maxDistance: 500
+    ignoreListenerVolume: 0
+    ignoreListenerPause: 0
+    rolloffMode: 0
+  gravityEffectVFX: {fileID: 5073169565669850764, guid: 78ad3c497ee864e53b35c49f63026ee1, type: 3}
+--- !u!4 &6119831106984410050 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4867696791416035178, guid: 5fc84ac41f77e4aa0bc2a97c9f9c29b9, type: 3}
+  m_PrefabInstance: {fileID: 1685341897399839912}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &7192813789034719699 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8408655423718786427, guid: 5fc84ac41f77e4aa0bc2a97c9f9c29b9, type: 3}
+  m_PrefabInstance: {fileID: 1685341897399839912}
+  m_PrefabAsset: {fileID: 0}
+--- !u!137 &8857972478906008067 stripped
+SkinnedMeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 7894351165183798955, guid: 5fc84ac41f77e4aa0bc2a97c9f9c29b9, type: 3}
+  m_PrefabInstance: {fileID: 1685341897399839912}
+  m_PrefabAsset: {fileID: 0}

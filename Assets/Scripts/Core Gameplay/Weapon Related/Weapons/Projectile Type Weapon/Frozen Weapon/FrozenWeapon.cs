@@ -82,7 +82,7 @@ public class FrozenWeapon : BaseWeapon, ISpecialWeaponSkill
 
     protected override void PlaySkillEffects()
     {
-        //PlayProjectileSound();
+        PlayProjectileSound();
     }
 
     protected override void RegularAttackBehaviour()

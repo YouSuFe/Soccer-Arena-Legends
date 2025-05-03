@@ -106,6 +106,7 @@ public class PenaltyZoneDamageTracker : NetworkBehaviour
         tempPlayerKeys.Clear();
         tempPlayerKeys.AddRange(playersInsideZone.Keys);
 
+        Debug.Log($"[PenaltyZone] Tracking {playersInsideZone.Count} players:");
         if (playersInsideZone.Count > 0)
         {
             Debug.Log($"[PenaltyZone] Tracking {playersInsideZone.Count} players:");
@@ -181,7 +182,11 @@ public class PenaltyZoneDamageTracker : NetworkBehaviour
     {
         if (!IsServer) return;
 
-        if (!other.TryGetComponent<PlayerAbstract>(out var player)) return;
+        if (!other.TryGetComponent<PlayerAbstract>(out var player))
+        {
+            Debug.LogWarning($"[PenaltyZone] Triggered by object without PlayerAbstract: {other.name}");
+            return;
+        }
 
         ulong clientId = player.OwnerClientId;
 

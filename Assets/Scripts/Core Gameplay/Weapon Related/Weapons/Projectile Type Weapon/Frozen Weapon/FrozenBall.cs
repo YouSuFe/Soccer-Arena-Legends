@@ -40,12 +40,6 @@ public class FrozenBall : NetworkBehaviour, IProjectileNetworkInitializer
         }
     }
 
-    public void Initialize(FrozenWeapon weapon)
-    {
-        frozenWeapon = weapon;
-        WeaponOwnerClientId = weapon.OwnerClientId;
-    }
-
     void Start()
     {
         InitializeParticles();

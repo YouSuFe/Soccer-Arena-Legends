@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Eagle Player
   m_EditorClassIdentifier: 
   id: 1
-  displayName: One
+  displayName: Eagle Man
   icon: {fileID: 21300000, guid: 15071f2c494ff4c81bc7b5f6242e7b03, type: 3}
   introPrefab: {fileID: 3701351935888238826, guid: 639acfd1fd1714fa29ba15d8ede54f12, type: 3}
   gameplayPrefab: {fileID: 4551682215654862057, guid: 593a196bee46b451ebe2d83791064087, type: 3}

@@ -27,6 +27,8 @@ public class IceManPlayer : PlayerAbstract
     {
         if (BallAttachmentStatus != BallAttachmentStatus.Attached) return false;
 
+        IceManBallSkill();
+
         IceManBallSkillClientRpc(RpcUtils.ToClient(OwnerClientId));
 
         // Broadcast VFX + SFX to client

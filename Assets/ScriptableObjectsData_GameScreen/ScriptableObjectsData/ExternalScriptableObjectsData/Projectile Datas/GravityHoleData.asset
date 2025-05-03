@@ -1,0 +1,50 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 41bebbcd2e7fe499c9bb9142d1cc9ee5, type: 3}
+  m_Name: GravityHoleData
+  m_EditorClassIdentifier: 
+  pullableObjectsLayer:
+    serializedVersion: 2
+    m_Bits: 6784
+  maxDistance: 15
+  pullRadius: 10
+  abilityDuration: 6
+  maxPullForce: 50
+  minPullForce: 25
+  blackHoleVFX: {fileID: 5073169565669850764, guid: 78ad3c497ee864e53b35c49f63026ee1, type: 3}
+  projectileTrail: {fileID: 3598296823676955802, guid: dd45780edd80f4fa2877491c3a365466, type: 3}
+  ignoredTriggerLayers:
+    serializedVersion: 2
+    m_Bits: 32800
+  gravityHoleSoundData:
+    clip: {fileID: 8300000, guid: f711bae32c041cb419ebbe644b33dc9c, type: 3}
+    mixerGroup: {fileID: -2848197126003448455, guid: 2ead715704bc04e2ba187b5e9227d6a7, type: 2}
+    loop: 1
+    playOnAwake: 0
+    frequentSound: 0
+    mute: 0
+    bypassEffects: 0
+    bypassListenerEffects: 0
+    bypassReverbZones: 0
+    priority: 128
+    volume: 1
+    pitch: 1
+    panStereo: 0
+    spatialBlend: 1
+    reverbZoneMix: 1
+    dopplerLevel: 1
+    spread: 0
+    minDistance: 1
+    maxDistance: 500
+    ignoreListenerVolume: 0
+    ignoreListenerPause: 0
+    rolloffMode: 0

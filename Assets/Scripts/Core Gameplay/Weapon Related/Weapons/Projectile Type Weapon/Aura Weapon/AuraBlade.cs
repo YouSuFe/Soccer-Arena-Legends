@@ -49,7 +49,7 @@ public class AuraBlade : NetworkBehaviour, IProjectileNetworkInitializer, IDestr
         }
         else
         {
-            Debug.LogWarning("⚠️ Failed to find auraWeapon on client when assigning via ClientRpc.");
+            Debug.LogWarning("Failed to find auraWeapon on client when assigning via ClientRpc.");
         }
     }
 

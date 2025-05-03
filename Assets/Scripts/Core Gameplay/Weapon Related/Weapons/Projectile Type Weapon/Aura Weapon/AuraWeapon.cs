@@ -85,7 +85,7 @@ public class AuraWeapon : BaseWeapon
 
     protected override void PlaySkillEffects()
     {
-        //PlayProjectileSound();
+        PlayProjectileSound();
     }
 
     protected override void RegularAttackBehaviour()
