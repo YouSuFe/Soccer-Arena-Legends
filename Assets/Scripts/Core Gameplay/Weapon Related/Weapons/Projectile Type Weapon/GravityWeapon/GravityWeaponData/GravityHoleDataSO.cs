@@ -13,7 +13,5 @@ public class GravityHoleDataSO : ScriptableObject
     public GameObject blackHoleVFX;
     public GameObject projectileTrail;
 
-    public LayerMask ignoredTriggerLayers;
-
     public SoundData gravityHoleSoundData;
 }

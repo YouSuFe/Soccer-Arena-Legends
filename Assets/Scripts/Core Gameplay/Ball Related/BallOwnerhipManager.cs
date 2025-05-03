@@ -261,6 +261,8 @@ public class BallOwnershipManager : NetworkBehaviour
 
     public void RegisterSkillInfluence(ulong clientId)
     {
+        if (currentBallOwner.Value != NO_OWNER) return;
+
         lastSkillInfluencerId = clientId;
     }
 

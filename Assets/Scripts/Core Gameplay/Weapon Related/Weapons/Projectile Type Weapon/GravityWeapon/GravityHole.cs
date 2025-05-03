@@ -86,10 +86,6 @@ public class GravityHole : NetworkBehaviour, IProjectileNetworkInitializer
         if (!IsServer || isPulling)
             return;
 
-        // Check if the layer is in the ignored mask
-        if (((1 << other.gameObject.layer) & gravityHoleData.ignoredTriggerLayers.value) != 0)
-            return;
-
         ActivateBlackHole();
     }
 
@@ -156,6 +152,11 @@ public class GravityHole : NetworkBehaviour, IProjectileNetworkInitializer
                 float dist = dir.magnitude;
                 float strength = Mathf.Lerp(gravityHoleData.maxPullForce, gravityHoleData.minPullForce, dist / gravityHoleData.pullRadius);
                 rb.AddForce(dir.normalized * strength, ForceMode.Acceleration);
+
+                if (obj.TryGetComponent<BallOwnershipManager>(out var ballManager))
+                {
+                    ballManager.RegisterSkillInfluence(WeaponOwnerClientId);
+                }
             }
         }
 

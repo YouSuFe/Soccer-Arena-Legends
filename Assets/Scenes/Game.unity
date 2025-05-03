@@ -15360,7 +15360,7 @@ GameObject:
   - component: {fileID: 666588501}
   - component: {fileID: 666588502}
   - component: {fileID: 666588503}
-  m_Layer: 0
+  m_Layer: 15
   m_Name: 'Red Penalty Zone '
   m_TagString: Untagged
   m_Icon: {fileID: 5132851093641282708, guid: 0000000000000000d000000000000000, type: 0}
@@ -17104,7 +17104,7 @@ GameObject:
   - component: {fileID: 919882710}
   - component: {fileID: 919882711}
   - component: {fileID: 919882712}
-  m_Layer: 0
+  m_Layer: 15
   m_Name: 'Blue Penalty Zone '
   m_TagString: Untagged
   m_Icon: {fileID: -964228994112308473, guid: 0000000000000000d000000000000000, type: 0}

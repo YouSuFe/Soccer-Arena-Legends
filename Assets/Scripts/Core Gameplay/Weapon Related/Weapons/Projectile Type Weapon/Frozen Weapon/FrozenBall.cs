@@ -71,6 +71,12 @@ public class FrozenBall : NetworkBehaviour, IProjectileNetworkInitializer
         // Check if the collided object is in the interactable layer
         if (((1 << collision.gameObject.layer) & frozenBallData.interactableLayerMask) != 0)
         {
+            if (collision.gameObject.TryGetComponent<BallOwnershipManager>(out var ballManager))
+            {
+                ballManager.RegisterSkillInfluence(WeaponOwnerClientId);
+                Debug.Log($"[FrozenBall] Skill influence registered on ball by Client {WeaponOwnerClientId}");
+            }
+
             TriggerImpactClientRpc(transform.position);
 
             // Apply the frozen state to players within the skill radius
