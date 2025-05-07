@@ -33,14 +33,13 @@ public class PlayerSpawnManager : NetworkBehaviour
     [Header("Databases")]
     [field: SerializeField] public CharacterDatabase CharacterDatabase { get; private set; }
     [field: SerializeField] public WeaponDatabase WeaponDatabase { get; private set; }
+    [SerializeField] private BallTypeDatabase ballTypeDatabase;
+
 
     [Header("Cameras")]
     [SerializeField] private CinemachineCamera fpsCamera;
     [SerializeField] private CinemachineCamera lookAtCamera;
 
-    [Header("Ball")]
-    [SerializeField] private GameObject ballPrefab; // Networked ball prefab
-    private GameObject spawnedBall;
 
     [Header("Spawn")]
     [SerializeField] private Transform[] blueTeamSpawnPoints;
@@ -69,6 +68,8 @@ public class PlayerSpawnManager : NetworkBehaviour
     /// Used for "Team-wide Safety Bubble" skills.
     /// </summary>
     private Dictionary<int, float> reviveShieldPerTeam = new();
+
+    private GameObject spawnedBall;
 
     private NetworkServer networkServer;
     private SpawnPointManager spawnPointManager;
@@ -250,10 +251,6 @@ public class PlayerSpawnManager : NetworkBehaviour
     /// <param name="characterId">The ID of the character selected by the player.</param>
     /// <param name="weaponId">The ID of the weapon selected by the player.</param>
     /// <param name="teamIndex">The team the player belongs to (e.g., 0 = Blue, 1 = Red).</param>
-    /// /// <param name="isBulkSpawn">
-    /// **True** → If spawning multiple players at once (ensures unique spawn points).  
-    /// **False** → If spawning a single player (allows random spawn selection).
-    /// </param>
     public void SpawnPlayer(ulong clientId, int characterId, int weaponId, int teamIndex, bool isRespawn = true)
     {
         if (!IsServer) return;
@@ -722,18 +719,48 @@ public class PlayerSpawnManager : NetworkBehaviour
 
     private void SpawnBall()
     {
-        if (ballPrefab == null)
+        if (!LobbyManager.Instance.IsInLobby())
         {
-            Debug.LogError("Ball Prefab is missing in BallSpawner!");
+            Debug.LogError("Cannot spawn ball. Not in a lobby.");
             return;
         }
 
-        // ✅ Instantiate and spawn the ball on the network
-        GameObject ballInstance = Instantiate(ballPrefab, ballSpawnPoint.position, Quaternion.identity);
-        ballInstance.GetComponent<NetworkObject>().Spawn();
+        var lobby = LobbyManager.Instance.GetJoinedLobby();
+        if (lobby == null || !lobby.Data.ContainsKey(LobbyManager.KEY_BALL_TYPE))
+        {
+            Debug.LogWarning("Defaulting to DefaultBall as BallType not found.");
+            SpawnBallByType(GameEnumsUtil.BallType.DefaultBall);
+            return;
+        }
 
+        string ballTypeStr = lobby.Data[LobbyManager.KEY_BALL_TYPE].Value;
+        GameEnumsUtil.BallType selectedBall = GameEnumsUtil.StringToEnum(
+            ballTypeStr,
+            GameEnumsUtil.BallType.DefaultBall
+        );
+
+        SpawnBallByType(selectedBall);
+    }
+
+    private void SpawnBallByType(GameEnumsUtil.BallType type)
+    {
+        GameObject prefab = ballTypeDatabase.GetBallPrefab(type);
+
+        if (prefab == null)
+        {
+            Debug.LogError($"[SpawnBallByType] No prefab assigned for BallType: {type}");
+            return;
+        }
+
+        GameObject ballInstance = Instantiate(prefab, ballSpawnPoint.position, Quaternion.identity);
+        ballInstance.GetComponent<NetworkObject>().Spawn();
         spawnedBall = ballInstance;
     }
+
+    public GameObject GetSpawnedBall() => spawnedBall;
+
+    public Vector3 GetBallSpawnPoint() => ballSpawnPoint.position;
+
     #endregion
 
     #region Camera Assigment on Spawn

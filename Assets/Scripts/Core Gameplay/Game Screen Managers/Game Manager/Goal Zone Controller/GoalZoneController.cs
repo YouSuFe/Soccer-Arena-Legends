@@ -15,8 +15,6 @@ public class GoalZoneController : NetworkBehaviour
     [Tooltip("This goal belongs to: Blue or Red team")]
     public Team goalTeam;
 
-    [SerializeField] private Transform ballResetPosition;
-
     private void OnCollisionEnter(Collision collision)
     {
         if (!IsServer) return;
@@ -75,13 +73,6 @@ public class GoalZoneController : NetworkBehaviour
                 Debug.Log($"[GoalZone] Assist credited to {assistId} for goal by {scoringPlayerId}");
                 GameManager.Instance.AddAssist(assistId);
             }
-        }
-
-        if (ballResetPosition != null)
-        {
-            ballManager.transform.position = ballResetPosition.position;
-            ballManager.GetComponent<Rigidbody>().linearVelocity = Vector3.zero;
-            ballManager.ResetOwnershipIds();
         }
     }
 

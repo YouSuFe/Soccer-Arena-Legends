@@ -189,7 +189,7 @@ public class SelectionNetwork : NetworkBehaviour
         }
 
         // Start the timer only when the first player joins
-        if (PlayerStatuses.Count == LobbyManager.Instance.GetJoinedLobby().MaxPlayers)
+        if (PlayerStatuses.Count == 2 /*LobbyManager.Instance.GetMaxPlayersInLobby()*/)
         {
             StartSelectionTimer();
         }
@@ -246,8 +246,6 @@ public class SelectionNetwork : NetworkBehaviour
 
         Debug.Log("Timer Expired! Forcing Lock-In.");
         ForceLockInAllPlayers();
-
-        Debug.Log("Ahahahaa look at that we are inside here");
 
         // Set the selectionTimer value for all players before starting second phase
         StartSecondPhaseTimer();

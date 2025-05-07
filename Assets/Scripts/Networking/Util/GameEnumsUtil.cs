@@ -12,7 +12,7 @@ public static class GameEnumsUtil
     public enum GameMode { SkillGameMode, /*CoreGameMode*/ }
 
     // ⚽ Ball Type Enum
-    public enum BallType { DefaultBall, /*FastBall, HeavyBall */}
+    public enum BallType { DefaultBall, ElasticBall/*, HeavyBall */}
 
     // 🔵🔴 Team Enum
     public enum PlayerTeam { Blue, Red, Spectator }

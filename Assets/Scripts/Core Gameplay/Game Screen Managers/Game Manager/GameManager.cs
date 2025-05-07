@@ -41,6 +41,8 @@ public class GameManager : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
+        MultiplayerGameStateManager.Instance.NetworkGameState.OnValueChanged += HandleGameStateChanged;
+
         if (!IsServer) return;
         Debug.Log("[Server:] Game Manager is initialized on On Network Spawn");
 
@@ -58,6 +60,8 @@ public class GameManager : NetworkBehaviour
 
     public override void OnNetworkDespawn()
     {
+        MultiplayerGameStateManager.Instance.NetworkGameState.OnValueChanged -= HandleGameStateChanged;
+
         if (!IsServer) return;
 
         NetworkManager.OnClientConnectedCallback -= HandleClientConnected;
@@ -67,6 +71,16 @@ public class GameManager : NetworkBehaviour
 
 
     }
+
+    private void HandleGameStateChanged(GameState oldState, GameState newState)
+    {
+        if (!IsServer) return;
+
+        bool showBall = newState == GameState.PreGame || newState == GameState.InGame;
+        ResetBall(showBall);
+    }
+
+
 
     private void HandleSceneLoaded(ulong clientId, string sceneName, LoadSceneMode mode)
     {
@@ -167,6 +181,39 @@ public class GameManager : NetworkBehaviour
         return result;
     }
 
+
+    public void ResetBall(bool isVisible)
+    {
+        GameObject ball = PlayerSpawnManager.Instance.GetSpawnedBall();
+        if (ball == null)
+        {
+            Debug.LogWarning("[GameManager] No spawned ball to reset.");
+            return;
+        }
+
+        var ballVisibility = ball.GetComponent<BallVisibilityNetworkController>();
+        var ballOwnership = ball.GetComponent<BallOwnershipManager>();
+        var netObj = ball.GetComponent<NetworkObject>();
+
+        if (ballVisibility == null || ballOwnership == null || netObj == null)
+        {
+            Debug.LogError("[GameManager] Ball is missing required components.");
+            return;
+        }
+
+        ballOwnership.ResetOwnershipIds();
+        netObj.TryRemoveParent();
+
+        if (isVisible)
+        {
+            Vector3 spawnPosition = PlayerSpawnManager.Instance.GetBallSpawnPoint();
+            ballVisibility.ShowBallServerRpc(spawnPosition);
+        }
+        else
+        {
+            ballVisibility.HideBallServerRpc();
+        }
+    }
 
 
     [ClientRpc]
