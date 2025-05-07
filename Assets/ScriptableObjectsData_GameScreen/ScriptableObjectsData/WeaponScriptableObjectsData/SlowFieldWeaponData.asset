@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f797e10f1c68e4b3daa4f98495d29c4b, type: 3}
+  m_Name: SlowFieldWeaponData
+  m_EditorClassIdentifier: 
+  weaponPrefab: {fileID: 4265952109873900940, guid: 6cb1e6893cb4743d3854bd82c2449395,
+    type: 3}
+  projectilePrefab: {fileID: 8123373536036518986, guid: 1ae881ccba04045aab0c095c6e825a54,
+    type: 3}
+  projectileSpeed: 80
+  regularAttackCooldown: 0.3
+  heavyAttackCooldown: 0.8
+  baseDamage: 10
+  heavyDamageMultiplier: 3
+  weaponLength: 0.5
+  hitRadius: 0.05
+  damageableLayer:
+    serializedVersion: 2
+    m_Bits: 6656
+  positionOffset: {x: 0, y: 0, z: 0}
+  rotationOffset: {x: 0, y: 0, z: 0}

@@ -51,6 +51,7 @@ public class GravityManPlayer : PlayerAbstract
     [ClientRpc]
     private void GravityManBallSkillClientRpc(ClientRpcParams clientRpcParams = default)
     {
+        if (IsServer) return;
         GravityManBallSkill();
     }
 

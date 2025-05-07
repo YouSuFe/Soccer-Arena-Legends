@@ -40,6 +40,7 @@ public class IceManPlayer : PlayerAbstract
     [ClientRpc]
     private void IceManBallSkillClientRpc(ClientRpcParams clientRpcParams = default)
     {
+        if (IsServer) return; // To prevent multiple skill call for host
         IceManBallSkill();
     }
 

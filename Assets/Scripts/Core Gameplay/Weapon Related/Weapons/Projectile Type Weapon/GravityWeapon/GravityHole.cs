@@ -36,13 +36,34 @@ public class GravityHole : NetworkBehaviour, IProjectileNetworkInitializer
         startPosition = transform.position;
         InitializeParticles(); // Client-side particles, safe here
 
-        // If you later need to use IsOwner / OwnerClientId checks, do them here
+        // 👇 Add this to listen for game state changes
+        if (IsServer && MultiplayerGameStateManager.Instance != null)
+        {
+            MultiplayerGameStateManager.Instance.NetworkGameState.OnValueChanged += HandleGameStateChanged;
+        }
+    }
+
+    private void HandleGameStateChanged(GameState previous, GameState next)
+    {
+        if (next != GameState.InGame && IsServer && NetworkObject.IsSpawned)
+        {
+            Debug.Log("[GravityHole] Game state changed out of InGame — despawning gravity hole.");
+            RemoveModifiersFromAllAffectedPlayers();
+            NotifyClientsOfEndClientRpc();
+            CleanupState();
+            NetworkObject.Despawn();
+        }
     }
 
     public override void OnNetworkDespawn()
     {
         base.OnNetworkDespawn();
         CleanupState(); // << Optional, good for safety
+
+        if (IsServer && MultiplayerGameStateManager.Instance != null)
+        {
+            MultiplayerGameStateManager.Instance.NetworkGameState.OnValueChanged -= HandleGameStateChanged;
+        }
     }
     public void InitializeNetworkedProjectile(BaseWeapon weapon)
     {

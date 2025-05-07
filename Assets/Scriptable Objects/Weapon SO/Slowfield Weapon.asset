@@ -10,10 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d9f2ae5781a1e48cc93e15ce5f307ea4, type: 3}
-  m_Name: 4
+  m_Name: Slowfield Weapon
   m_EditorClassIdentifier: 
   id: 4
-  displayName: Weapon Four
+  displayName: Slowfield
   icon: {fileID: 21300000, guid: ec1c53200d7e385428ee41fb94009d87, type: 3}
   modelPrefab: {fileID: 2504837491292611139, guid: 77f0b319613dc43c0adadffaa41eed3c, type: 3}
-  gameplayPrefab: {fileID: 1962091245426479924, guid: 78c45ecf077a749acb652d094c129c6f, type: 3}
+  gameplayPrefab: {fileID: 6003811083512107680, guid: 6cb1e6893cb4743d3854bd82c2449395, type: 3}
