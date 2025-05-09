@@ -84,16 +84,6 @@ public class EagleShotPlayer : PlayerAbstract
 
     }
 
-    protected override void PerformHeavyAttack()
-    {
-        Debug.Log("Heavy Attack From " + name);
-    }
-
-    protected override void PerformRegularAttack()
-    {
-        Debug.Log("Regular Attack From " + name);
-    }
-
     protected override void PlaySkillEffects()
     {
         Vector3 skillDirection = TargetingSystem.GetShotDirection(CameraLookAnchor, activeBall.transform.position, activeBall.gameObject.layer);

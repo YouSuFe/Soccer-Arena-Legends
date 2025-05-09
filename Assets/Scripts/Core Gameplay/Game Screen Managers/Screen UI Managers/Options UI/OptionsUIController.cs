@@ -63,6 +63,8 @@ public class OptionsUIController : MonoBehaviour
         }
 
         mainOptionsPanel.SetActive(opening);
+
+        UIInputManager.Instance?.HandleOptionsMenuStateChanged(opening);
     }
 
     public void OpenSettings()

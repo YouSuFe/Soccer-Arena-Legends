@@ -5,9 +5,6 @@ public abstract class BaseWeapon : NetworkBehaviour, IWeapon, IDamageDealer, ISp
 {
     #region Weapon Configuration
 
-    private const string REGULAR_ATTACK_ANIM_TRIGGER = "regularAttack";
-    private const string HEAVY_ATTACK_ANIM_TRIGGER = "heavyAttack";
-
     [Header("Input Reader")]
     [field: SerializeField] public InputReader InputReader { get; private set; }
 
@@ -108,22 +105,6 @@ public abstract class BaseWeapon : NetworkBehaviour, IWeapon, IDamageDealer, ISp
             transform.rotation = weaponHolder.transform.rotation;
     }
 
-    private void OnEnable()
-    {
-        if (!IsOwner) return;
-
-        InputReader.OnRegularAttackPerformed += InputManager_OnRegularAttack;
-        InputReader.OnHeavyAttackPerformed += InputManager_OnHeavyAttack;
-    }
-
-    private void OnDisable()
-    {
-        if (!IsOwner) return;
-
-        InputReader.OnRegularAttackPerformed -= InputManager_OnRegularAttack;
-        InputReader.OnHeavyAttackPerformed -= InputManager_OnHeavyAttack;
-    }
-
     #endregion
 
     #region Abstract Methods
@@ -134,25 +115,6 @@ public abstract class BaseWeapon : NetworkBehaviour, IWeapon, IDamageDealer, ISp
 
     #endregion
 
-    #region Input Handling
-
-    private void InputManager_OnRegularAttack()
-    {
-        if (!IsOwner) return;
-
-        Debug.Log($"[Client-{OwnerClientId}] Regular Attack Input recieved.");
-        PerformRegularAttack();
-    }
-
-    private void InputManager_OnHeavyAttack()
-    {
-        if (!IsOwner) return;
-
-        Debug.Log($"[Client-{OwnerClientId}] Heavy Attack Input recieved.");
-        PerformHeavyAttack();
-    }
-
-    #endregion
 
     #region Damage Calculation and Dealing
 
@@ -345,7 +307,7 @@ public abstract class BaseWeapon : NetworkBehaviour, IWeapon, IDamageDealer, ISp
         {
             Debug.Log($"[Client-{OwnerClientId}] Performing regular attack locally.");
             //  Play animation instantly on local attacker
-            TriggerAttackAnimation(REGULAR_ATTACK_ANIM_TRIGGER);
+            TriggerAttackAnimation(player.PlayerController.AnimationData.RegularAttackTriggerHash);
             //  Send attack request to the server
             PerformRegularAttackServerRpc();
         }
@@ -378,7 +340,7 @@ public abstract class BaseWeapon : NetworkBehaviour, IWeapon, IDamageDealer, ISp
             Debug.Log($"[Client-{OwnerClientId}] Performing heavy attack locally.");
 
             //  Play animation instantly on local attacker
-            TriggerAttackAnimation(HEAVY_ATTACK_ANIM_TRIGGER);
+            TriggerAttackAnimation(player.PlayerController.AnimationData.HeavyAttackTriggerHash);
             //  Send attack request to the server
             PerformHeavyAttackServerRpc();
         }
@@ -413,7 +375,7 @@ public abstract class BaseWeapon : NetworkBehaviour, IWeapon, IDamageDealer, ISp
     }
 
     // Trigger animations based on attack type
-    private void TriggerAttackAnimation(string attackType)
+    private void TriggerAttackAnimation(int triggerHash)
     {
         // Ensure Animator is assigned
         if (playerAnimator == null)
@@ -422,7 +384,7 @@ public abstract class BaseWeapon : NetworkBehaviour, IWeapon, IDamageDealer, ISp
             return;
         }
 
-        playerAnimator.SetTrigger(attackType);
+        player.Animator.SetTrigger(triggerHash);
     }
 
     #endregion

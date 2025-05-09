@@ -19,6 +19,7 @@ GameObject:
   - component: {fileID: 1375941103122032208}
   - component: {fileID: 5865642170212978211}
   - component: {fileID: -4221758556774808149}
+  - component: {fileID: 8200996354339149350}
   m_Layer: 7
   m_Name: RegularBall
   m_TagString: Untagged
@@ -261,6 +262,23 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
+--- !u!114 &8200996354339149350
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2089097753458326465}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e8d3a46c8b0b84020a052f39249b77c8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
+  renderers:
+  - {fileID: 6750559629761354841}
+  colliders:
+  - {fileID: 1013389890763402008}
 --- !u!1 &5180949507278147440
 GameObject:
   m_ObjectHideFlags: 0

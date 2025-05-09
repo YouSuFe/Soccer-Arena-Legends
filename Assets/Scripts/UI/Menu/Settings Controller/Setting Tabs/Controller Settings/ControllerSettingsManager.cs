@@ -19,7 +19,6 @@ public class ControllerSettingsManager : MonoBehaviour, ISettingsTab
         LoadInitialSettings();
         ApplyToUI(temp);
         BindUIEvents();
-        gameObject.SetActive(false);
     }
 
     private void LoadInitialSettings()

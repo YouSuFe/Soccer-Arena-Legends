@@ -19,8 +19,8 @@ MonoBehaviour:
   heavyAttackCooldown: 0.8
   baseDamage: 10
   heavyDamageMultiplier: 3
-  weaponLength: 0.5
-  hitRadius: 0.05
+  weaponLength: 1
+  hitRadius: 0.1
   damageableLayer:
     serializedVersion: 2
     m_Bits: 6656

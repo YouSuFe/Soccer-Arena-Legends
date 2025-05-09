@@ -12,7 +12,7 @@ public class PlayerBaseStats
 
     public int DistributablePoints { get; private set; } = 0; // Points available for distribution to stats
 
-    private float baseStamina = 50f;
+    private float baseStamina = 20f;
 
     // Constructor initializes PlayerBaseStats with the provided base stats
     public PlayerBaseStats(BaseStats baseStats)
@@ -76,6 +76,6 @@ public class PlayerBaseStats
     public float GetStamina()
     {
         float health = GetStatValue(StatType.Health);
-        return baseStamina + health;
+        return baseStamina + health/2;
     }
 }

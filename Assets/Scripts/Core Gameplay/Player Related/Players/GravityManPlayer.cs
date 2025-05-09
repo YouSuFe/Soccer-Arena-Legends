@@ -57,19 +57,6 @@ public class GravityManPlayer : PlayerAbstract
 
     #endregion
 
-    #region Attacks
-
-    protected override void PerformHeavyAttack()
-    {
-        Debug.Log("Heavy Attack From GravityManPlayer");
-    }
-
-    protected override void PerformRegularAttack()
-    {
-        Debug.Log("Regular Attack From GravityManPlayer");
-    }
-
-    #endregion
 
     #region Main Methods
 

@@ -56,20 +56,6 @@ public class IceManPlayer : PlayerAbstract
 
     #endregion
 
-    #region Attacks
-
-    protected override void PerformHeavyAttack()
-    {
-        Debug.Log("Heavy Attack From IceManPlayer");
-    }
-
-    protected override void PerformRegularAttack()
-    {
-        Debug.Log("Regular Attack From IceManPlayer");
-    }
-
-    #endregion
-
     #region Main Methods
 
 

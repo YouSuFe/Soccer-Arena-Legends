@@ -21,7 +21,6 @@ public class AudioSettingsManager : MonoBehaviour, ISettingsTab
         LoadInitialSettings();
         ApplyToUI(temp);
         BindEvents();
-        gameObject.SetActive(false);
     }
 
     private void LoadInitialSettings()

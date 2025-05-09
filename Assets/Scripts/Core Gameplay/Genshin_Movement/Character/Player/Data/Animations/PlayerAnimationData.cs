@@ -35,6 +35,10 @@ public class PlayerAnimationData
     [Header("Special Weapon Parameter Names")]
     [SerializeField] private string speacialDashinParameterName = "isDashWeaponUsed";
 
+    [Header("Attack Trigger Names")]
+    [SerializeField] private string regularAttackTriggerName = "regularAttack";
+    [SerializeField] private string heavyAttackTriggerName = "heavyAttack";
+
 
     public int GroundedParameterHash { get; private set; }
     public int MovingParameterHash { get; private set; }
@@ -60,6 +64,9 @@ public class PlayerAnimationData
     public int ShockedParameterHash { get; private set; }
 
     public int SpeacialDashinParameterHash { get; private set; }
+
+    public int RegularAttackTriggerHash { get; private set; }
+    public int HeavyAttackTriggerHash { get; private set; }
 
     public void Initialize()
     {
@@ -87,5 +94,8 @@ public class PlayerAnimationData
         ShockedParameterHash = Animator.StringToHash(shockedParameterName);
 
         SpeacialDashinParameterHash = Animator.StringToHash(speacialDashinParameterName);
+
+        RegularAttackTriggerHash = Animator.StringToHash(regularAttackTriggerName);
+        HeavyAttackTriggerHash = Animator.StringToHash(heavyAttackTriggerName);
     }
 }

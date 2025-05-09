@@ -49,19 +49,6 @@ public class DebuffRemoverPlayer : PlayerAbstract
 
     #endregion
 
-    #region Attacks
-
-    protected override void PerformHeavyAttack()
-    {
-        Debug.Log("Heavy Attack From DebuffRemoverPlayer");
-    }
-
-    protected override void PerformRegularAttack()
-    {
-        Debug.Log("Regular Attack From DebuffRemoverPlayer");
-    }
-
-    #endregion
 
     #region Main Methods
 

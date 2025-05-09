@@ -12,6 +12,7 @@ public class UIInputManager : MonoBehaviour
 
     [Header("UI Input Reader")]
     [SerializeField] private InputReader uiInputReader;
+    [SerializeField] private InputReader gameplayInputReader;
 
     #endregion
 
@@ -82,5 +83,26 @@ public class UIInputManager : MonoBehaviour
         uiInputReader?.EnableInputActions();
     }
 
+    private void DisableGameplayInputs()
+    {
+        gameplayInputReader?.DisableInputActions();
+    }
+
+    private void EnableGameplayInputs()
+    {
+        gameplayInputReader?.EnableInputActions();
+    }
+
+    public void HandleOptionsMenuStateChanged(bool isOpen)
+    {
+        if (isOpen)
+        {
+            DisableGameplayInputs();
+        }
+        else
+        {
+            EnableGameplayInputs();
+        }
+    }
     #endregion
 }

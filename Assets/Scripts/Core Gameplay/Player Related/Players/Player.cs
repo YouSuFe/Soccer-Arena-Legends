@@ -107,7 +107,7 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
     public event Action OnTakeBall;
     public event Action OnLoseBall;
     public event Action<SkillType, float> OnSkillCooldownChanged;
-    public event Action<float, float> OnStaminaChanged; // Notify listeners when stamina changes
+    public event Action<float, float> OnStaminaChanged;
 
     [Header("Player HUD")]
     private PlayerUIController playerUIController;
@@ -295,15 +295,13 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
     private void InputManager_OnRegularAttack()
     {
         if (!IsPlayerAllowedToMove()) return;
-
-        PerformRegularAttack();
+        weapon?.PerformRegularAttack();
     }
 
     private void InputManager_OnHeavyAttack()
     {
         if (!IsPlayerAllowedToMove()) return;
-
-        PerformHeavyAttack();
+        weapon?.PerformHeavyAttack();
     }
 
     private void InputManager_OnProjectile()
@@ -415,8 +413,6 @@ public abstract class PlayerAbstract : Entity, IPositionBasedDamageable
 
     protected abstract bool PerformBallSkill(Vector3 rayOrigin, Vector3 direction);
     protected abstract void PlaySkillEffects();
-    protected abstract void PerformRegularAttack();
-    protected abstract void PerformHeavyAttack();
 
     [ServerRpc]
     private void PerformWeaponSkillServerRpc(Vector3 rayOrigin, Vector3 direction)

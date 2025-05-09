@@ -4431,8 +4431,8 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   <InputReader>k__BackingField: {fileID: 11400000, guid: 71ed99219920443b89ce98868d684423, type: 2}
   weaponData: {fileID: 11400000, guid: 989dd2a39bd8a460082bbcd9e30a63c6, type: 2}
-  skillCooldownTime: 1
-  regularAttackCooldown: 0.3
+  skillCooldownTime: 7
+  regularAttackCooldown: 0.5
   heavyAttackCooldown: 2
   baseDamage: 10
   heavyDamageMultiplier: 3

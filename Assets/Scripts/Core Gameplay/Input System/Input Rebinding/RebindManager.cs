@@ -34,6 +34,11 @@ public class RebindManager : MonoBehaviour
             rebindUIs.Add(ui);
     }
 
+    private void OnDisable()
+    {
+        HideOverlay();
+    }
+
     public void StartInteractiveRebind(InputRebindUI caller, InputAction action, int bindingIndex)
     {
         ShowOverlay($"Press a key for '{action.name}'...\n(ESC to cancel)");

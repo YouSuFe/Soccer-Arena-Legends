@@ -53,7 +53,7 @@ public class SelectionNetwork : NetworkBehaviour
 
     [Header("Selection Settings")]
     // If we want to start the game when max player is reached, we can use this.
-    [SerializeField] private int maxPlayers = 4;
+    [SerializeField] private int minPlayersToStart = 2;
     [SerializeField] private float selectionTimeAmount = 90f;
     [SerializeField] private float secondPhaseTime = 15f;
 
@@ -189,7 +189,7 @@ public class SelectionNetwork : NetworkBehaviour
         }
 
         // Start the timer only when the first player joins
-        if (PlayerStatuses.Count == 2 /*LobbyManager.Instance.GetMaxPlayersInLobby()*/)
+        if (PlayerStatuses.Count == minPlayersToStart /*LobbyManager.Instance.GetMaxPlayersInLobby()*/)
         {
             StartSelectionTimer();
         }

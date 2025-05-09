@@ -664,6 +664,11 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 1706881663713507974, guid: 73178e70bbf9a4acf9ee20d588a66203, type: 3}
   m_PrefabInstance: {fileID: 204969015}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &204969017 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8963319788511478183, guid: 73178e70bbf9a4acf9ee20d588a66203, type: 3}
+  m_PrefabInstance: {fileID: 204969015}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &330585543
 GameObject:
   m_ObjectHideFlags: 0
@@ -1904,7 +1909,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1693677670}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 204969017}
+        m_TargetAssemblyTypeName: UnityEngine.GameObject, UnityEngine
+        m_MethodName: SetActive
+        m_Mode: 6
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 1
+        m_CallState: 2
 --- !u!114 &1693677670
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2413,7 +2430,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4845276930943762971, guid: 2da3dcc22749e7f4280737786d898334, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0
+      value: -0.000015258789
       objectReference: {fileID: 0}
     - target: {fileID: 4845637959249703711, guid: 2da3dcc22749e7f4280737786d898334, type: 3}
       propertyPath: m_AnchorMax.y

@@ -42,19 +42,16 @@ public class SettingsMenuManager : MonoBehaviour
         backButton.onClick.AddListener(OnBackClicked);
         popupYesButton.onClick.AddListener(OnPopupYes);
         popupNoButton.onClick.AddListener(OnPopupNo);
+    }
 
+    private void Start()
+    {
         savePopup.SetActive(false);
         settingsPanel.SetActive(false);
     }
 
     private void Update()
     {
-        if (settingsPanel.activeSelf && Input.GetKeyDown(KeyCode.Escape))
-        {
-            OnBackClicked();
-        }
-
-        // Optional: toggle Confirm button based on global change state
         confirmButton.interactable = AnyTabHasChanges();
     }
 
