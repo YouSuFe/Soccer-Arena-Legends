@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 
 public class PlayerFrozenState : PlayerDebuffState
@@ -30,6 +31,15 @@ public class PlayerFrozenState : PlayerDebuffState
         ResetVelocity();
 
         ResetSprintState();
+
+        Vector3 vfxPosition = stateMachine.PlayerController.FrozenVfxAnchor.position;
+        float duration = frozenData.FrozenDurationTime;
+
+        // Only the owner calls the server
+        if (stateMachine.PlayerController.IsOwner)
+        {
+            SpawnFrozenVfxServerRpc(vfxPosition, duration);
+        }
 
     }
 
@@ -65,6 +75,20 @@ public class PlayerFrozenState : PlayerDebuffState
 
     #region Main Methods
 
+    [ServerRpc(RequireOwnership = false)]
+    private void SpawnFrozenVfxServerRpc(Vector3 position, float duration)
+    {
+        SpawnFrozenVfxClientRpc(position, duration);
+    }
+
+    [ClientRpc]
+    private void SpawnFrozenVfxClientRpc(Vector3 position, float duration)
+    {
+        if (frozenData.FrozenVfx == null) return;
+
+        GameObject vfx = Object.Instantiate(frozenData.FrozenVfx, position, Quaternion.identity);
+        Object.Destroy(vfx, duration);
+    }
 
     private void ManageFrozenStateTimer()
     {

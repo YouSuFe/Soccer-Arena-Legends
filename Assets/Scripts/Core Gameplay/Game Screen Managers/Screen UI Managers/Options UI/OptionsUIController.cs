@@ -29,10 +29,12 @@ public class OptionsUIController : MonoBehaviour
 
         if (confirmLeaveNoButton != null)
             confirmLeaveNoButton.onClick.AddListener(CancelLeave);
-
-        HideAllPanels();
     }
 
+    private void Start()
+    {
+        HideAllPanels();
+    }
     private void HideAllPanels()
     {
         mainOptionsPanel.SetActive(false);
@@ -95,7 +97,7 @@ public class OptionsUIController : MonoBehaviour
             // Host case
             HostSingleton.Instance.GameManager.ShutDown();
             NetworkManager.Singleton.Shutdown();
-            UnityEngine.SceneManagement.SceneManager.LoadScene("Menu");
+            //ClientSingleton.Instance.GameManager.Disconnect();
         }
         else
         {
@@ -103,4 +105,5 @@ public class OptionsUIController : MonoBehaviour
             ClientSingleton.Instance.GameManager.Disconnect();
         }
     }
+
 }

@@ -25,6 +25,9 @@ public class PlayerController : NetworkBehaviour
     [field: SerializeField] public SoundData PlayerFallingSoundData { get; private set; }
     [field: SerializeField] public SoundData PlayerHardFallingSoundData { get; private set; }
 
+    [field: Header("Status Position")]
+    [field: SerializeField] public Transform FrozenVfxAnchor { get; private set; }
+
     public bool IsPlayerOwner => IsOwner;
     public bool IsPlayerServer => IsServer;
 

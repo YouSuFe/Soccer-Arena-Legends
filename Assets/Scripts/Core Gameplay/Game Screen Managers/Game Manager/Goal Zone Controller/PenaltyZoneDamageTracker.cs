@@ -20,6 +20,13 @@ public class PenaltyZoneDamageTracker : NetworkBehaviour
     [SerializeField] private int regularDamage = 10;
     [SerializeField] private int damageWithBall = 500;
 
+    [Header("Penalty Zone Effects")]
+    [SerializeField] private GameObject regularHitVFXPrefab;
+    [SerializeField] private GameObject ballHitVFXPrefab;
+
+    [SerializeField] private SoundData regularHitSound;
+    [SerializeField] private SoundData ballHitSound;
+
     private const float First_Damage_Interval = 0.2f;
     #endregion
 
@@ -106,7 +113,7 @@ public class PenaltyZoneDamageTracker : NetworkBehaviour
         tempPlayerKeys.Clear();
         tempPlayerKeys.AddRange(playersInsideZone.Keys);
 
-        Debug.Log($"[PenaltyZone] Tracking {playersInsideZone.Count} players:");
+#if UNITY_EDITOR
         if (playersInsideZone.Count > 0)
         {
             Debug.Log($"[PenaltyZone] Tracking {playersInsideZone.Count} players:");
@@ -115,7 +122,7 @@ public class PenaltyZoneDamageTracker : NetworkBehaviour
                 Debug.Log($"  - Client {kvp.Key}, Dead: {kvp.Value.PlayerInstance.IsPlayerDeath}");
             }
         }
-
+#endif
         foreach (ulong clientId in tempPlayerKeys)
         {
             if (!playersInsideZone.TryGetValue(clientId, out var zoneData))
@@ -152,15 +159,18 @@ public class PenaltyZoneDamageTracker : NetworkBehaviour
                     continue;
                 }
 
-                int damageAmount = zoneData.PlayerInstance.CheckIfCurrentlyHasBall() ? damageWithBall : regularDamage;
+                bool hasBall = zoneData.PlayerInstance.CheckIfCurrentlyHasBall();
+                int damageAmount = hasBall ? damageWithBall : regularDamage;
 
                 zoneData.PlayerInstance.TakeDamage(damageAmount, DeathType.Zone);
-                PlayPenaltyEffectClientRpc(clientId, zoneData.PlayerInstance.transform.position);
+
+                // Trigger VFX and SFX for the affected client
+                PlayPenaltyEffectClientRpc(zoneData.PlayerInstance.transform.position, hasBall);
 
                 zoneData.RemainingDamageTime = damageIntervalSeconds;
             }
 
-            // ✅ Always assign updated struct back
+            // Always assign updated struct back
             playersInsideZone[clientId] = zoneData;
         }
 
@@ -261,15 +271,24 @@ public class PenaltyZoneDamageTracker : NetworkBehaviour
     #region === Visual Effects ===
 
     [ClientRpc]
-    private void PlayPenaltyEffectClientRpc(ulong targetClientId, Vector3 hitPosition)
+    private void PlayPenaltyEffectClientRpc(Vector3 hitPosition, bool hasBall)
     {
-        // ToDo: Make these workable when player gets hit,
-        //VFXManager.Instance.SpawnHitEffect(hitPosition); // Your custom VFX call
+        GameObject vfxPrefab = hasBall ? ballHitVFXPrefab : regularHitVFXPrefab;
+        SoundData soundData = hasBall ? ballHitSound : regularHitSound;
 
-        //SoundManager.Instance.CreateSoundBuilder()
-        //    .WithPosition(hitPosition)
-        //    .WithRandomPitch()
-        //    .Play(SoundLibrary.Instance.penaltyZoneDamage); // Your custom SFX
+        if (vfxPrefab != null)
+        {
+            GameObject vfxInstance = Instantiate(vfxPrefab, hitPosition, Quaternion.identity);
+            Destroy(vfxInstance, 2f); // Auto-destroy after effect finishes
+        }
+
+        if (soundData != null)
+        {
+            SoundManager.Instance.CreateSoundBuilder()
+                .WithPosition(hitPosition)
+                .WithRandomPitch()
+                .Play(soundData);
+        }
     }
 
     #endregion

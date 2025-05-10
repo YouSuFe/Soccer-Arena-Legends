@@ -6,4 +6,6 @@ public class PlayerFrozenData
 {
     [field: SerializeField] [field: Range(0f, 3f)] public float SpeedModifier { get; private set; } = 0f;
     [field: SerializeField] [field: Range(0f, 3f)] public float FrozenDurationTime { get; private set; } = 1.5f;
+    [field: SerializeField] public GameObject FrozenVfx { get; private set; }
 }
+

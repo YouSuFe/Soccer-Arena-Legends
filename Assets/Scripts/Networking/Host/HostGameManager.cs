@@ -152,10 +152,15 @@ public class HostGameManager : IDisposable
         try
         {
             await LobbyService.Instance.RemovePlayerAsync(lobbyId, AuthenticationService.Instance.PlayerId);
+            Debug.Log("[HostGameManager] Removing player async.");
         }
         catch (LobbyServiceException e)
         {
             Debug.LogError($"[Host Shutdown] Error while leaving lobby: {e}");
+        }
+        finally
+        {
+            LobbyManager.Instance.ClearJoinedLobby();
         }
 
         lobbyId = string.Empty;
