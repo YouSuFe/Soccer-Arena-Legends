@@ -11,6 +11,9 @@ public class ControllerSettingsManager : MonoBehaviour, ISettingsTab
     [SerializeField]
     private CameraSensitivityApplier cameraSensitivityApplier;
 
+    // New constant to define the gain scale
+    private const float SensitivityGainScale = 100f;
+
     private ControllerSettingsData initial;
     private ControllerSettingsData temp;
 
@@ -25,7 +28,7 @@ public class ControllerSettingsManager : MonoBehaviour, ISettingsTab
     {
         initial = new ControllerSettingsData
         {
-            sensitivity = 1f,
+            sensitivity = 0.4f,
             invertYAxis = true
         };
 
@@ -69,11 +72,12 @@ public class ControllerSettingsManager : MonoBehaviour, ISettingsTab
 
     }
 
-    private void ApplySensitivityLive(float sensitivity)
+    private void ApplySensitivityLive(float normalizedValue)
     {
         if (cameraSensitivityApplier != null)
         {
-            cameraSensitivityApplier.ApplySensitivity(sensitivity);
+            float gainValue = normalizedValue * SensitivityGainScale;
+            cameraSensitivityApplier.ApplySensitivity(gainValue);
         }
     }
 

@@ -162,36 +162,54 @@ public abstract class BaseWeapon : NetworkBehaviour, IWeapon, IDamageDealer, ISp
     {
         Debug.Log($"[Server] Received damage request: Target-{targetNetworkId} | Damage-{damage}");
 
-        if (!NetworkManager.Singleton.SpawnManager.SpawnedObjects.ContainsKey(targetNetworkId)) return;
-
-        var targetObject = NetworkManager.Singleton.SpawnManager.SpawnedObjects[targetNetworkId];
-        var target = targetObject.GetComponent<IDamageable>();
-
-        if (target != null)
+        // Check if the target exists
+        if (!NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(targetNetworkId, out var targetObject))
         {
-            // ❌ Block friendly fire (same team)
-            if (!TeamUtils.AreOpponents(OwnerClientId, targetNetworkId))
+            Debug.LogWarning($"[Server] No SpawnedObject with ID: {targetNetworkId}");
+            return;
+        }
+
+        var target = targetObject.GetComponent<IDamageable>();
+        if (target == null)
+        {
+            Debug.LogWarning($"[Server] Target object does not implement IDamageable: {targetObject.name}");
+            return;
+        }
+
+        // 🧠 Resolve actual client ID from NetworkObject
+        ulong targetClientId = targetObject.OwnerClientId;
+
+        // Check team logic (only for players)
+        if (PlayerSpawnManager.Instance != null)
+        {
+            var targetUserData = PlayerSpawnManager.Instance.GetUserData(targetClientId);
+            if (targetUserData == null)
             {
-                Debug.Log($"{name} Skipping damage: target is same team.");
+                Debug.LogWarning($"[Server] UserData for client {targetClientId} not found.");
                 return;
             }
 
-            Debug.Log($"[Server] Applying {damage} damage to Target-{targetNetworkId}");
-
-            // ✅ Apply damage based on interface type
-            if (isPositionBased && target is IPositionBasedDamageable positionBasedDamageable)
+            if (!TeamUtils.AreOpponents(OwnerClientId, targetClientId))
             {
-                positionBasedDamageable.TakeDamage(damage, attackerPosition, DeathType.Knife, OwnerClientId);
+                Debug.Log($"[Server] Skipping damage: {OwnerClientId} and {targetClientId} are on the same team.");
+                return;
             }
-            else
-            {
-                target.TakeDamage(damage, DeathType.Knife, OwnerClientId);
-            }
-
-            // ✅ Efficient: only notify attacker to show floating damage
-            ShowFloatingDamageClientRpc(damage, RpcUtils.SendRpcToOwner(this));
         }
+
+        // ✅ Apply damage
+        if (isPositionBased && target is IPositionBasedDamageable posTarget)
+        {
+            posTarget.TakeDamage(damage, attackerPosition, DeathType.Knife, OwnerClientId);
+        }
+        else
+        {
+            target.TakeDamage(damage, DeathType.Knife, OwnerClientId);
+        }
+
+        // ✅ Notify attacker for floating damage UI
+        ShowFloatingDamageClientRpc(damage, RpcUtils.SendRpcToOwner(this));
     }
+
 
     [ClientRpc]
     private void ShowFloatingDamageClientRpc(int damage, ClientRpcParams rpcParams = default)

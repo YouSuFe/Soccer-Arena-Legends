@@ -1967,6 +1967,8 @@ MonoBehaviour:
     frozenParameterName: isFrozen
     shockedParameterName: isShocked
     speacialDashinParameterName: isDashWeaponUsed
+    regularAttackTriggerName: regularAttack
+    heavyAttackTriggerName: heavyAttack
   <PlayerFallingSoundData>k__BackingField:
     clip: {fileID: 8300000, guid: 482611fe6bc559142a00be6e726b4862, type: 3}
     mixerGroup: {fileID: -2848197126003448455, guid: 2ead715704bc04e2ba187b5e9227d6a7, type: 2}
@@ -2013,6 +2015,7 @@ MonoBehaviour:
     ignoreListenerVolume: 0
     ignoreListenerPause: 0
     rolloffMode: 0
+  <FrozenVfxAnchor>k__BackingField: {fileID: 8124774095758538265}
 --- !u!114 &1711991082496151951
 MonoBehaviour:
   m_ObjectHideFlags: 0

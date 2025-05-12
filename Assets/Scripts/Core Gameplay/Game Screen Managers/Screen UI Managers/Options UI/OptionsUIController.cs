@@ -87,7 +87,7 @@ public class OptionsUIController : MonoBehaviour
         mainOptionsPanel.SetActive(true);
     }
 
-    public void ConfirmExit()
+    public async void ConfirmExit()
     {
         Debug.Log("Player confirmed to exit.");
         CursorController.UnlockCursor();
@@ -95,9 +95,9 @@ public class OptionsUIController : MonoBehaviour
         if (NetworkManager.Singleton.IsHost)
         {
             // Host case
-            HostSingleton.Instance.GameManager.ShutDown();
+            await HostSingleton.Instance.GameManager.ShutDown();
+            ClientSingleton.Instance.GameManager.Disconnect();
             NetworkManager.Singleton.Shutdown();
-            //ClientSingleton.Instance.GameManager.Disconnect();
         }
         else
         {

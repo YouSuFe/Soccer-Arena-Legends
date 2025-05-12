@@ -145,7 +145,7 @@ public class HostGameManager : IDisposable
         }
     }
 
-    public async void ShutDown()
+    public async Task ShutDown()
     {
         if (string.IsNullOrEmpty(lobbyId)) return;
 
@@ -160,6 +160,7 @@ public class HostGameManager : IDisposable
         }
         finally
         {
+            Debug.LogError($"[Host Shutdown Finally] Clear Joined Lobby. {lobbyId}");
             LobbyManager.Instance.ClearJoinedLobby();
         }
 

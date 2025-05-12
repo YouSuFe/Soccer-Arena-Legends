@@ -14,6 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: 4
   displayName: Debuff Remover
-  icon: {fileID: 21300000, guid: a91e6ddf8f5244a2b89f6b560d57054d, type: 3}
+  icon: {fileID: 21300000, guid: 8b66a7653770d46f984ea1e113e9b661, type: 3}
   introPrefab: {fileID: 5454596134875775234, guid: c50cf1e70da734d30b99cc9511713672, type: 3}
   gameplayPrefab: {fileID: 3333968463881764028, guid: 5f971633c2f2048bab12f9519fa07d60, type: 3}

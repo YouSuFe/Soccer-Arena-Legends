@@ -717,7 +717,7 @@ public class PlayerSpawnManager : NetworkBehaviour
     }
 
 
-    private void SpawnBall()
+    public void SpawnBall()
     {
         if (!LobbyManager.Instance.IsInLobby())
         {
@@ -755,6 +755,8 @@ public class PlayerSpawnManager : NetworkBehaviour
         GameObject ballInstance = Instantiate(prefab, ballSpawnPoint.position, Quaternion.identity);
         ballInstance.GetComponent<NetworkObject>().Spawn();
         spawnedBall = ballInstance;
+        spawnedBall.GetComponent<BallVisibilityNetworkController>().HideBallServerRpc();
+
     }
 
     public GameObject GetSpawnedBall() => spawnedBall;

@@ -203,6 +203,7 @@ MonoBehaviour:
     <PlayerFrozenData>k__BackingField:
       <SpeedModifier>k__BackingField: 0
       <FrozenDurationTime>k__BackingField: 1.5
+      <FrozenVfx>k__BackingField: {fileID: 6097779538034126439, guid: b6d3e2e4b8df2964eb3dfce561902f3e, type: 3}
     <PlayerShockedData>k__BackingField:
       <SpeedModifier>k__BackingField: 0
       <ShockedDurationTime>k__BackingField: 1.5

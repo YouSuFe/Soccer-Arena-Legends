@@ -638,19 +638,38 @@ public class LobbyManager : MonoBehaviour
     #region Player Lobby
     private Player GetPlayer(Lobby lobby)
     {
-        var assignedTeam = GameEnumsUtil.PlayerTeam.Blue;
+        GameEnumsUtil.PlayerTeam assignedTeam = GameEnumsUtil.PlayerTeam.Blue;
 
-        // Check if a lobby exists and count current players
         if (lobby != null && lobby.Players != null)
         {
-            Debug.Log($"[GetPlayer] Lobby exists! Current player count: {lobby.Players.Count}");
+            int blueCount = 0;
+            int redCount = 0;
 
-            assignedTeam = (lobby.Players.Count % 2 == 0) ? GameEnumsUtil.PlayerTeam.Blue : GameEnumsUtil.PlayerTeam.Red;
+            foreach (var player in lobby.Players)
+            {
+                if (player.Data.TryGetValue(KEY_PLAYER_TEAM, out var teamData))
+                {
+                    var team = GameEnumsUtil.StringToEnum(teamData.Value, GameEnumsUtil.PlayerTeam.Spectator);
+                    if (team == GameEnumsUtil.PlayerTeam.Blue)
+                        blueCount++;
+                    else if (team == GameEnumsUtil.PlayerTeam.Red)
+                        redCount++;
+                }
+            }
+
+            // Assign to the team with fewer players
+            if (blueCount > redCount)
+                assignedTeam = GameEnumsUtil.PlayerTeam.Red;
+            else
+                assignedTeam = GameEnumsUtil.PlayerTeam.Blue;
+
+            Debug.Log($"[GetPlayer] Blue: {blueCount} | Red: {redCount} → Assigned: {assignedTeam}");
         }
         else
         {
-            Debug.LogWarning("[GetPlayer] Lobby is NULL! Assigning default Blue team.");
+            Debug.LogWarning("[GetPlayer] Lobby is NULL or has no players. Defaulting to Blue.");
         }
+
 
         Debug.Log($"[GetPlayer] Assigned Team: {assignedTeam}");
 
