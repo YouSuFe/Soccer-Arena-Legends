@@ -5,7 +5,7 @@ _A fast-paced Unity arena soccer game with combat abilities, unique characters, 
 
 ## 🎮 Introduction
 
-Soccer Arena Legends is a Unity-based prototype that blends **soccer mechanics** with **combat-inspired abilities** and **RPG-style progression**.  
+Soccer Arena Legends is a Unity-based prototype that blends **soccer mechanics** with **combat-inspired abilities** and **Level Up style progression**.  
 It is designed for both **local practice** and **online multiplayer** using **Unity Netcode for GameObjects (NGO)** with **Unity Gaming Services (UGS) Relay + Lobby**.
 ⚙️ Dedicated Server: The project also supports a Unity Dedicated Server build (UGS), but this repo only contains the client/host version. The dedicated server logic lives in a separate project.
 
