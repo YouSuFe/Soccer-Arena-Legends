@@ -75,7 +75,7 @@ The game is structured around **five core scenes**, each responsible for part of
 ---
 
 ### 🗺️ Architecture Overview
-- **Player Controller**: Movement, physics, and input-driven rotation.  
+- **Player Controller**: Rigidbody Movement, Rigidbody physics, and input-driven rotation.  
 - **State Machine**: Handles all movement such as grounded, airborne, dashing, and landing states.  
 - **Ability System**: ScriptableObject-driven definitions with cooldowns and effects.  
 - **Camera System**: Cinemachine-based with a switch handler for FP/TP.  
